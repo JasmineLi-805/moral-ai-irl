@@ -1,0 +1,218 @@
+<div>
+<h2>
+    <span class="h3 bolded-blue" data-i18n="litw-demographics-title"></span>
+    <span class="h3" data-toggle="tooltip" data-placement="right" data-i18n="[title]litw-demographics-title-tip">
+        <span class="tip-handler" data-i18n="litw-demographics-title-tip-text"></span>
+    </span>
+</h2>
+<span class="text-left" id="requiredMessage" data-i18n="litw-demographics-required-all"></span>
+</div>
+
+<br>
+
+<div id="demographicsForm" style="text-align: left"></div>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var countries = {};
+        $.getJSON('static/templates/i18n/countries-en.json', function(data) { countries = data; }) //TODO: load based on language
+        .done( function () {
+                $("#demographicsForm").alpaca({
+                    "data": false,
+                    "schema": {
+                        "description": "MoralAI - Demographics",
+                        "type": "object",
+                        "properties": {
+                            "demographics-retake": {
+                                "title": $.i18n('litw-demographics-retake'),
+                                "enum": ['no', 'yes'],
+                                "required":true
+                            },
+                            "demographics-age": {
+                                "title": $.i18n('litw-demographics-age'),
+                                "required":true,
+                                "minimum": 18
+                            },
+                            "demographics-gender": {
+                                "title": $.i18n('litw-demographics-gender'),
+                                "enum": ['female', 'male', 'non-binary', 'no-disclosure', 'other'],
+                                "required":true
+                            },
+                            "demographics-gender-other": {
+                                "title": $.i18n('litw-demographics-gender-other'),
+                                "required":false
+                            },
+                            "demographics-education": {
+                                "title": $.i18n('litw-demographics-education'),
+                                "enum": ['no-formal-edu', 'incomplete-primary', 'complete-primary',
+                                    'incomplete-sec-high', 'complete-sec-high', 'university-no-degree',
+                                    'university-degree', 'incomplete-grad-prof', 'complete-grad-prof'],
+                                "required":true
+                            },
+                            "demographics-culture": {
+                                "title": $.i18n('litw-demographics-country'),
+                                "enum": Object.keys(countries),
+                                "required":true
+                            },
+                            "demographics-race": {
+                                "title": $.i18n('litw-demographics-race'),
+                                "enum": ['native', 'asian', 'black', 'latino', 'islander', 'white', 'no-disclosure',
+                                    'other'],
+                                "required":false
+                            },
+                            "demographics-race-other": {
+                                "title": $.i18n('litw-demographics-race-other'),
+                                "required":false
+                            }
+                        }
+                    },
+                    "options": {
+                        //"hideInitValidationError":true,
+                        "fields": {
+                            "demographics-retake": {
+                                "type": 'select',
+                                "optionLabels": [$.i18n('litw-demographics-no'), $.i18n('litw-demographics-yes')],
+                                "sort": false,
+                                "fieldClass": "row",
+                                "noneLabel": "--",
+                                "removeDefaultNone": false,
+                                "showMessages": false,
+                                "default": "--"
+                            },
+                            "demographics-age": {
+                                "type": 'integer',
+                                "fieldClass": "row",
+                                "showMessages": false
+                            },
+                            "demographics-gender": {
+                                "type": 'select',
+                                "optionLabels": [$.i18n('litw-demographics-female'),
+                                    $.i18n('litw-demographics-male'), $.i18n('litw-demographics-nonbinary'),
+                                    $.i18n('litw-demographics-nodisclose'), $.i18n('litw-demographics-other')],
+                                "sort": false,
+                                "fieldClass": "row",
+                                "noneLabel": "--",
+                                "removeDefaultNone": false,
+                                "showMessages": false,
+                                "default": "--"
+                            },
+                            "demographics-gender-other": {
+                                "type": 'text',
+                                "fieldClass": "row",
+                                "showMessages": false,
+                                "hidden": true
+                            },
+                            "demographics-education": {
+                                "type": 'select',
+                                "optionLabels": [$.i18n('litw-demographics-education1'),
+                                    $.i18n('litw-demographics-education2'), $.i18n('litw-demographics-education3'),
+                                    $.i18n('litw-demographics-education4'), $.i18n('litw-demographics-education5'),
+                                    $.i18n('litw-demographics-education6'), $.i18n('litw-demographics-education7'),
+                                    $.i18n('litw-demographics-education8'), $.i18n('litw-demographics-education9')
+                                ],
+                                "sort": false,
+                                "fieldClass": "row",
+                                "noneLabel": "--",
+                                "removeDefaultNone": false,
+                                "showMessages": false,
+                                "default": "--"
+                            },
+                            "demographics-culture": {
+                                "type": 'select',
+                                //"helper": $.i18n('litw-demographics-culture-tip'),
+                                "optionLabels": Object.values(countries),
+                                "sort": false,
+                                "fieldClass": "row",
+                                "noneLabel": "--",
+                                "removeDefaultNone": false,
+                                "showMessages": false,
+                                "default": "--"
+                            },
+                            "demographics-race": {
+                                "type": 'checkbox',
+                                "optionLabels": [
+                                    $.i18n('litw-demographics-race-native'),
+                                    $.i18n('litw-demographics-race-asian'),
+                                    $.i18n('litw-demographics-race-black'),
+                                    $.i18n('litw-demographics-race-latino'),
+                                    $.i18n('litw-demographics-race-islander'),
+                                    $.i18n('litw-demographics-race-white'),
+                                    $.i18n('litw-demographics-nodisclose'),
+                                    $.i18n('litw-demographics-other'),
+                                ],
+                                "sort": false,
+                                "removeDefaultNone": true,
+                                "fieldClass": "row",
+                                "showMessages": false,
+                                "hidden": true
+                            },
+                            "demographics-race-other": {
+                                "type": 'text',
+                                "fieldClass": "row",
+                                "showMessages": false,
+                                "hidden": true
+                            }
+                        }
+                    },
+                    "postRender": function(control){
+                        if( $('body').css('direction') === 'rtl') {
+                            $('#demographicsForm').css('text-align', 'right');
+                        }
+
+                        $('#btn-next-page').attr('style','display:none;');
+                        $(".alpaca-required-indicator").html(" *");
+                        $("input[type='text']").css('width','200px');
+
+                        let age = control.childrenByPropertyId["demographics-age"];
+                        age.subscribe(age, function(ageValue) {
+                            if(ageValue !== '' && !isNaN(ageValue) && Number(ageValue)<14) {
+                                $("#litw-body").html(
+                                    "<H2>"+$.i18n('litw-demographics-minor-alert1') +"</H2>"+
+                                    "<H3>"+$.i18n('litw-demographics-minor-alert2') + "</H3>"
+                                );
+                                window.setTimeout(function(){
+                                    window.location.replace("https://www.labinthewild.org");
+                                }, 5000);
+                            }
+                        });
+
+                        let gender = control.childrenByPropertyId["demographics-gender"];
+                        let genderOther = control.childrenByPropertyId["demographics-gender-other"];
+                        genderOther.subscribe(gender, function(val) {
+                            this.options.hidden = val !== 'other';
+                            this.refresh();
+                            $("input[type='text']").css('width','200px');
+                        });
+
+                        let country = control.childrenByPropertyId["demographics-culture"];
+                        let race = control.childrenByPropertyId["demographics-race"];
+                        race.subscribe(country, function(val) {
+                            this.options.hidden = val !== 'United States';
+                            this.refresh();
+                        });
+
+                        let raceOther = control.childrenByPropertyId["demographics-race-other"];
+                        raceOther.subscribe(race, function(val) {
+                            this.options.hidden = !val.includes('other');
+                            this.refresh();
+                            $("input[type='text']").css('width','200px');
+                        });
+                    },
+                    "view": {
+                        //"locale": $.i18n().locale,
+                        "callbacks": {
+                            "valid": function(control) {
+                                $('#btn-next-page').attr('style','display:block;');
+                            },
+                            "invalid": function() {
+                                $('#btn-next-page').attr('style','display:none;');
+                            }
+                        }
+                    }
+                 });
+        });
+    });
+</script>
+
+<script>
+    $('[data-toggle="tooltip"]').tooltip();
+</script>

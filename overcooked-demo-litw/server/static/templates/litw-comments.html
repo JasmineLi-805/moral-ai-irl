@@ -1,0 +1,90 @@
+<h2 class="h3 bolded-blue" data-i18n="litw-comment-title"></h2>
+<span class="text-left" data-i18n="litw-comment-subtitle"></span>
+
+<div id="commentsForm" style="text-align: left"></div>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#commentsForm").alpaca({
+            "data": false,
+            "schema": {
+                "description": "LITW Comments",
+                "type": "object",
+                "properties": {
+                    "comment-general": {
+                        "title": $.i18n('litw-comment-q1'),
+                        "required": false,
+                        "type": "string",
+                    },
+                    "comment-hadissue": {
+                        "title": $.i18n('litw-comment-q21'),
+                        "enum": ['no', 'yes'],
+                        "required":false
+                    },
+                    "comment-issue": {
+                        "title": $.i18n('litw-comment-q22'),
+                        "type": "string",
+                        "required": false
+                    },
+                    "comment-didcheat": {
+                        "title": $.i18n('litw-comment-q31'),
+                        "enum": ['no', 'yes'],
+                        "required":false
+                    },
+                    "comment-cheat": {
+                        "title": $.i18n('litw-comment-q32'),
+                        "type": "string",
+                        "required":false
+                    }
+                },
+            },
+            "options": {
+                "fields": {
+                    "comment-general": {
+                        "type": "textarea"
+                    },
+                    "comment-hadissue": {
+                        "type": 'select',
+                        "optionLabels": [$.i18n('litw-demographics-no'),
+                            $.i18n('litw-demographics-yes')],
+                        "sort": false,
+                        "removeDefaultNone": true
+                    },
+                    "comment-issue": {
+                        "type": "textarea",
+                        "hidden": true
+                    },
+                    "comment-didcheat": {
+                        "type": 'select',
+                        "optionLabels": [$.i18n('litw-demographics-no'),
+                            $.i18n('litw-demographics-yes')],
+                        "sort": false,
+                        "removeDefaultNone": true
+                    },
+                    "comment-cheat": {
+                        "type": "textarea",
+                        "hidden": true
+                    },
+                }
+            },
+            "postRender": function(control) {
+                if( $('body').css('direction') === 'rtl') {
+                    $('#commentsForm').css('text-align', 'right');
+                }
+
+                let hadissue = control.childrenByPropertyId["comment-hadissue"];
+                let issue = control.childrenByPropertyId["comment-issue"];
+                issue.subscribe(hadissue, function(val) {
+                    this.options.hidden = val !== 'yes';
+                    this.refresh();
+                });
+
+                let didcheat = control.childrenByPropertyId["comment-didcheat"];
+                let cheat = control.childrenByPropertyId["comment-cheat"];
+                cheat.subscribe(didcheat, function(val) {
+                    this.options.hidden = val !== 'yes';
+                    this.refresh();
+                });
+            }
+        });
+    });
+</script>

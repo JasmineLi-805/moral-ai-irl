@@ -1,0 +1,31 @@
+version : '3.7'
+
+services:
+    cook:
+        build:
+            context: ./server
+            args:
+                BUILD_ENV: "${BUILD_ENV:-production}"
+                OVERCOOKED_BRANCH: "${OVERCOOKED_BRANCH:-master}"
+                HARL_BRANCH: "${HARL_BRANCH:-master}"
+                #GRAPHICS: "${GRAPHICS:-overcooked_graphics_v2.2.js}"
+        environment: 
+            FLASK_ENV: "${BUILD_ENV:-production}"
+        ports:
+            - 8080:8080
+
+    nginx:
+        build:
+            context: ./nginx
+            args:
+                NGINX_CONF: ${NGINX_CONF}
+                NGINX_PORT: ${NGINX_PORT}
+                SERVER_NAME: ${SERVER_NAME}
+                SERVER_SSL_CERTIFICATE_KEY: ${SERVER_SSL_CERTIFICATE_KEY}
+                SERVER_SSL_CERTIFICATE_CHAIN: ${SERVER_SSL_CERTIFICATE_CHAIN}
+        volumes:
+            - ${STATIC_FOLDER}:/var/cook/static/:ro
+        ports:
+            - ${NGINX_PORT}:${NGINX_PORT}
+        depends_on:
+            - cook

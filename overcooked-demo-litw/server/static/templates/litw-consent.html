@@ -1,0 +1,30 @@
+<h2 class="bolded-blue" data-i18n='litw-irb-header'></h2>
+<p class="bolded-italic" data-i18n='litw-irb-subheader-1'></p>
+
+{{#times 8}}
+	<div class="irb-paragraph">
+		<strong class="irb-paragraph-header" data-i18n='litw-irb-body-{{this}}-p1'></strong>
+		<p class="irb-paragraph-body" data-i18n='litw-irb-body-{{this}}-p2'></p>
+	</div>
+{{/times}}
+
+<p data-i18n='litw-irb-body-final'></p>
+<br>
+<form id="consent-form">
+	<input type="checkbox" id="agree-to-study" onclick="toggleNextButton()"/>
+	<label for="agree-to-study" data-i18n='litw-irb-consent'></label>
+</form>
+<span class="bolded-blue" id="approve-irb" data-i18n='litw-irb-warning'></span>
+
+<script>
+    function toggleNextButton() {
+        let agreed = $('#agree-to-study').prop("checked");
+		if (agreed) {
+			$('#btn-next-page').show();
+			$("#approve-irb").hide();
+		} else {
+			$('#btn-next-page').hide();
+			$("#approve-irb").show();
+		}
+    }
+</script>

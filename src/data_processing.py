@@ -6,7 +6,7 @@ import numpy as np
 import pickle
 import os
 
-from actions import Action
+from overcooked_ai_py.mdp.actions import Action
 
 CLEAN_DATA_DIR = '/Users/jasmineli/Desktop/moral-ai-irl/data/cleaned'
 
@@ -40,7 +40,12 @@ SCHEMA_TO_JSON_KEY = {
     'locale': 'locale'
 }
 
-def convert_json_to_trials(file_path, verbose=False):
+
+#####################
+# LOW LEVEL METHODS #
+#####################
+
+def read_json_to_trials(file_path, verbose=False):
     '''
     Convert the initial json file to a list of trials.
     Returns: trials
@@ -157,6 +162,11 @@ def convert_trials_to_formatted_df(trials, verbose=False):
 # HIGH LEVEL METHODS #
 ######################
 
+    ######################
+    # Data Preprocessing #
+    ######################
+
+
 def json_to_df_pickle(in_file_path, out_file_path, verbose=False):
     """
     High level function that reads the raw json file and converts it to 
@@ -164,7 +174,7 @@ def json_to_df_pickle(in_file_path, out_file_path, verbose=False):
     file in CLEAN_DATA_DIR. 
     """
     # reads and extract necessary information from raw json file
-    trials = convert_json_to_trials(in_file_path, verbose=verbose)
+    trials = read_json_to_trials(in_file_path, verbose=verbose)
     # convert trials to dataframe and add featuers from calculation
     dataframes = convert_trials_to_formatted_df(trials)
     ###
@@ -174,9 +184,61 @@ def json_to_df_pickle(in_file_path, out_file_path, verbose=False):
         pickle.dump(dataframes, file=f)
     return dataframes
 
-if __name__ == "__main__":
-    # # Processes the raw JSON file and save as pickle file in CLEAN_DATA_DIR
-    # in_file_path = '/Users/jasmineli/Desktop/moral-ai-irl/data/study_data.json'
-    # out_file_path = os.path.join(CLEAN_DATA_DIR, 'study_data_clean.pickle')
-    # df = json_to_df_pickle(in_file_path, out_file_path)
+    ####################
+    # Learning / Train #
+    ####################
 
+
+def get_vectorized_trajectories(layouts, data_path, country=None, city=None, verbose=False):
+    """
+    Get vectorized trajectories for a layout, can specify the city and country of the player.
+
+    Arguments:
+        layouts (list): List of strings corresponding to layouts we wish to retrieve data for
+        data_path (str): Full path to pickled DataFrame we wish to load.
+    """
+    def get_trajs_from_data(data_path, layouts, verbose=False, **kwargs):
+        """
+        Converts and returns trajectories from dataframe at `data_path` to overcooked trajectories.
+        """
+        # TODO: 把以下步骤融合进主方程
+        trajs, info = convert_joint_df_trajs_to_overcooked_single(
+            main_trials,
+            layouts,
+            silent=silent,
+            **kwargs
+        )
+
+        return trajs, info
+
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(
+            "Tried to load human data from {} but file does not exist!".format(data_path))
+
+    if verbose:
+            print("Loading data from {}".format(data_path))
+
+    trials = pickle.load(data_path)
+    
+    data = {}
+
+    # For each data path, load data once and parse trajectories for all corresponding layouts
+    for data_path in data_path_to_layouts:
+        curr_data = get_trajs_from_data(
+            curr_data_path, layouts=[layout], verbose=verbose)[0]
+        data = append_trajectories(data, curr_data)
+
+    # Return all accumulated data for desired layouts
+    return data
+
+
+if __name__ == "__main__":
+    # Processes the raw JSON file and save as pickle file in CLEAN_DATA_DIR
+    in_file_path = '/Users/jasmineli/Desktop/moral-ai-irl/data/study_data.json'
+    out_file_path = os.path.join(CLEAN_DATA_DIR, 'study_data_clean.pickle')
+    df = json_to_df_pickle(in_file_path, out_file_path, verbose=True)
+
+    with open(out_file_path, 'rb') as f:
+        frame = pickle.load(f)
+        assert(len(frame) == len(df))
+        assert(type(frame) == type(df))

@@ -1,6 +1,7 @@
-from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
 import sys
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
+from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
+
 
 
 DEFAULT_DATA_PARAMS = {
@@ -22,7 +23,12 @@ def load_data():
 
     processed_trajs = get_human_human_trajectories(
         **DEFAULT_DATA_PARAMS, silent=False)
+    print(len(processed_trajs))
+    for k in processed_trajs:
+        print(k)
     inputs, targets = processed_trajs["ep_states"], processed_trajs["ep_actions"]
+    print(f'inputs = {type(inputs)}; len = {len(inputs)}')
+    print(f'targets = {type(targets)}; len = {len(targets)}')
 
     # sequence matters, pad the shorter ones with init state
     seq_lens = np.array([len(seq) for seq in inputs])
@@ -36,5 +42,5 @@ def load_data():
 
 if __name__ == "__main__":
     inputs, targets, seq_lens = load_data()
-    print(inputs.shape)
-    print(targets.shape)
+    print(f'input = {inputs.shape}')
+    print(f'targets = {targets.shape}')
