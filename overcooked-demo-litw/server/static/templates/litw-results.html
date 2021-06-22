@@ -1,0 +1,20 @@
+<div id="results-body">
+    <h3 class="bolded-blue" data-i18n="litw-result-header"></h3>
+    <div style="width: 50%; margin: auto">
+        <h4>{{results.message}}</h4>
+        <table class="table">
+            <thead class="thead-dark">
+            <tr>
+                <th scope="col" data-i18n="litw-result-table-cook"></th>
+                <th scope="col" data-i18n="litw-result-table-coop"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>{{results.score_p_avg}} / {{results.score_o_avg}}</td>
+                <td>{{results.coop_p_avg}} / {{results.coop_o_avg}}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div id="results-footer"></div>

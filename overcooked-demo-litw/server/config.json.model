@@ -1,0 +1,23 @@
+{
+    "logfile" : "app.log",
+    "layouts" : ["cramped_room", "mai_separate_coop_left", "mai_separate_coop_right"],
+    "MAX_GAMES" : 10,
+    "MAX_GAME_LENGTH" : 120,
+    "AGENT_DIR" : "./static/assets/agents",
+    "MAX_FPS" : 30,
+    "layout_globals" : {
+        "onion_value" : 10,
+        "tomato_value" : 10,
+        "onion_time" : 10,
+        "tomato_time" : 10,
+        "order_bonus" : 2,
+        "max_num_ingredients" : 3
+    },
+    "litw": {
+        "url_server": "https://data.labinthewild.org/v1/",
+        "url_auth": "auth/?study_id={}&study_key={}",
+        "url_data": "study/{}/data/",
+        "study_id": "",
+        "study_key": ""
+    }
+}

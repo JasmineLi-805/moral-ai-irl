@@ -1,0 +1,56 @@
+<div class="litw-results-footer">
+    <div class="litw-results-footer-content">
+        <div class="litw-results-footer-header bolded-blue" data-i18n="litw-results-more-title"></div>
+            <span class="litw-results-number">1</span>
+            <span class="litw-fb-like-msg" data-i18n="litw-results-more-step1"></span>
+            <a href="https://www.facebook.com/LabInTheWild/">facebook.com/LabInTheWild/</a>
+        <div class="litw-results-sharing-container litw-footer-element">
+            <span class="litw-results-number">2</span>
+            <span class="litw-results-sharing-header" data-i18n="litw-results-more-step2"></span>
+            <div class="litw-results-sharing-body">
+                <a class="sessionFlow" id="twitterShareButton0"
+                   href="https://twitter.com/intent/tweet?text={{share_text}}&amp;url={{share_url}}"
+                   target="_new" onclick="LITW.tracking.recordSharing('Twitter')">
+                    <img id="twitter0" src="/static/images/litw/twitter.png" width="50px"/>
+                </a>
+                <a class="sessionFlow" id="fbShareButton0"
+                   href="https://www.facebook.com/sharer/sharer.php?u={{share_url}}"
+                   target="_new" onclick="LITW.tracking.recordSharing('Facebook')">
+                    <img id="fb0" src="/static/images/litw/fb.png" width="50px"/>
+                </a>
+                <a class="sessionFlow" id="linkedinShareButton0"
+                   href="https://www.linkedin.com/shareArticle?mini=true&amp;url={{share_url}}&amp;title={{share_title}}&amp;summary={{share_text}}"
+                   target="_new" onclick="LITW.tracking.recordSharing('LinkedIn')">
+                    <img id="LinkedIn0" src="/static/images/litw/linkedin.png" width="50px"/>
+                </a>
+                <a class="sessionFlow" id="pinterestShareButton0"
+                   href="https://www.pinterest.com/pin/create/button/?url={{share_url}}&amp;media=&amp;description={{share_title}}"
+                   target="_new" onclick="LITW.tracking.recordSharing('Pinterest')">
+                    <img id="Pinterest0" src="/static/images/litw/pinterest.png" width="50px"/>
+                </a>
+            </div>
+        </div>
+        <div class="litw-results-study-links-container litw-footer-element">
+            <span class="litw-results-number">3</span>
+            <span class="litw-results-study-links-header" data-i18n="litw-results-more-step3"></span>
+            <div class="litw-results-study-links">
+                {{#each more_litw_studies}}
+                <div class="litw-study-link row">
+                    <div class="col-md-3">
+                        <a href="{{study_url}}" onclick='submit_slogan_choice("{{study_slogan}}")'>
+                            <img class="litw-study-link-img" src="{{study_logo}}"/>
+                        </a>
+                    </div>
+                    <div class="col-md-9">
+                        <h3><a href="{{study_url}}" onclick='submit_slogan_choice("{{study_slogan}}")'>{{study_slogan}}</a></h3>
+                        <br>
+                        <p class="litw-study-link-description">{{study_description}}
+                            <a href="{{study_url}}" onclick='submit_slogan_choice("{{study_slogan}}")' class="participate-link" data-i18n="litw-results-more-participate"></a>
+                        </p>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+</div>
