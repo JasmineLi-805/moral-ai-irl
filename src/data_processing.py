@@ -276,24 +276,20 @@ def get_vectorized_trajectories(layout, data_path, country=None, city=None, verb
     return (inputs, outputs, seq_len), trajs, info
 
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Convert game data from json to dataframes.')
+    parser.add_argument('--input_path', required=True, type=str, help='path to json file')
+    parser.add_argument('--output_path', required=True, type=str, help='path to store dataframe pickle file')
+    parser.add_argument('--verbose', required=False, help='setting to True prints log messages', default=False)
+    args = parser.parse_args()
+    
+    in_file_path = args.input_path
+    out_file_path = args.output_path
+    df = json_to_df_pickle(in_file_path, out_file_path, verbose=True)
+    
+    if args.verbose:
+        print(f'completed json to dataframe pickle file conversion')
+
 if __name__ == "__main__":
-    # Processes the raw JSON file and save as pickle file in CLEAN_DATA_DIR
-    # in_file_path = '/Users/jasmineli/Desktop/moral-ai-irl/data/study_data.json'
-    out_file_path = os.path.join(CLEAN_DATA_DIR, 'study_data_clean.pickle')
-    # df = json_to_df_pickle(in_file_path, out_file_path, verbose=True)
-
-    # with open(out_file_path, 'rb') as f:
-    #     frame = pickle.load(f)
-    #     assert(len(frame) == len(df))
-    #     assert(type(frame) == type(df))
-
-    data, traj, info = get_vectorized_trajectories(layout="mai_separate_coop_right",
-                                             data_path=out_file_path, 
-                                             country='United States',
-                                             verbose=True)
-    x_state = data[0]
-    y_action = data[1]
-    seq_len = data[2]
-    print(x_state.shape)
-    print(y_action.shape)
-    print(seq_len)
+    main()
