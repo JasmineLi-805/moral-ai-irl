@@ -1,18 +1,23 @@
 
-import json
 import pandas as pd
+import json
 import sys
-import numpy as np
-import pickle
-import os
-
+sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
+from human_aware_rl_master.human_aware_rl.human.data_processing_utils import joint_df_trajs_to_overcooked_single
+from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
+from typing_extensions import final
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState
 from overcooked_ai_py.mdp.actions import Action
+import os
+import pickle
+import numpy as np
+
 
 CLEAN_DATA_DIR = '/Users/jasmineli/Desktop/moral-ai-irl/data/cleaned'
 
 # the schema for the raw trials, used by convert_json_to_trials
 SCHEMA = [
-    'state', 'joint_action', 'time_left', 'score', 'time_elapsed', 'cur_gameloop', 'layout',
+    'state', 'joint_action', 'time_left', 'split_score', 'time_elapsed', 'cur_gameloop', 'layout',
     'layout_name', 'trial_id', 'player_0_id', 'player_1_id', 'player_0_is_human', 'player_1_is_human',
     'agent_coop_count', 'country', 'city', 'locale', 'id'
 ]
@@ -22,7 +27,7 @@ SCHEMA_TO_JSON_KEY = {
     'state': 'state',
     'joint_action': 'joint_action',
     'time_left': 'time_left',
-    'score': 'score',
+    'split_score': 'score',
     'time_elapsed': 'time_elapsed',
     'cur_gameloop': 'cur_gameloop',
     'layout': 'layout',
@@ -70,6 +75,8 @@ def read_json_to_trials(file_path, verbose=False):
                         tr[s] = game[json_key]
                     elif json_key in game['data']:
                         tr[s] = game['data'][json_key]
+                        if s == 'split_score':
+                            tr[s] = step[json_key]
                     elif json_key in step:
                         tr[s] = step[json_key]
                     else:
@@ -79,6 +86,24 @@ def read_json_to_trials(file_path, verbose=False):
             if verbose:
                 trial_id = trial[0]['trial_id']
                 print(f'  trial {trial_id}: loaded {len(trial)} timesteps.')
+
+            # add splitted reward on each state transition
+            final_step = trial[-1]
+            final_step['split_reward'] = [0, 0]
+            for i in range(0, len(trial) - 1):
+                cur_score = trial[i]['split_score']
+                next_score = trial[i + 1]['split_score']
+                trial[i]['split_reward'] = [next_score[0] -
+                                            cur_score[0], next_score[1] - cur_score[1]]
+
+            # add combined reward and score on each state transition
+            total_reward = 0
+            for i in range(len(trial)):
+                trial[i]['score'] = sum(trial[i]['split_score'])
+                trial[i]['reward'] = sum(trial[i]['split_reward'])
+                total_reward += trial[i]['reward']
+            assert(trial[-1]['score'] == total_reward)
+
             trials.append(trial)
         if verbose:
             game_id = trials[0][0]['id']
@@ -116,8 +141,8 @@ def convert_trials_to_formatted_df(trials, verbose=False):
         # whether any human INTERACT actions were performed
         def is_interact_row(row): return int(np.sum(np.array(
             [row['player_0_is_human'], row['player_1_is_human']]) * is_interact(row['joint_action'])) > 0)
-        # Whehter any human keyboard stroked were performed
 
+        # Whehter any human keyboard stroked were performed
         def is_button_press_row(row): return int(np.sum(np.array(
             [row['player_0_is_human'], row['player_1_is_human']]) * is_button_press(row['joint_action'])) > 0)
 
@@ -156,6 +181,8 @@ def convert_trials_to_formatted_df(trials, verbose=False):
             tr['cur_gameloop_total']
 
         df.append(tr)
+    if verbose and len(df) > 0:
+        print(f'trials converted to formatted dataframes.')
     return df
 
 ######################
@@ -170,18 +197,21 @@ def convert_trials_to_formatted_df(trials, verbose=False):
 def json_to_df_pickle(in_file_path, out_file_path, verbose=False):
     """
     High level function that reads the raw json file and converts it to 
-    processed pandas dataframe. The pandas dataframe is stored in a pickle
-    file in CLEAN_DATA_DIR. 
+    processed pandas dataframe.
     """
     # reads and extract necessary information from raw json file
     trials = read_json_to_trials(in_file_path, verbose=verbose)
     # convert trials to dataframe and add featuers from calculation
-    dataframes = convert_trials_to_formatted_df(trials)
+    dataframes = convert_trials_to_formatted_df(trials, verbose=verbose)
+    dataframes = pd.concat(dataframes)
     ###
     # TODO: Add data filtering here if needed.
     ###
     with open(out_file_path, 'wb') as f:
         pickle.dump(dataframes, file=f)
+
+    if verbose:
+        print(f'dataframes of trials written to {out_file_path}')
     return dataframes
 
     ####################
@@ -189,56 +219,81 @@ def json_to_df_pickle(in_file_path, out_file_path, verbose=False):
     ####################
 
 
-def get_vectorized_trajectories(layouts, data_path, country=None, city=None, verbose=False):
+def get_vectorized_trajectories(layout, data_path, country=None, city=None, verbose=False):
     """
     Get vectorized trajectories for a layout, can specify the city and country of the player.
 
     Arguments:
-        layouts (list): List of strings corresponding to layouts we wish to retrieve data for
+        layouts (str): the layout we wish to retrieve data for
         data_path (str): Full path to pickled DataFrame we wish to load.
     """
-    def get_trajs_from_data(data_path, layouts, verbose=False, **kwargs):
-        """
-        Converts and returns trajectories from dataframe at `data_path` to overcooked trajectories.
-        """
-        # TODO: 把以下步骤融合进主方程
-        trajs, info = convert_joint_df_trajs_to_overcooked_single(
-            main_trials,
-            layouts,
-            silent=silent,
-            **kwargs
-        )
 
-        return trajs, info
+    def _pad(sequences, maxlen=None, default=0):
+        if not maxlen:
+            maxlen = max([len(seq) for seq in sequences])
+        for seq in sequences:
+            pad_len = maxlen - len(seq)
+            seq.extend([default]*pad_len)
+        return sequences
+
+    def format(inputs, targets):
+        # sequence matters, pad the shorter ones with init state
+        seq_lens = np.array([len(seq) for seq in inputs])
+        seq_padded = _pad(inputs, default=np.zeros((len(inputs[0][0],))))
+        targets_padded = _pad(targets, default=np.zeros(1))
+        inputs_t = np.dstack(seq_padded).transpose((2, 0, 1))
+        targets_t = np.dstack(targets_padded).transpose((2, 0, 1))
+        return inputs_t, targets_t, seq_lens
 
     if not os.path.exists(data_path):
         raise FileNotFoundError(
             "Tried to load human data from {} but file does not exist!".format(data_path))
 
     if verbose:
-            print("Loading data from {}".format(data_path))
+        print("Loading data from {}".format(data_path))
 
-    trials = pickle.load(data_path)
+    params = {
+        "layouts": [layout],
+        "check_trajectories": False,
+        "featurize_states": True,
+        "data_path": data_path,
+        "country": country,
+        "city": city,
+        "verbose": verbose
+    }
+
+    main_trials = pd.read_pickle(data_path)
+
+    trajs, info = joint_df_trajs_to_overcooked_single(
+        main_trials,
+        **params
+    )
     
-    data = {}
+    states = trajs['ep_states']
+    actions = trajs['ep_actions']
+    inputs, outputs, seq_len = format(inputs=states, targets=actions)
 
-    # For each data path, load data once and parse trajectories for all corresponding layouts
-    for data_path in data_path_to_layouts:
-        curr_data = get_trajs_from_data(
-            curr_data_path, layouts=[layout], verbose=verbose)[0]
-        data = append_trajectories(data, curr_data)
-
-    # Return all accumulated data for desired layouts
-    return data
+    return (inputs, outputs, seq_len), trajs, info
 
 
 if __name__ == "__main__":
     # Processes the raw JSON file and save as pickle file in CLEAN_DATA_DIR
-    in_file_path = '/Users/jasmineli/Desktop/moral-ai-irl/data/study_data.json'
+    # in_file_path = '/Users/jasmineli/Desktop/moral-ai-irl/data/study_data.json'
     out_file_path = os.path.join(CLEAN_DATA_DIR, 'study_data_clean.pickle')
-    df = json_to_df_pickle(in_file_path, out_file_path, verbose=True)
+    # df = json_to_df_pickle(in_file_path, out_file_path, verbose=True)
 
-    with open(out_file_path, 'rb') as f:
-        frame = pickle.load(f)
-        assert(len(frame) == len(df))
-        assert(type(frame) == type(df))
+    # with open(out_file_path, 'rb') as f:
+    #     frame = pickle.load(f)
+    #     assert(len(frame) == len(df))
+    #     assert(type(frame) == type(df))
+
+    data, traj, info = get_vectorized_trajectories(layout="mai_separate_coop_right",
+                                             data_path=out_file_path, 
+                                             country='United States',
+                                             verbose=True)
+    x_state = data[0]
+    y_action = data[1]
+    seq_len = data[2]
+    print(x_state.shape)
+    print(y_action.shape)
+    print(seq_len)

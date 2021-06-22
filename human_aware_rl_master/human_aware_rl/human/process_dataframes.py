@@ -56,6 +56,27 @@ def get_human_human_trajectories(layouts, dataset_type='train', data_path=None, 
     # Return all accumulated data for desired layouts
     return data
 
+def get_trajectories(data_path, layout, country=None, city=None, **kwargs):
+    """
+    USED ONLY BY MORAL-AI, adopted from get_human_human_trajectories
+    Get trajectories for a layout, country and city. 
+
+    Arguments:
+        layout (str): the layouts we wish to retrieve data for
+        data_path (str): Full path to pickled DataFrame we wish to load.
+        country, city (str): country and city info of the player.
+
+    Keyword Arguments:
+        featurize_states (bool): Whether the states in returned trajectories should be OvercookedState objects (false) or vectorized np.Arrays (true)
+        check_trajectories (bool): If True, we ensure the consistency of the MDP dynamics within the trajectory. This is slow and has lots of overhead
+        verbose (bool): If false, silence logging and print statements
+    """
+    # For each data path, load data once and parse trajectories for all corresponding layouts
+    curr_data = get_trajs_from_data(data_path, layouts=[layout], **kwargs)[0]
+
+    # Return all accumulated data for desired layouts
+    return curr_data
+
 def csv_to_df_pickle(csv_path, out_dir, out_file_prefix, button_presses_threshold=0.25, perform_train_test_split=True, silent=True, **kwargs):
     """
     High level function that converts raw CSV data into well formatted and cleaned pickled pandas dataframes.

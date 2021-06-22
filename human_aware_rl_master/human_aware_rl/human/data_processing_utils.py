@@ -1,9 +1,11 @@
-import json, time
+import json
+import time
 import numpy as np
 
 from overcooked_ai_py.agents.benchmarking import AgentEvaluator
 from overcooked_ai_py.mdp.actions import Action, Direction
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState, ObjectState, PlayerState, OvercookedGridworld
+import pandas
 
 AI_ID = 'I am robot, bite my shiny metal ass!'
 
@@ -40,9 +42,11 @@ def json_state_to_python_state(df_state):
 
     return OvercookedState.from_dict(df_state)
 
+
 def is_interact(joint_action):
     joint_action = json_joint_action_to_python_action(joint_action)
     return np.array([int(joint_action[0] == Action.INTERACT), int(joint_action[1] == Action.INTERACT)])
+
 
 def is_button_press(joint_action):
     joint_action = json_joint_action_to_python_action(joint_action)
@@ -67,13 +71,15 @@ def df_traj_to_python_joint_traj(traj_df, check_trajectories=True, silent=True, 
     layout_name = datapoint['layout_name']
     agent_evaluator = AgentEvaluator.from_layout_name(
         mdp_params={"layout_name": layout_name},
-        env_params={"horizon": 1250}  # Defining the horizon of the mdp of origin of the trajectories
+        # Defining the horizon of the mdp of origin of the trajectories
+        env_params={"horizon": 1250}
     )
     mdp = agent_evaluator.env.mdp
     env = agent_evaluator.env
 
     overcooked_states = [json_state_to_python_state(s) for s in traj_df.state]
-    overcooked_actions = [json_joint_action_to_python_action(joint_action) for joint_action in traj_df.joint_action]
+    overcooked_actions = [json_joint_action_to_python_action(
+        joint_action) for joint_action in traj_df.joint_action]
     overcooked_rewards = list(traj_df.reward)
 
     assert sum(
@@ -83,10 +89,12 @@ def df_traj_to_python_joint_traj(traj_df, check_trajectories=True, silent=True, 
         "ep_states": [overcooked_states],
         "ep_actions": [overcooked_actions],
         "ep_rewards": [overcooked_rewards],  # Individual (dense) reward values
-        "ep_dones": [[False] * len(overcooked_states)],  # Individual done values
+        # Individual done values
+        "ep_dones": [[False] * len(overcooked_states)],
         "ep_infos": [{}] * len(overcooked_states),
 
-        "ep_returns": [sum(overcooked_rewards)],  # Sum of dense rewards across each episode
+        # Sum of dense rewards across each episode
+        "ep_returns": [sum(overcooked_rewards)],
         "ep_lengths": [len(overcooked_states)],  # Lengths of each episode
         "mdp_params": [mdp.mdp_params],
         "env_params": [env.env_params],
@@ -96,7 +104,8 @@ def df_traj_to_python_joint_traj(traj_df, check_trajectories=True, silent=True, 
             'env': [agent_evaluator.env]
         }
     }
-    trajectories = {k: np.array(v) if k not in ["ep_actions", "metadatas"] else v for k, v in trajectories.items()}
+    trajectories = {k: np.array(v) if k not in [
+        "ep_actions", "metadatas"] else v for k, v in trajectories.items()}
 
     if check_trajectories:
         agent_evaluator.check_trajectories(trajectories, verbose=not silent)
@@ -128,28 +137,95 @@ def convert_joint_df_trajs_to_overcooked_single(main_trials, layouts, silent=Fal
     human_indices = []
     num_trials_for_layout = {}
     for layout_name in layouts:
-        trial_ids = np.unique(main_trials[main_trials['layout_name'] == layout_name]['trial_id'])
+        trial_ids = np.unique(
+            main_trials[main_trials['layout_name'] == layout_name]['trial_id'])
         num_trials = len(trial_ids)
         num_trials_for_layout[layout_name] = num_trials
 
         if num_trials == 0:
             print("WARNING: No trajectories found on {} layout!".format(layout_name))
-        
+
         for trial_id in trial_ids:
             # Get an single game
             one_traj_df = main_trials[main_trials['trial_id'] == trial_id]
 
             # Get python trajectory data and information on which player(s) was/were human
-            joint_traj_data = df_traj_to_python_joint_traj(one_traj_df, silent=silent,**kwargs)
+            joint_traj_data = df_traj_to_python_joint_traj(
+                one_traj_df, silent=silent, **kwargs)
 
             human_idx = get_human_player_index_for_df(one_traj_df)
             human_indices.append(human_idx)
 
             # Convert joint trajectories to single agent trajectories, appending recovered info to the `trajectories` dict
-            joint_state_trajectory_to_single(single_agent_trajectories, joint_traj_data, human_idx, **kwargs)
+            joint_state_trajectory_to_single(
+                single_agent_trajectories, joint_traj_data, human_idx, **kwargs)
 
-    if not silent: 
-        print("Number of trajectories processed for each layout: {}".format(num_trials_for_layout))
+    if not silent:
+        print("Number of trajectories processed for each layout: {}".format(
+            num_trials_for_layout))
+    return single_agent_trajectories, human_indices
+
+
+def joint_df_trajs_to_overcooked_single(main_trials, layouts, verbose=False, **kwargs):
+    """
+    Takes in a dataframe `main_trials` containing joint trajectories, and extract trajectories of workers `worker_ids`
+    on layouts `layouts`, with specific options.
+    """
+    silent = not verbose
+    single_agent_trajectories = {
+        # With shape (n_episodes, game_len), where game_len might vary across games:
+        "ep_states": [],
+        "ep_actions": [],
+        "ep_rewards": [],  # Individual reward values
+        "ep_dones": [],  # Individual done values
+        "ep_infos": [],
+
+        # With shape (n_episodes, ):
+        "ep_returns": [],  # Sum of rewards across each episode
+        "ep_lengths": [],  # Lengths of each episode
+        "mdp_params": [],
+        "env_params": [],
+        "metadatas": {"ep_agent_idxs": []}  # Agent index for current episode
+    }
+
+    human_indices = []
+    num_trials_for_layout = {}
+    for layout_name in layouts:
+        trial_ids = []
+        if kwargs['country'] and kwargs['city']:
+            trials = main_trials[main_trials['country'] == kwargs['country']]
+            trials = trials[trials['city'] == kwargs['city']]
+            trial_ids = np.unique(trials[trials['layout_name'] == layout_name]['trial_id'])
+        elif kwargs['country']:
+            trials = main_trials[main_trials['country'] == kwargs['country']]
+            trial_ids = np.unique(trials[trials['layout_name'] == layout_name]['trial_id'])
+        else:
+            trial_ids = np.unique(main_trials[main_trials['layout_name'] == layout_name]['trial_id'])
+        
+        num_trials = len(trial_ids)
+        num_trials_for_layout[layout_name] = num_trials
+
+        if num_trials == 0:
+            print("WARNING: No trajectories found on {} layout!".format(layout_name))
+
+        for trial_id in trial_ids:
+            # Get an single game
+            one_traj_df = main_trials[main_trials['trial_id'] == trial_id]
+
+            # Get python trajectory data and information on which player(s) was/were human
+            joint_traj_data = df_traj_to_python_joint_traj(
+                one_traj_df, silent=silent, **kwargs)
+
+            human_idx = get_human_player_index_for_df(one_traj_df)
+            human_indices.append(human_idx)
+
+            # Convert joint trajectories to single agent trajectories, appending recovered info to the `trajectories` dict
+            joint_state_trajectory_to_single(
+                single_agent_trajectories, joint_traj_data, human_idx, **kwargs)
+
+    if verbose:
+        print("Number of trajectories processed for each layout: {}".format(
+            num_trials_for_layout))
     return single_agent_trajectories, human_indices
 
 
@@ -176,7 +252,8 @@ def joint_state_trajectory_to_single(trajectories, joint_traj_data, player_indic
 
     env = joint_traj_data['metadatas']['env'][0]
 
-    assert len(joint_traj_data['ep_states']) == 1, "This method only takes in one trajectory"
+    assert len(joint_traj_data['ep_states']
+               ) == 1, "This method only takes in one trajectory"
     states, joint_actions = joint_traj_data['ep_states'][0], joint_traj_data['ep_actions'][0]
     rewards, length = joint_traj_data['ep_rewards'][0], joint_traj_data['ep_lengths'][0]
 
@@ -186,7 +263,6 @@ def joint_state_trajectory_to_single(trajectories, joint_traj_data, player_indic
         ep_obs, ep_acts, ep_dones = [], [], []
         for i in range(len(states)):
             state, action = states[i], joint_actions[i][agent_idx]
-
             if featurize_states:
                 action = np.array([Action.ACTION_TO_INDEX[action]]).astype(int)
                 state = env.featurize_state_mdp(state)[agent_idx]
