@@ -2,12 +2,16 @@ import unittest, os, shutil
 import numpy as np
 import pickle, copy
 from numpy.testing._private.utils import assert_raises
+import os
+import sys
+sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master/overcooked_ai_py'))
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, OvercookedState
 from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
 from overcooked_ai_py.agents.agent import AgentPair, GreedyHumanModel
 from overcooked_ai_py.planning.planners import MediumLevelActionManager, NO_COUNTERS_PARAMS
-from human_aware_rl.utils import equal_dicts
 
+sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master/human_aware_rl'))
+from human_aware_rl.utils import equal_dicts
 from human_aware_rl.static import *
 from human_aware_rl.human.process_dataframes import csv_to_df_pickle, get_trajs_from_data
 from human_aware_rl.human.process_human_trials import main as process_human_trials_main
