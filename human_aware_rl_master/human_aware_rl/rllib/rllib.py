@@ -11,6 +11,7 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from ray.rllib.models import ModelCatalog
 from human_aware_rl.rllib.utils import softmax, get_base_ae, get_required_arguments, iterable_equal
+from human_aware_rl.dummy.rl_agent import DummyPolicy
 from datetime import datetime
 import tempfile
 import gym
@@ -76,11 +77,13 @@ class RlLibAgent(Agent):
         agent_action =  Action.INDEX_TO_ACTION[action_idx]
         
         # Softmax in numpy to convert logits to normalized probabilities
-        logits = info['action_dist_inputs']
-        action_probabilities = softmax(logits)
+        agent_action_info = {}
+        if info:
+            logits = info['action_dist_inputs']
+            action_probabilities = softmax(logits)
 
-        agent_action_info = {'action_probs' : action_probabilities}
-        self.rnn_state = rnn_state
+            agent_action_info['action_probs'] = action_probabilities
+            self.rnn_state = rnn_state
 
         return agent_action, agent_action_info
 
@@ -182,6 +185,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
         high = np.ones(obs_shape) * 100
         low = np.ones(obs_shape) * -100
         self.bc_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
+
+        # dummy observation? -> Only if you want to train the dummy agent
 
     def _get_featurize_fn(self, agent_id):
         if agent_id.startswith('ppo'):
@@ -430,22 +435,31 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
 
         # Randomize starting indices
         policies = [agent_0_policy_str, agent_1_policy_str]
+        print(f'the policies are: {policies}')
         np.random.shuffle(policies)
         agent_0_policy, agent_1_policy = policies
 
         # Get the corresponding rllib policy objects for each policy string name
-        agent_0_policy = trainer.get_policy(agent_0_policy)
-        agent_1_policy = trainer.get_policy(agent_1_policy)
+        if agent_0_policy != 'dummy':
+            agent_0_policy = trainer.get_policy(agent_0_policy)
+        else:
+            agent_0_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
+            print(f'dummy policy model = {agent_0_policy.model}')
+        if agent_1_policy != 'dummy':
+            agent_1_policy = trainer.get_policy(agent_1_policy)
+        else:
+            agent_1_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
+            print(f'dummy policy model = {agent_1_policy.model}')
 
         agent_0_feat_fn = agent_1_feat_fn = None
-        if 'bc' in policies:
+        if 'bc' in policies or 'dummy' in policies:
             base_ae = get_base_ae(eval_mdp_params, env_params)
             base_env = base_ae.env
-            bc_featurize_fn = lambda state : base_env.featurize_state_mdp(state)
-            if policies[0] == 'bc':
-                agent_0_feat_fn = bc_featurize_fn
-            if policies[1] == 'bc':
-                agent_1_feat_fn = bc_featurize_fn
+            featurize_fn = lambda state : base_env.featurize_state_mdp(state)
+            if policies[0] == 'bc' or policies[0] == 'dummy':
+                agent_0_feat_fn = featurize_fn
+            if policies[1] == 'bc' or policies[0] == 'dummy':
+                agent_1_feat_fn = featurize_fn
 
         # Compute the evauation rollout. Note this doesn't use the rllib passed in evaluation_workers, so this 
         # computation all happens on the CPU. Could change this if evaluation becomes a bottleneck
@@ -545,6 +559,10 @@ def gen_trainer_from_params(params):
             bc_cls = bc_params['bc_policy_cls']
             bc_config = bc_params['bc_config']
             return (bc_cls, env.bc_observation_space, env.action_space, bc_config)
+        elif policy_type == 'dummy':
+            dummy_cls = DummyPolicy
+            dummy_config = {}
+            return (dummy_cls, env.bc_observation_space, env.action_space, dummy_config)
 
     # Rllib compatible way of setting the directory we store agent checkpoints in
     logdir_prefix = "{0}_{1}_{2}".format(params["experiment_name"], params['training_params']['seed'], timestr)
@@ -568,6 +586,7 @@ def gen_trainer_from_params(params):
     all_policies = ['ppo']
 
     # Whether both agents should be learned
+    # OvercookedMultiAgent.self_play_bc_schedule means no bc agent.
     self_play = iterable_equal(multi_agent_params['bc_schedule'], OvercookedMultiAgent.self_play_bc_schedule)
     if not self_play:
         all_policies.append('bc')
@@ -590,8 +609,10 @@ def gen_trainer_from_params(params):
     trainer = PPOTrainer(env="overcooked_multi_agent", config={
         "multiagent": multi_agent_config,
         "callbacks" : TrainingCallbacks,
-        "custom_eval_function" : get_rllib_eval_function(evaluation_params, environment_params['eval_mdp_params'], environment_params['env_params'],
-                                        environment_params["outer_shape"], 'ppo', 'ppo' if self_play else 'bc',
+        "custom_eval_function" : get_rllib_eval_function(evaluation_params, environment_params['eval_mdp_params'], 
+                                        environment_params['env_params'],
+                                        environment_params["outer_shape"], 
+                                        'ppo', 'dummy',
                                         verbose=params['verbose']),
         "env_config" : environment_params,
         "eager" : False,

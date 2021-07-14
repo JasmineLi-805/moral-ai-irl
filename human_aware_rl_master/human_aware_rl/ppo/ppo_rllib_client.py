@@ -4,7 +4,8 @@ from overcooked_ai_py.agents.benchmarking import AgentEvaluator
 import numpy as np
 
 # environment variable that tells us whether this code is running on the server or not
-LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
+# LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
+LOCAL_TESTING = True
 
 # Sacred setup (must be before rllib imports)
 from sacred import Experiment
@@ -156,7 +157,7 @@ def my_config():
     evaluation_num_games = 1
 
     # Whether to display rollouts in evaluation
-    evaluation_display = False
+    evaluation_display = True
 
     # Where to log the ray dashboard stats
     temp_dir = os.path.join(os.path.abspath(os.sep), "tmp", "ray_tmp")
@@ -182,7 +183,7 @@ def my_config():
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "cramped_room"
+    layout_name = "mai_separate_coop_left"
 
     # all_layout_names = '_'.join(layout_names)
 
@@ -349,6 +350,7 @@ def run(params):
 
 @ex.automain
 def main(params):
+    print(f'is local testing mode = {LOCAL_TESTING}')
     # List of each random seed to run
     seeds = params['seeds']
     del params['seeds']

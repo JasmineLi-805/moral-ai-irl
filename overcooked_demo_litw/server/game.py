@@ -5,7 +5,9 @@ from time import time
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
 from overcooked_ai_py.mdp.actions import Action, Direction
 from overcooked_ai_py.planning.planners import MotionPlanner, NO_COUNTERS_PARAMS
-from human_aware_rl.rllib.rllib import load_agent
+# import sys, os
+# sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master'))
+# from human_aware_rl_master.human_aware_rl.rllib.rllib import load_agent
 import random, os, pickle, json
 import ray
 
@@ -580,7 +582,7 @@ class OvercookedGame(Game):
             try:
                 # Loading rllib agents requires additional helpers
                 fpath = os.path.join(AGENT_DIR, npc_id, 'agent', 'agent')
-                agent = load_agent(fpath, agent_index=idx)
+                # agent = load_agent(fpath, agent_index=idx)
                 return agent
             except Exception as e:
                 raise IOError("Error loading Rllib Agent\n{}".format(e.__repr__()))
@@ -831,7 +833,9 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['PLACE_ONION_HELP']:
             self.help_provided = True
-        if (not self._find_help_object(state.objects)) and self.help_provided:
+        # TODO: remove this adhoc fix 
+        if self.help_provided:
+        # if (not self._find_help_object(state.objects)) and self.help_provided:
             self.help_provided = False
             self.provided_coop += 1
         super(MAIDumbAgentLeftCoop, self).reset_smart(state)
