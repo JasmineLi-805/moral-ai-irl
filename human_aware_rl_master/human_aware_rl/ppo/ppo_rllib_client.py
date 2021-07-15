@@ -157,7 +157,7 @@ def my_config():
     evaluation_num_games = 1
 
     # Whether to display rollouts in evaluation
-    evaluation_display = True
+    evaluation_display = False
 
     # Where to log the ray dashboard stats
     temp_dir = os.path.join(os.path.abspath(os.sep), "tmp", "ray_tmp")

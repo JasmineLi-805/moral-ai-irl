@@ -833,7 +833,9 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['PLACE_ONION_HELP']:
             self.help_provided = True
-        # TODO: remove this adhoc fix 
+        print(type(state))  # <class 'numpy.ndarray'>
+        print(state.shape)  # (96,)
+        # TODO: remove this adhoc fix
         if self.help_provided:
         # if (not self._find_help_object(state.objects)) and self.help_provided:
             self.help_provided = False

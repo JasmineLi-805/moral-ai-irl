@@ -444,12 +444,10 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
             agent_0_policy = trainer.get_policy(agent_0_policy)
         else:
             agent_0_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
-            print(f'dummy policy model = {agent_0_policy.model}')
         if agent_1_policy != 'dummy':
             agent_1_policy = trainer.get_policy(agent_1_policy)
         else:
             agent_1_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
-            print(f'dummy policy model = {agent_1_policy.model}')
 
         agent_0_feat_fn = agent_1_feat_fn = None
         if 'bc' in policies or 'dummy' in policies:
@@ -470,7 +468,57 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
         return metrics
 
-    return _evaluate
+    # TODO: Define a new evaluation function that 
+    def _evaluate_customized_reward(trainer, evaluation_workers):
+        if verbose:
+            print("Computing rollout of current trained policy")
+
+        # Randomize starting indices
+        policies = [agent_0_policy_str, agent_1_policy_str]
+        print(f'the policies are: {policies}')
+        np.random.shuffle(policies)
+        agent_0_policy, agent_1_policy = policies
+
+        # Get the corresponding rllib policy objects for each policy string name
+        if agent_0_policy != 'dummy':
+            agent_0_policy = trainer.get_policy(agent_0_policy)
+        else:
+            agent_0_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
+        if agent_1_policy != 'dummy':
+            agent_1_policy = trainer.get_policy(agent_1_policy)
+        else:
+            agent_1_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
+
+        agent_0_feat_fn = agent_1_feat_fn = None
+        if 'bc' in policies or 'dummy' in policies:
+            base_ae = get_base_ae(eval_mdp_params, env_params)
+            base_env = base_ae.env
+            featurize_fn = lambda state : base_env.featurize_state_mdp(state)
+            if policies[0] == 'bc' or policies[0] == 'dummy':
+                agent_0_feat_fn = featurize_fn
+            if policies[1] == 'bc' or policies[1] == 'dummy':
+                agent_1_feat_fn = featurize_fn
+
+        # Compute the evauation rollout. Note this doesn't use the rllib passed in evaluation_workers, so this 
+        # computation all happens on the CPU. Could change this if evaluation becomes a bottleneck
+        results = evaluate(eval_params, eval_mdp_params, outer_shape, agent_0_policy, agent_1_policy, agent_0_feat_fn, agent_1_feat_fn, verbose=verbose)
+
+        ep_state = results['ep_states']
+        base_ae = get_base_ae(eval_mdp_params, env_params)
+        base_env = base_ae.env
+        featurize_func = lambda state : base_env.featurize_state_mdp(state)
+        print(featurize_func(ep_state[0][0]).shape)
+        ep_state = [featurize_func(eps) for eps in ep_state[0]]
+        ep_state = np.concatenate(ep_state, axis=0)
+        print(type(ep_state))
+        print(ep_state.shape)
+
+        # Log any metrics we care about for rllib tensorboard visualization
+        metrics = {}
+        metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
+        return metrics
+
+    return _evaluate_customized_reward
 
 
 def evaluate(eval_params, mdp_params, outer_shape, agent_0_policy, agent_1_policy, agent_0_featurize_fn=None, agent_1_featurize_fn=None, verbose=False):
