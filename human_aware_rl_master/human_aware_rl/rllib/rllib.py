@@ -504,14 +504,16 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         results = evaluate(eval_params, eval_mdp_params, outer_shape, agent_0_policy, agent_1_policy, agent_0_feat_fn, agent_1_feat_fn, verbose=verbose)
 
         ep_state = results['ep_states']
+        # print(type(ep_state[0][0])) # <class 'overcooked_ai_py.mdp.overcooked_mdp.OvercookedState'>
         base_ae = get_base_ae(eval_mdp_params, env_params)
         base_env = base_ae.env
         featurize_func = lambda state : base_env.featurize_state_mdp(state)
-        print(featurize_func(ep_state[0][0]).shape)
+        # print(featurize_func(ep_state[0][0])[0].shape)  # (96,)
         ep_state = [featurize_func(eps) for eps in ep_state[0]]
         ep_state = np.concatenate(ep_state, axis=0)
-        print(type(ep_state))
-        print(ep_state.shape)
+        # print(ep_state.shape)      # (800, 96)
+
+        # TODO: add metric calculation function
 
         # Log any metrics we care about for rllib tensorboard visualization
         metrics = {}
