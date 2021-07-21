@@ -9,8 +9,8 @@
   - [x] Add the Dummy agent to the pair of agents playing the game
     - [ ] Q: states are featurized before passing to the Dummy agent, even though featurization function is set to `None`, causing type mismatch.
   - [ ] Change the reward evaluation method to customized reward function
-        - [x] Add a customized evaluate function where new reward calculation can be inserted
-        - [ ] Find a suitable reward function (model structure)
+    - [x] Add a customized evaluate function where new reward calculation can be inserted
+    - [ ] Find a suitable reward function (model structure)
   - [ ] Test the correctness of the code (agents learning, layout correctly loaded, etc.)
   - [ ] Tune the hyperparameters for training.
   - [ ] Estimate the time required for training.
