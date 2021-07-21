@@ -490,13 +490,20 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
             agent_1_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
 
         agent_0_feat_fn = agent_1_feat_fn = None
-        if 'bc' in policies or 'dummy' in policies:
+        if 'bc' in policies:
             base_ae = get_base_ae(eval_mdp_params, env_params)
             base_env = base_ae.env
             featurize_fn = lambda state : base_env.featurize_state_mdp(state)
-            if policies[0] == 'bc' or policies[0] == 'dummy':
+            if policies[0] == 'bc':
                 agent_0_feat_fn = featurize_fn
-            if policies[1] == 'bc' or policies[1] == 'dummy':
+            if policies[1] == 'bc':
+                agent_1_feat_fn = featurize_fn
+        
+        if 'dummy' in policies:
+            featurize_fn = None
+            if policies[0] == 'dummy':
+                agent_0_feat_fn = featurize_fn
+            if policies[1] == 'dummy':
                 agent_1_feat_fn = featurize_fn
 
         # Compute the evauation rollout. Note this doesn't use the rllib passed in evaluation_workers, so this 
