@@ -527,7 +527,7 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
         return metrics
 
-    return _evaluate_customized_reward
+    return _evaluate
 
 
 def evaluate(eval_params, mdp_params, outer_shape, agent_0_policy, agent_1_policy, agent_0_featurize_fn=None, agent_1_featurize_fn=None, verbose=False):
