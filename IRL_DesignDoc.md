@@ -12,7 +12,8 @@
         - [x] Add a customized evaluate function where new reward calculation can be inserted
         - [ ] Find a suitable reward function (model structure)
   - [ ] Test the correctness of the code (agents learning, layout correctly loaded, etc.)
-  - [ ] Tune the hyperparameters for training
+  - [ ] Tune the hyperparameters for training.
+  - [ ] Estimate the time required for training.
 - [ ] IRL implementation
   - [ ] Code that initializes the IRL training environment
   - [ ] Training code using Pytorch and the RL training code
@@ -44,10 +45,24 @@ To insert the Dummy agent into the game, I changed the code in the evaluation fu
 
 #### Customized evaluation function
 
-The `evaluate` function in `human_aware_rl_master/human_aware_rl/rllib/rllib.py` is where the trial rollouts and reward calculation occur. It calls into `get_rllib_eval_function` in which returns an evaluation function. I added the new evaluation function `_evaluate_customized_reward` in `get_rllib_eval_function`, parallel with the existing `_evaluate` function. 
+The `evaluate` function in `human_aware_rl_master/human_aware_rl/rllib/rllib.py` is where the trial rollouts and reward calculation occur. It calls into `get_rllib_eval_function` in which returns an evaluation function. I added the new evaluation function `_evaluate_customized_reward` in `get_rllib_eval_function`, parallel with the existing `_evaluate` function.
 
 - In the future, new evaluation functions can be added to the same place. The client only needs to switch the return value of `get_rllib_eval_function` to switch between different evaluation functions
 
 ### Testing
 
+#### Model learns from training
 
+The RL agent should show improvements in rewards in the training process. This can be tested by the following methods:
+
+- [ ] The agent can be trained using the final score as the reward
+- [ ] The agent can be trained using our customized reward function
+
+#### Code correctness
+
+The following are the things to consider when checking the implementation's correctness:
+
+- Intended layout is loaded
+- The `coop_cnt` variables are added to the state and featurized
+- Agent initialization (position, state, etc)
+- Agent behaviors are valid in the layout (eg. some interactive actions can only be performed in certain positions in a layout)
