@@ -836,8 +836,8 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
         # print(type(state))  # <class 'numpy.ndarray'>
         # print(state.shape)  # (96,)
         # TODO: remove this adhoc fix
-        if self.help_provided:
-        # if (not self._find_help_object(state.objects)) and self.help_provided:
+        #if self.help_provided:
+        if (not self._find_help_object(state.objects)) and self.help_provided:
             self.help_provided = False
             self.provided_coop += 1
         super(MAIDumbAgentLeftCoop, self).reset_smart(state)
