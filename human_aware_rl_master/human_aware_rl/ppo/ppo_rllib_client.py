@@ -5,7 +5,7 @@ import numpy as np
 
 # environment variable that tells us whether this code is running on the server or not
 # LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
-LOCAL_TESTING = False
+LOCAL_TESTING = True
 
 # Sacred setup (must be before rllib imports)
 from sacred import Experiment
@@ -222,7 +222,7 @@ def my_config():
     # schedule for bc_factor is represented by a list of points (t_i, v_i) where v_i represents the 
     # value of bc_factor at timestep t_i. Values are linearly interpolated between points
     # The default listed below represents bc_factor=0 for all timesteps
-    bc_schedule = OvercookedMultiAgent.self_play_bc_schedule
+    # bc_schedule = OvercookedMultiAgent.self_play_bc_schedule
 
 
     # To be passed into rl-lib model/custom_options config
@@ -285,18 +285,18 @@ def my_config():
             "reward_shaping_factor" : reward_shaping_factor,
             "reward_shaping_horizon" : reward_shaping_horizon,
             "use_phi" : use_phi,
-            "bc_schedule" : bc_schedule
+            # "bc_schedule" : bc_schedule
         }
     }
 
-    bc_params = {
-        "bc_policy_cls" : BehaviorCloningPolicy,
-        "bc_config" : {
-            "model_dir" : bc_model_dir,
-            "stochastic" : bc_stochastic,
-            "eager" : eager
-        }
-    }
+    # bc_params = {
+    #     "bc_policy_cls" : BehaviorCloningPolicy,
+    #     "bc_config" : {
+    #         "model_dir" : bc_model_dir,
+    #         "stochastic" : bc_stochastic,
+    #         "eager" : eager
+    #     }
+    # }
 
     ray_params = {
         "custom_model_id" : "MyPPOModel",
@@ -309,7 +309,7 @@ def my_config():
         "model_params" : model_params,
         "training_params" : training_params,
         "environment_params" : environment_params,
-        "bc_params" : bc_params,
+        # "bc_params" : bc_params,
         "shared_policy" : shared_policy,
         "num_training_iters" : num_training_iters,
         "evaluation_params" : evaluation_params,

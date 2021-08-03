@@ -10,7 +10,7 @@ from tensorflow.compat.v1.keras.backend import set_session, get_session
 
 class DummyPolicy(RllibPolicy):
     """
-    This is the preprogrammed agent that is
+    This wraps the preprogrammed Dummy Policy into an RllibPolicy
     """
     def __init__(self, observation_space, action_space, config):
         super(DummyPolicy, self).__init__(observation_space, action_space, config)

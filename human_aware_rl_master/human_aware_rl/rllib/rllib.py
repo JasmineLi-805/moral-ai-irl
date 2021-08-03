@@ -1,6 +1,6 @@
 from overcooked_ai_py.mdp.actions import Action
 from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES, OvercookedState
 from overcooked_ai_py.agents.benchmarking import AgentEvaluator
 from overcooked_ai_py.agents.agent import Agent, AgentPair
 from ray.tune.registry import register_env
@@ -94,33 +94,35 @@ class OvercookedMultiAgent(MultiAgentEnv):
     """
 
     # List of all agent types currently supported
-    supported_agents = ['ppo', 'bc']
+    # TODO
+    supported_agents = ['ppo', 'dummy']
 
     # Default bc_schedule, includes no bc agent at any time
-    bc_schedule = self_play_bc_schedule = [(0, 0), (float('inf'), 0)]
+    # bc_schedule = self_play_bc_schedule = [(0, 0), (float('inf'), 0)]
 
     # Default environment params used for creation
-    DEFAULT_CONFIG = {
-        # To be passed into OvercookedGridWorld constructor
-        "mdp_params" : {
-            "layout_name" : "cramped_room",
-            "rew_shaping_params" : {}
-        },
-        # To be passed into OvercookedEnv constructor
-        "env_params" : {
-            "horizon" : 400
-        },
-        # To be passed into OvercookedMultiAgent constructor
-        "multi_agent_params" : {
-            "reward_shaping_factor" : 0.0,
-            "reward_shaping_horizon" : 0,
-            "bc_schedule" : self_play_bc_schedule,
-            "use_phi" : True
-        }
-    }
+    # DEFAULT_CONFIG = {
+    #     # To be passed into OvercookedGridWorld constructor
+    #     "mdp_params" : {
+    #         "layout_name" : "cramped_room",
+    #         "rew_shaping_params" : {}
+    #     },
+    #     # To be passed into OvercookedEnv constructor
+    #     "env_params" : {
+    #         "horizon" : 400
+    #     },
+    #     # To be passed into OvercookedMultiAgent constructor
+    #     "multi_agent_params" : {
+    #         "reward_shaping_factor" : 0.0,
+    #         "reward_shaping_horizon" : 0,
+    #         "bc_schedule" : self_play_bc_schedule,
+    #         "use_phi" : True
+    #     }
+    # }
 
     def __init__(self, base_env, reward_shaping_factor=0.0, reward_shaping_horizon=0,
-                            bc_schedule=None, use_phi=True):
+                            # bc_schedule=None, 
+                            use_phi=True):
         """
         base_env: OvercookedEnv
         reward_shaping_factor (float): Coefficient multiplied by dense reward before adding to sparse reward to determine shaped reward
@@ -129,14 +131,15 @@ class OvercookedMultiAgent(MultiAgentEnv):
             with linear interpolation in between the t_i
         use_phi (bool): Whether to use 'shaped_r_by_agent' or 'phi_s_prime' - 'phi_s' to determine dense reward
         """
-        if bc_schedule:
-            self.bc_schedule = bc_schedule
-        self._validate_schedule(self.bc_schedule)
+        # if bc_schedule:
+        #     self.bc_schedule = bc_schedule
+        # self._validate_schedule(self.bc_schedule)
         self.base_env = base_env
         # since we are not passing featurize_fn in as an argument, we create it here and check its validity
         self.featurize_fn_map = {
             "ppo": lambda state: self.base_env.lossless_state_encoding_mdp(state),
-            "bc": lambda state: self.base_env.featurize_state_mdp(state)
+            "dummy": lambda state: state
+            # "bc": lambda state: self.base_env.featurize_state_mdp(state)
         }
         self._validate_featurize_fns(self.featurize_fn_map)
         self._initial_reward_shaping_factor = reward_shaping_factor
@@ -145,11 +148,12 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self.use_phi = use_phi
         self._setup_observation_space()
         self.action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
-        self.anneal_bc_factor(0)
+        # self.anneal_bc_factor(0)
         self.reset()
     
     def _validate_featurize_fns(self, mapping):
-        assert 'ppo' in mapping, "At least one ppo agent must be specified"
+        assert 'ppo' in mapping, "One ppo agent must be specified"
+        assert 'dummy' in mapping, "One dummy agent must be specified"
         for k, v in mapping.items():
             assert k in self.supported_agents, "Unsuported agent type in featurize mapping {0}".format(k)
             assert callable(v), "Featurize_fn values must be functions"
@@ -180,34 +184,43 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self.ppo_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
 
         # bc observation
-        featurize_fn_bc = lambda state: self.base_env.featurize_state_mdp(state)
-        obs_shape = featurize_fn_bc(dummy_state)[0].shape
-        high = np.ones(obs_shape) * 100
-        low = np.ones(obs_shape) * -100
-        self.bc_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
+        # featurize_fn_bc = lambda state: self.base_env.featurize_state_mdp(state)
+        # obs_shape = featurize_fn_bc(dummy_state)[0].shape
+        # high = np.ones(obs_shape) * 100
+        # low = np.ones(obs_shape) * -100
+        # self.bc_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
 
         # dummy observation? -> Only if you want to train the dummy agent
 
     def _get_featurize_fn(self, agent_id):
         if agent_id.startswith('ppo'):
             return lambda state: self.base_env.lossless_state_encoding_mdp(state)
-        if agent_id.startswith('bc'):
-            return lambda state: self.base_env.featurize_state_mdp(state)
+        if agent_id.startswith('dummy'):
+            return lambda state: state
+        # if agent_id.startswith('bc'):
+        #     return lambda state: self.base_env.featurize_state_mdp(state)
         raise ValueError("Unsupported agent type {0}".format(agent_id))
 
     def _get_obs(self, state):
-        ob_p0 = self._get_featurize_fn(self.curr_agents[0])(state)[0]
-        ob_p1 = self._get_featurize_fn(self.curr_agents[1])(state)[1]
+        if self.curr_agents[0].startswith('dummy') :
+            ob_p0 = self._get_featurize_fn(self.curr_agents[0])(state)
+        else :
+            ob_p0 = self._get_featurize_fn(self.curr_agents[0])(state)[0]
+        
+        if self.curr_agents[1].startswith('dummy') :
+            ob_p1 = self._get_featurize_fn(self.curr_agents[1])(state)
+        else:
+            ob_p1 = self._get_featurize_fn(self.curr_agents[1])(state)
 
         return ob_p0, ob_p1
 
     def _populate_agents(self):
         # Always include at least one ppo agent (i.e. bc_sp not supported for simplicity)
-        agents = ['ppo']
+        agents = ['ppo', 'dummy']
 
         # Coin flip to determine whether other agent should be ppo or bc
-        other_agent = 'bc' if np.random.uniform() < self.bc_factor else 'ppo'
-        agents.append(other_agent)
+        # other_agent = 'bc' if np.random.uniform() < self.bc_factor else 'ppo'
+        # agents.append(other_agent)
 
         # Randomize starting indices
         # np.random.shuffle(agents)
@@ -284,28 +297,28 @@ class OvercookedMultiAgent(MultiAgentEnv):
         new_factor = self._anneal(self._initial_reward_shaping_factor, timesteps, self.reward_shaping_horizon)
         self.set_reward_shaping_factor(new_factor)
 
-    def anneal_bc_factor(self, timesteps):
-        """
-        Set the current bc factor such that we anneal linearly until self.bc_factor_horizon
-        timesteps, given that we are currently at timestep "timesteps"
-        """
-        p_0 = self.bc_schedule[0]
-        p_1 = self.bc_schedule[1]
-        i = 2
-        while timesteps > p_1[0] and i < len(self.bc_schedule):
-            p_0 = p_1
-            p_1 = self.bc_schedule[i]
-            i += 1
-        start_t, start_v = p_0
-        end_t, end_v = p_1
-        new_factor = self._anneal(start_v, timesteps, end_t, end_v, start_t)
-        self.set_bc_factor(new_factor)
+    # def anneal_bc_factor(self, timesteps):
+    #     """
+    #     Set the current bc factor such that we anneal linearly until self.bc_factor_horizon
+    #     timesteps, given that we are currently at timestep "timesteps"
+    #     """
+    #     p_0 = self.bc_schedule[0]
+    #     p_1 = self.bc_schedule[1]
+    #     i = 2
+    #     while timesteps > p_1[0] and i < len(self.bc_schedule):
+    #         p_0 = p_1
+    #         p_1 = self.bc_schedule[i]
+    #         i += 1
+    #     start_t, start_v = p_0
+    #     end_t, end_v = p_1
+    #     new_factor = self._anneal(start_v, timesteps, end_t, end_v, start_t)
+    #     self.set_bc_factor(new_factor)
 
     def set_reward_shaping_factor(self, factor):
         self.reward_shaping_factor = factor
 
-    def set_bc_factor(self, factor):
-        self.bc_factor = factor
+    # def set_bc_factor(self, factor):
+    #     self.bc_factor = factor
 
     def seed(self, seed):
         """
@@ -440,15 +453,9 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         agent_0_policy, agent_1_policy = policies
 
         # Get the corresponding rllib policy objects for each policy string name
-        if agent_0_policy != 'dummy':
-            agent_0_policy = trainer.get_policy(agent_0_policy)
-        else:
-            agent_0_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
-        if agent_1_policy != 'dummy':
-            agent_1_policy = trainer.get_policy(agent_1_policy)
-        else:
-            agent_1_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
-
+        agent_0_policy = trainer.get_policy(agent_0_policy)
+        agent_1_policy = trainer.get_policy(agent_1_policy)
+        
         agent_0_feat_fn = agent_1_feat_fn = None
         if 'bc' in policies or 'dummy' in policies:
             base_ae = get_base_ae(eval_mdp_params, env_params)
@@ -456,7 +463,7 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
             featurize_fn = lambda state : base_env.featurize_state_mdp(state)
             if policies[0] == 'bc' or policies[0] == 'dummy':
                 agent_0_feat_fn = featurize_fn
-            if policies[1] == 'bc' or policies[0] == 'dummy':
+            if policies[1] == 'bc' or policies[1] == 'dummy':
                 agent_1_feat_fn = featurize_fn
 
         # Compute the evauation rollout. Note this doesn't use the rllib passed in evaluation_workers, so this 
@@ -593,7 +600,7 @@ def gen_trainer_from_params(params):
     training_params = params['training_params']
     environment_params = params['environment_params']
     evaluation_params = params['evaluation_params']
-    bc_params = params['bc_params']
+    # bc_params = params['bc_params']
     multi_agent_params = params['environment_params']['multi_agent_params']
 
     env = OvercookedMultiAgent.from_config(environment_params)
@@ -601,7 +608,7 @@ def gen_trainer_from_params(params):
     # Returns a properly formatted policy tuple to be passed into ppotrainer config
     def gen_policy(policy_type="ppo"):
         # supported policy types thus far
-        assert policy_type in ["ppo", "bc"]
+        assert policy_type in ["ppo", "dummy"]
 
         if policy_type == "ppo":
             config = {
@@ -612,14 +619,14 @@ def gen_trainer_from_params(params):
                 }
             }
             return (None, env.ppo_observation_space, env.action_space, config)
-        elif policy_type == "bc":
-            bc_cls = bc_params['bc_policy_cls']
-            bc_config = bc_params['bc_config']
-            return (bc_cls, env.bc_observation_space, env.action_space, bc_config)
+        # elif policy_type == "bc":
+        #     bc_cls = bc_params['bc_policy_cls']
+        #     bc_config = bc_params['bc_config']
+        #     return (bc_cls, env.bc_observation_space, env.action_space, bc_config)
         elif policy_type == 'dummy':
             dummy_cls = DummyPolicy
             dummy_config = {}
-            return (dummy_cls, env.bc_observation_space, env.action_space, dummy_config)
+            return (dummy_cls, None, env.action_space, dummy_config)
 
     # Rllib compatible way of setting the directory we store agent checkpoints in
     logdir_prefix = "{0}_{1}_{2}".format(params["experiment_name"], params['training_params']['seed'], timestr)
@@ -640,21 +647,23 @@ def gen_trainer_from_params(params):
 
     # Create rllib compatible multi-agent config based on params
     multi_agent_config = {}
-    all_policies = ['ppo']
+    all_policies = ['ppo', 'dummy']
 
     # Whether both agents should be learned
     # OvercookedMultiAgent.self_play_bc_schedule means no bc agent.
-    self_play = iterable_equal(multi_agent_params['bc_schedule'], OvercookedMultiAgent.self_play_bc_schedule)
-    if not self_play:
-        all_policies.append('bc')
+    # self_play = iterable_equal(multi_agent_params['bc_schedule'], OvercookedMultiAgent.self_play_bc_schedule)
+    # if not self_play:
+        # all_policies.append('bc')
 
     multi_agent_config['policies'] = { policy : gen_policy(policy) for policy in all_policies }
 
     def select_policy(agent_id):
         if agent_id.startswith('ppo'):
             return 'ppo'
-        if agent_id.startswith('bc'):
-            return 'bc'
+        # if agent_id.startswith('bc'):
+        #     return 'bc'
+        if agent_id.startswith('dummy'):
+            return 'dummy'
     multi_agent_config['policy_mapping_fn'] = select_policy
     multi_agent_config['policies_to_train'] = 'ppo'
 
