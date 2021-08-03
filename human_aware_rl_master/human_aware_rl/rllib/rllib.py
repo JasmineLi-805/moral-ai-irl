@@ -212,7 +212,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         agents.append(other_agent)
 
         # Randomize starting indices
-        np.random.shuffle(agents)
+        # np.random.shuffle(agents)
 
         # Ensure agent names are unique
         agents[0] = agents[0] + '_0'
@@ -438,7 +438,7 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         # Randomize starting indices
         policies = [agent_0_policy_str, agent_1_policy_str]
         print(f'the policies are: {policies}')
-        np.random.shuffle(policies)
+        # np.random.shuffle(policies)
         agent_0_policy, agent_1_policy = policies
 
         # Get the corresponding rllib policy objects for each policy string name
@@ -478,7 +478,7 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         # Randomize starting indices
         policies = [agent_0_policy_str, agent_1_policy_str]
         print(f'the policies are: {policies}')
-        np.random.shuffle(policies)
+        # np.random.shuffle(policies)
         agent_0_policy, agent_1_policy = policies
 
         # Get the corresponding rllib policy objects for each policy string name
