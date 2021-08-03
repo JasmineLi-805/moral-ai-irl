@@ -17,9 +17,7 @@ class DummyPolicy(RllibPolicy):
 
         possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right']
         assert config['layout'] in possible_layout
-        model = MAIDumbAgentLeftCoop() if config['layout'] == 'mai_separate_coop_left' else MAIDumbAgentRightCoop()
-
-        self.model = model
+        self.model = MAIDumbAgentLeftCoop() if config['layout'] == 'mai_separate_coop_left' else MAIDumbAgentRightCoop()
         # self.context = self._create_execution_context()
 
         print('a DummyPolicy is instantiated')
@@ -48,15 +46,8 @@ class DummyPolicy(RllibPolicy):
             rnn_state: if using lstm models
             info (dict): if needed
         """
-        # Cast to np.array if list (no-op if already np.array)        
-        # obs_batch = np.array(obs_batch)
-
-        # Run the model
-        actions = []
-        for obs in obs_batch:
-            actions.append(Action.ACTION_TO_INDEX[self.model.action(obs)[0]])
-
-        return actions, None, None
+        next_action = self.model.action(obs_batch)
+        return next_action[0], None, None
 
     def get_initial_state(self):
         return []

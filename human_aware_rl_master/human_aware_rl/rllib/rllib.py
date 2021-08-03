@@ -69,13 +69,15 @@ class RlLibAgent(Agent):
             - action_info (dict) that stores action probabilities under 'action_probs' key
         """
         # Preprocess the environment state
-        obs = self.featurize(state)
-        my_obs = obs[self.agent_index]
-
         # Use Rllib.Policy class to compute action argmax and action probabilities
-        [action_idx], rnn_state, info = self.policy.compute_actions(np.array([my_obs]), self.rnn_state)
-        agent_action =  Action.INDEX_TO_ACTION[action_idx]
-        
+        if isinstance(self.policy, DummyPolicy):
+            agent_action, rnn_state, info = self.policy.compute_actions(state, self.rnn_state)
+        else:
+            obs = self.featurize(state)
+            my_obs = obs[self.agent_index]
+            [action_idx], rnn_state, info = self.policy.compute_actions(np.array([my_obs]), self.rnn_state)
+            agent_action =  Action.INDEX_TO_ACTION[action_idx]
+
         # Softmax in numpy to convert logits to normalized probabilities
         agent_action_info = {}
         if info:
