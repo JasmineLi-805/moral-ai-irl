@@ -7,7 +7,8 @@
 - [ ] Implement RL training code
   - [x] Set the game environment to use customized layout
   - [x] Add the Dummy agent to the pair of agents playing the game
-    - [ ] Q: states are featurized before passing to the Dummy agent, even though featurization function is set to `None`, causing type mismatch.
+    - [x] Q: states are featurized before passing to the Dummy agent, even though featurization function is set to `None`, causing type mismatch.
+    - [ ] Q: The observation requires the custumized space to have a shape, which is not applicable to the OvercookedState object.
   - [ ] Change the reward evaluation method to customized reward function
     - [x] Add a customized evaluate function where new reward calculation can be inserted
     - [ ] Find a suitable reward function (model structure)
@@ -35,13 +36,14 @@
 
 The layout can be easily changed in `ppo_rllib_client.py` by setting the `layout_name` paramter.
 
-#### BC agent
+#### Dummy agent
 
 The existing code uses RLLib to do the training. `DummyPolicy` in `human_aware_rl_master/human_aware_rl/dummy/rl_agent.py` is the wrapper around Dummy agent for it to be compatible with RLLib. In the training process, the `DummyPolicy` would be used to create an agent that interacts with the game environment.
-To insert the Dummy agent into the game, I changed the code in the evaluation function in `human_aware_rl_master/human_aware_rl/rllib/rllib.py` by manually setting one of the policies to `DummyPolicy`. The featurizing function for the dummy is set to `None`, since it does not require the featurized states to make decision.
+To insert the Dummy agent into the game evaluation,
+- <s>change the code in the evaluation function in `human_aware_rl_master/human_aware_rl/rllib/rllib.py` by manually setting one of the policies to `DummyPolicy`. The featurizing function for the dummy is set to `None`, since it does not require the featurized states to make decision.</s>
 
-- An alternative is to add the Dummy's policy to the trainer, so that there is no explicit policy settings in the eval func. This way setting the policy for all three types of agents(BC, RL, Dummy) can all be done in one call to `trainer.get_policy`.
-- *Issue*: The state passed to the dummy agent is featurized even though its featurization function is set to `None`. This causes the agent's `smart_reset` to fail, as there is a type mismatch. The error is suppressed by removing `not self._find_help_object(state.objects)` in the agent's reset functions. Will further explore this issue later.
+- Add the Dummy's policy to the trainer, so that there is no explicit policy settings in the eval func. This way setting the policy for all three types of agents(BC, RL, Dummy) can all be done in one call to `trainer.get_policy`.
+- *Issue [solved]*: The state passed to the dummy agent is featurized even though its featurization function is set to `None`. This causes the agent's `smart_reset` to fail, as there is a type mismatch. The error is suppressed by removing `not self._find_help_object(state.objects)` in the agent's reset functions. Will further explore this issue later.
 
 #### Customized evaluation function
 
