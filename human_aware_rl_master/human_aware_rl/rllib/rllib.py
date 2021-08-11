@@ -1,8 +1,11 @@
+
+# from overcooked_demo_litw.server.game import MAIDumbAgent
 from overcooked_ai_py.mdp.actions import Action
 from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES, OvercookedState
 from overcooked_ai_py.agents.benchmarking import AgentEvaluator
 from overcooked_ai_py.agents.agent import Agent, AgentPair
+from ray.rllib.models.preprocessors import NoPreprocessor
 from ray.tune.registry import register_env
 from ray.tune.logger import UnifiedLogger
 from ray.tune.result import DEFAULT_RESULTS_DIR
@@ -11,7 +14,7 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from ray.rllib.models import ModelCatalog
 from human_aware_rl.rllib.utils import softmax, get_base_ae, get_required_arguments, iterable_equal
-from human_aware_rl.dummy.rl_agent import DummyPolicy
+from human_aware_rl.dummy.rl_agent import DummyPolicy, DummyObservationSpace
 from datetime import datetime
 import tempfile
 import gym
@@ -192,13 +195,18 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # low = np.ones(obs_shape) * -100
         # self.bc_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
 
-        # dummy observation? -> Only if you want to train the dummy agent
+        # TODO: dummy observation
+        self.dummy_obs_space = DummyObservationSpace()
 
     def _get_featurize_fn(self, agent_id):
+        def mai_dummy_feat_fn(state):
+            print(f'dummy featurization ran')
+            return state.to_dict()
+
         if agent_id.startswith('ppo'):
             return lambda state: self.base_env.lossless_state_encoding_mdp(state)
         if agent_id.startswith('dummy'):
-            return lambda state: state
+            return mai_dummy_feat_fn
         # if agent_id.startswith('bc'):
         #     return lambda state: self.base_env.featurize_state_mdp(state)
         raise ValueError("Unsupported agent type {0}".format(agent_id))
@@ -627,8 +635,8 @@ def gen_trainer_from_params(params):
         #     return (bc_cls, env.bc_observation_space, env.action_space, bc_config)
         elif policy_type == 'dummy':
             dummy_cls = DummyPolicy
-            dummy_config = {}
-            return (dummy_cls, None, env.action_space, dummy_config)
+            dummy_config = {'layout': environment_params['mdp_params']['layout_name']}
+            return (dummy_cls, env.dummy_obs_space, env.action_space, dummy_config)
 
     # Rllib compatible way of setting the directory we store agent checkpoints in
     logdir_prefix = "{0}_{1}_{2}".format(params["experiment_name"], params['training_params']['seed'], timestr)
