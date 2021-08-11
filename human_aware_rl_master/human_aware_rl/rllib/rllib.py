@@ -72,14 +72,13 @@ class RlLibAgent(Agent):
             - action_info (dict) that stores action probabilities under 'action_probs' key
         """
         # Preprocess the environment state
+        obs = self.featurize(state)
+        my_obs = obs[self.agent_index]
+
         # Use Rllib.Policy class to compute action argmax and action probabilities
-        if isinstance(self.policy, DummyPolicy):
-            agent_action, rnn_state, info = self.policy.compute_actions(state, self.rnn_state)
-        else:
-            obs = self.featurize(state)
-            my_obs = obs[self.agent_index]
-            [action_idx], rnn_state, info = self.policy.compute_actions(np.array([my_obs]), self.rnn_state)
-            agent_action =  Action.INDEX_TO_ACTION[action_idx]
+        [action_idx], rnn_state, info = self.policy.compute_actions(np.array([my_obs]), self.rnn_state)
+        agent_action =  Action.INDEX_TO_ACTION[action_idx]
+
 
         # Softmax in numpy to convert logits to normalized probabilities
         agent_action_info = {}
@@ -195,13 +194,17 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # low = np.ones(obs_shape) * -100
         # self.bc_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
 
-        # TODO: dummy observation
-        self.dummy_obs_space = DummyObservationSpace()
+        # dummy observation
+        self.dummy_obs_space = gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2)})
 
     def _get_featurize_fn(self, agent_id):
         def mai_dummy_feat_fn(state):
-            print(f'dummy featurization ran')
-            return state.to_dict()
+            pos = (5, 3)    # according to default value for MaiDummyAgent
+            help_obj_name = 'onion'
+            obj = state.objects.get(pos, None)
+            if obj and obj.to_dict()['name'] == help_obj_name:
+                return {'help_obj': 1}
+            return {'help_obj': 0}
 
         if agent_id.startswith('ppo'):
             return lambda state: self.base_env.lossless_state_encoding_mdp(state)
@@ -428,9 +431,9 @@ class TrainingCallbacks(DefaultCallbacks):
                 lambda env: env.anneal_reward_shaping_factor(timestep)))
 
         # Anneal the bc factor based on environment paremeters and current timestep
-        trainer.workers.foreach_worker(
-            lambda ev: ev.foreach_env(
-                lambda env: env.anneal_bc_factor(timestep)))
+        # trainer.workers.foreach_worker(
+        #     lambda ev: ev.foreach_env(
+        #         lambda env: env.anneal_bc_factor(timestep)))
 
     def on_postprocess_trajectory(self, worker, episode, agent_id, policy_id, policies, postprocessed_batch, original_batches, **kwargs):
         pass

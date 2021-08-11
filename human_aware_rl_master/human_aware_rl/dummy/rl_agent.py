@@ -53,10 +53,12 @@ class DummyPolicy(RllibPolicy):
         Returns:
             actions (list|np.array): batch of output actions shape [BATCH_SIZE, ACTION_SHAPE]
             rnn_state: if using lstm models
-            info (dict): if needed
+            info (dict)
         """
-        next_action = self.model.action(obs_batch)
-        return next_action[0], None, None
+        actions = []
+        for obs in obs_batch:
+            actions.append(Action.ACTION_TO_INDEX[self.model.action(obs)[0]])
+        return actions, [], {}
 
     def get_initial_state(self):
         return []

@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from threading import Lock, Thread
 from queue import Queue, LifoQueue, Empty, Full
 from time import time
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
+from typing import Dict
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, OvercookedState
 from overcooked_ai_py.mdp.actions import Action, Direction
 from overcooked_ai_py.planning.planners import MotionPlanner, NO_COUNTERS_PARAMS
 # import sys, os
@@ -833,9 +834,14 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['PLACE_ONION_HELP']:
             self.help_provided = True
-        if (not self._find_help_object(state.objects)) and self.help_provided:
-            self.help_provided = False
-            self.provided_coop += 1
+        if isinstance(state, OvercookedState):
+            if (not self._find_help_object(state.objects)) and self.help_provided:
+                self.help_provided = False
+                self.provided_coop += 1
+        elif isinstance(state, Dict):
+            if state['help_obj'] == 1 and self.help_provided:
+                self.help_provided = False
+                self.provided_coop += 1
         super(MAIDumbAgentLeftCoop, self).reset_smart(state)
 
 
@@ -918,6 +924,16 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
         self.curr_tick = -1
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['STOVE_TO_CENTER', 'DELIVER_SOUP']:
+            if isinstance(state, OvercookedState):
+                if self._find_help_object(state.objects):
+                    self.phases.append('GRAB_ONION_SHORT')
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
+            elif isinstance(state, Dict):
+                if state['help_obj'] == 1:
+                    self.phases.append('GRAB_ONION_SHORT')
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
             if self._find_help_object(state.objects):
                 self.phases.append('GRAB_ONION_SHORT')
             else:
