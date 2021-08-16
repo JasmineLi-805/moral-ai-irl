@@ -148,7 +148,7 @@ def my_config():
     save_freq = 25
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 50 if not LOCAL_TESTING else 1
+    evaluation_interval = 25 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -334,6 +334,9 @@ def run(params):
         if params['verbose']:
             print("Starting training iteration", i)
         result = trainer.train()
+
+        msg = result['episode_reward_mean']
+        print(f'{i}: {msg}')
 
         if i % params['save_every'] == 0:
             save_path = save_trainer(trainer, params)
