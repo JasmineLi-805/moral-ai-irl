@@ -89,6 +89,13 @@ class DummyPolicy(RllibPolicy):
     def _create_execution_context(self):
         pass
 
+def mai_dummy_feat_fn(state):
+    pos = (5, 3)    # according to default value for MaiDummyAgent
+    help_obj_name = 'onion'
+    obj = state.objects.get(pos, None)
+    if obj and obj.to_dict()['name'] == help_obj_name:
+        return {'help_obj': 1}
+    return {'help_obj': 0}
 
 class DummyObservationSpace(Space):
     """

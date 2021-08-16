@@ -5,6 +5,7 @@ from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES, OvercookedState
 from overcooked_ai_py.agents.benchmarking import AgentEvaluator
 from overcooked_ai_py.agents.agent import Agent, AgentPair
+from ray.rllib.agents.ppo.ppo_tf_policy import PPOTFPolicy
 from ray.rllib.models.preprocessors import NoPreprocessor
 from ray.tune.registry import register_env
 from ray.tune.logger import UnifiedLogger
@@ -14,7 +15,7 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from ray.rllib.models import ModelCatalog
 from human_aware_rl.rllib.utils import softmax, get_base_ae, get_required_arguments, iterable_equal
-from human_aware_rl.dummy.rl_agent import DummyPolicy, DummyObservationSpace
+from human_aware_rl.dummy.rl_agent import DummyPolicy, DummyObservationSpace, mai_dummy_feat_fn
 from datetime import datetime
 import tempfile
 import gym
@@ -73,10 +74,11 @@ class RlLibAgent(Agent):
         """
         # Preprocess the environment state
         obs = self.featurize(state)
-        my_obs = obs[self.agent_index]
+        if isinstance(self.policy, PPOTFPolicy):
+            obs = obs[self.agent_index]
 
         # Use Rllib.Policy class to compute action argmax and action probabilities
-        [action_idx], rnn_state, info = self.policy.compute_actions(np.array([my_obs]), self.rnn_state)
+        [action_idx], rnn_state, info = self.policy.compute_actions(np.array([obs]), self.rnn_state)
         agent_action =  Action.INDEX_TO_ACTION[action_idx]
 
 
@@ -98,7 +100,6 @@ class OvercookedMultiAgent(MultiAgentEnv):
     """
 
     # List of all agent types currently supported
-    # TODO
     supported_agents = ['ppo', 'dummy']
 
     # Default bc_schedule, includes no bc agent at any time
@@ -198,14 +199,6 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self.dummy_obs_space = gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2)})
 
     def _get_featurize_fn(self, agent_id):
-        def mai_dummy_feat_fn(state):
-            pos = (5, 3)    # according to default value for MaiDummyAgent
-            help_obj_name = 'onion'
-            obj = state.objects.get(pos, None)
-            if obj and obj.to_dict()['name'] == help_obj_name:
-                return {'help_obj': 1}
-            return {'help_obj': 0}
-
         if agent_id.startswith('ppo'):
             return lambda state: self.base_env.lossless_state_encoding_mdp(state)
         if agent_id.startswith('dummy'):
@@ -215,6 +208,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
         raise ValueError("Unsupported agent type {0}".format(agent_id))
 
     def _get_obs(self, state):
+        # in the original version there can be 2 ppo agents, 
+        # the featurization func for ppo agents are returned as pairs
         if self.curr_agents[0].startswith('dummy') :
             ob_p0 = self._get_featurize_fn(self.curr_agents[0])(state)
         else :
@@ -223,20 +218,13 @@ class OvercookedMultiAgent(MultiAgentEnv):
         if self.curr_agents[1].startswith('dummy') :
             ob_p1 = self._get_featurize_fn(self.curr_agents[1])(state)
         else:
-            ob_p1 = self._get_featurize_fn(self.curr_agents[1])(state)
+            ob_p1 = self._get_featurize_fn(self.curr_agents[1])(state)[1]
 
         return ob_p0, ob_p1
 
     def _populate_agents(self):
         # Always include at least one ppo agent (i.e. bc_sp not supported for simplicity)
         agents = ['ppo', 'dummy']
-
-        # Coin flip to determine whether other agent should be ppo or bc
-        # other_agent = 'bc' if np.random.uniform() < self.bc_factor else 'ppo'
-        # agents.append(other_agent)
-
-        # Randomize starting indices
-        # np.random.shuffle(agents)
 
         # Ensure agent names are unique
         agents[0] = agents[0] + '_0'
@@ -439,7 +427,8 @@ class TrainingCallbacks(DefaultCallbacks):
         pass
 
 
-def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shape, agent_0_policy_str='ppo', agent_1_policy_str='ppo', verbose=False):
+def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shape,
+                            agent_0_policy_str='ppo', agent_1_policy_str='dummy', verbose=False):
     """
     Used to "curry" rllib evaluation function by wrapping additional parameters needed in a local scope, and returning a
     function with rllib custom_evaluation_function compatible signature
@@ -470,14 +459,13 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         agent_1_policy = trainer.get_policy(agent_1_policy)
         
         agent_0_feat_fn = agent_1_feat_fn = None
-        if 'bc' in policies or 'dummy' in policies:
-            base_ae = get_base_ae(eval_mdp_params, env_params)
-            base_env = base_ae.env
-            featurize_fn = lambda state : base_env.featurize_state_mdp(state)
-            if policies[0] == 'bc' or policies[0] == 'dummy':
+        if 'dummy' in policies:
+            featurize_fn = mai_dummy_feat_fn
+            if policies[0] == 'dummy':
                 agent_0_feat_fn = featurize_fn
-            if policies[1] == 'bc' or policies[1] == 'dummy':
+            if policies[1] == 'dummy':
                 agent_1_feat_fn = featurize_fn
+        # No need to handle for ppo agent, it is handled in evaluate.
 
         # Compute the evauation rollout. Note this doesn't use the rllib passed in evaluation_workers, so this 
         # computation all happens on the CPU. Could change this if evaluation becomes a bottleneck
@@ -488,7 +476,7 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
         return metrics
 
-    # TODO: Define a new evaluation function that 
+    # TODO: Define a new evaluation function
     def _evaluate_customized_reward(trainer, evaluation_workers):
         if verbose:
             print("Computing rollout of current trained policy")
@@ -691,7 +679,7 @@ def gen_trainer_from_params(params):
         "custom_eval_function" : get_rllib_eval_function(evaluation_params, environment_params['eval_mdp_params'], 
                                         environment_params['env_params'],
                                         environment_params["outer_shape"], 
-                                        'ppo', 'dummy',
+                                        agent_0_policy_str='ppo', agent_1_policy_str='dummy',
                                         verbose=params['verbose']),
         "env_config" : environment_params,
         "eager" : False,
