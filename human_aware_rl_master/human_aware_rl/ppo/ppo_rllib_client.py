@@ -79,7 +79,7 @@ def my_config():
     D2RL = False
     ### Training Params ###
 
-    num_workers = 30 if not LOCAL_TESTING else 2
+    num_workers = 12 if not LOCAL_TESTING else 2
 
     # list of all random seeds to use for experiments, used to reproduce results
     seeds = [0]
