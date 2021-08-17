@@ -934,18 +934,27 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                     self.phases.append('GRAB_ONION_SHORT')
                 else:
                     self.phases.append('GRAB_ONION_LONG')
-            if self._find_help_object(state.objects):
-                self.phases.append('GRAB_ONION_SHORT')
-            else:
-                self.phases.append('GRAB_ONION_LONG')
+            # if self._find_help_object(state.objects):
+            #     self.phases.append('GRAB_ONION_SHORT')
+            # else:
+            #     self.phases.append('GRAB_ONION_LONG')
         elif last_phase == 'GRAB_ONION_SHORT':
-            if state.players[1].held_object:
-                self.received_coop += 1
-                self.phases.append('PLACE_ONION_STOVE')
-                self.count_helps += 1
-                self.was_helped = True
-            else:
-                self.phases.append('GRAB_ONION_LONG')
+            if isinstance(state, OvercookedState):
+                if state.players[1].held_object:
+                    self.received_coop += 1
+                    self.phases.append('PLACE_ONION_STOVE')
+                    self.count_helps += 1
+                    self.was_helped = True
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
+            elif isinstance(state, Dict):
+                if state['player_1_held_obj']:
+                    self.received_coop += 1
+                    self.phases.append('PLACE_ONION_STOVE')
+                    self.count_helps += 1
+                    self.was_helped = True
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
         elif last_phase == 'GRAB_ONION_LONG':
             if self.was_helped:
                 self.phases.append('PLACE_ONION_STOVE')

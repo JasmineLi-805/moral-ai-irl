@@ -105,7 +105,7 @@ def my_config():
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 420 if not LOCAL_TESTING else 2
+    num_training_iters = 200 if not LOCAL_TESTING else 2
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -183,7 +183,7 @@ def my_config():
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "mai_separate_coop_left"
+    layout_name = "mai_separate_coop_right"
 
     # all_layout_names = '_'.join(layout_names)
 

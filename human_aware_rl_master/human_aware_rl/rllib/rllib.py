@@ -15,7 +15,7 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from ray.rllib.models import ModelCatalog
 from human_aware_rl.rllib.utils import softmax, get_base_ae, get_required_arguments, iterable_equal
-from human_aware_rl.dummy.rl_agent import DummyPolicy, DummyObservationSpace, mai_dummy_feat_fn
+from human_aware_rl.dummy.rl_agent import DummyPolicy, mai_dummy_feat_fn
 from datetime import datetime
 import tempfile
 import gym
@@ -143,7 +143,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # since we are not passing featurize_fn in as an argument, we create it here and check its validity
         self.featurize_fn_map = {
             "ppo": lambda state: self.base_env.lossless_state_encoding_mdp(state),
-            "dummy": lambda state: state
+            "dummy": mai_dummy_feat_fn
             # "bc": lambda state: self.base_env.featurize_state_mdp(state)
         }
         self._validate_featurize_fns(self.featurize_fn_map)
@@ -196,7 +196,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # self.bc_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
 
         # dummy observation
-        self.dummy_obs_space = gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2)})
+        self.dummy_obs_space = gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2),
+                                                "player_1_held_obj":gym.spaces.Discrete(2)})
 
     def _get_featurize_fn(self, agent_id):
         if agent_id.startswith('ppo'):

@@ -91,72 +91,81 @@ class DummyPolicy(RllibPolicy):
         pass
 
 def mai_dummy_feat_fn(state):
+    featurized = {}
     pos = (5, 3)    # according to default value for MaiDummyAgent
     help_obj_name = 'onion'
     obj = state.objects.get(pos, None)
+
+    if state.players[1].held_object:
+        featurized['player_1_held_obj'] = 1
+    else: 
+        featurized['player_1_held_obj'] = 0
+
     if obj and obj.to_dict()['name'] == help_obj_name:
-        return {'help_obj': 1}
-    return {'help_obj': 0}
+        featurized['help_obj'] = 1
+    else:
+        featurized['help_obj'] = 0
+    return featurized
 
-class DummyObservationSpace(Space):
-    """
-    The Dummy agent takes the game state dictionary as its input. This class is a wrapper
-    for the game state so that the OvercookedState object is compatible with Rllib.
+# class DummyObservationSpace(Space):
+#     """
+#     The Dummy agent takes the game state dictionary as its input. This class is a wrapper
+#     for the game state so that the OvercookedState object is compatible with Rllib.
 
-    Example usage:
-    self.observation_space = gym.spaces.DummyObservationSpace()
-    """
+#     Example usage:
+#     self.observation_space = gym.spaces.DummyObservationSpace()
+#     """
 
-    def __init__(self, spaces=None, **spaces_kwargs):
-        self.spaces = spaces
-        self.shape = -1
-        # super(DummyObservationSpace, self).__init__(
-        #     self.shape, None
-        # )  # None for shape and dtype, since it'll require special handling
+#     def __init__(self, spaces=None, **spaces_kwargs):
+#         self.spaces = spaces
+#         self.shape = -1
+#         # super(DummyObservationSpace, self).__init__(
+#         #     self.shape, None
+#         # )  # None for shape and dtype, since it'll require special handling
 
-    def contains(self, x):
-        if isinstance(x, OvercookedState):
-            x = x.to_dict()
-        elif not isinstance(x, Dict):
-            return False
+#     def contains(self, x):
+#         if isinstance(x, OvercookedState):
+#             x = x.to_dict()
+#         elif not isinstance(x, Dict):
+#             return False
 
-        keys = ['players', 'objects', 'bonus_orders', 'all_orders', 'timestep']
-        for k in keys:
-            if k not in x:
-                return False
-        return True
+#         keys = ['players', 'objects', 'bonus_orders', 'all_orders', 'timestep']
+#         for k in keys:
+#             if k not in x:
+#                 return False
+#         return True
 
-    def __getitem__(self, key):
-        return self.space[key]
+#     def __getitem__(self, key):
+#         return self.space[key]
 
-    def __iter__(self):
-        for key in self.spaces:
-            yield key
+#     def __iter__(self):
+#         for key in self.spaces:
+#             yield key
 
-    def __contains__(self, item):
-        return self.contains(item)
+#     def __contains__(self, item):
+#         return self.contains(item)
 
-    def __repr__(self):
-        return "DummyObservationSpace()"
+#     def __repr__(self):
+#         return "DummyObservationSpace()"
 
-    def to_jsonable(self, sample_n):
-        # serialize as dict-repr of vectors
-        return self.spaces.to_dict()
+#     def to_jsonable(self, sample_n):
+#         # serialize as dict-repr of vectors
+#         return self.spaces.to_dict()
 
-    def from_jsonable(self, sample_n):
-        dict_of_list = {}
-        for key, space in self.spaces.items():
-            dict_of_list[key] = space.from_jsonable(sample_n[key])
-        ret = []
-        for i, _ in enumerate(dict_of_list[key]):
-            entry = {}
-            for key, value in dict_of_list.items():
-                entry[key] = value[i]
-            ret.append(entry)
-        return ret
+#     def from_jsonable(self, sample_n):
+#         dict_of_list = {}
+#         for key, space in self.spaces.items():
+#             dict_of_list[key] = space.from_jsonable(sample_n[key])
+#         ret = []
+#         for i, _ in enumerate(dict_of_list[key]):
+#             entry = {}
+#             for key, value in dict_of_list.items():
+#                 entry[key] = value[i]
+#             ret.append(entry)
+#         return ret
 
-    def __eq__(self, other):
-        return isinstance(other, DummyObservationSpace) and self.spaces == other.spaces
+#     def __eq__(self, other):
+#         return isinstance(other, DummyObservationSpace) and self.spaces == other.spaces
 
 # class DummyPreprocessor(Preprocessor):
 
