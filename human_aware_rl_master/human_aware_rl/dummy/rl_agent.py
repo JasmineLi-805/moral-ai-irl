@@ -27,7 +27,7 @@ class DummyPolicy(RllibPolicy):
         
         possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right']
         assert config['layout'] in possible_layout
-        self.model = MAIDumbAgentLeftCoop() if config['layout'] == 'mai_separate_coop_left' else MAIDumbAgentRightCoop()
+        self.model = MAIDumbAgentLeftCoop() if config['layout'] == 'mai_separate_coop_right' else MAIDumbAgentRightCoop()
         # self.context = self._create_execution_context()
 
         print('a DummyPolicy is instantiated')
