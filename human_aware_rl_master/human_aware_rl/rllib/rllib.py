@@ -233,10 +233,6 @@ class OvercookedMultiAgent(MultiAgentEnv):
 
         shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
         shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
-        
-        # REMOVE: test reverse rewards
-        shaped_reward_p0 *= -1.0
-        shaped_reward_p1 *= -1.0
 
         obs = { self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1 }
         rewards = { self.curr_agents[0]: shaped_reward_p0, self.curr_agents[1]: shaped_reward_p1 }
