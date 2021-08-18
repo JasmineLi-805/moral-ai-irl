@@ -24,14 +24,17 @@ class DummyPolicy(RllibPolicy):
 
         assert config
         assert config['layout']
-        
+        layout = config['layout']
         # the 'left' and 'right' in the layout name refers to the human player's position
         possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right']
         assert config['layout'] in possible_layout
-        self.model = MAIDumbAgentLeftCoop() if config['layout'] == 'mai_separate_coop_right' else MAIDumbAgentRightCoop()
+        if config['layout']== 'mai_separate_coop_right':
+            print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentLeftCoop')
+            self.model = MAIDumbAgentLeftCoop() 
+        elif config['layout']== 'mai_separate_coop_left':
+            print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentRightCoop') 
+            self.model = MAIDumbAgentRightCoop()
         # self.context = self._create_execution_context()
-
-        print('a DummyPolicy is instantiated')
 
     # def _setup_shapes(self):
     #     # This is here to make the class compatible with both tuples or gym.Space objs for the spaces
