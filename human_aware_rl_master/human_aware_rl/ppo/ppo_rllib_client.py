@@ -148,7 +148,7 @@ def my_config():
     save_freq = 25
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 25 if not LOCAL_TESTING else 1
+    evaluation_interval = 200 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -157,7 +157,7 @@ def my_config():
     evaluation_num_games = 1
 
     # Whether to display rollouts in evaluation
-    evaluation_display = False
+    evaluation_display = True
 
     # Where to log the ray dashboard stats
     temp_dir = os.path.join(os.path.abspath(os.sep), "tmp", "ray_tmp")
