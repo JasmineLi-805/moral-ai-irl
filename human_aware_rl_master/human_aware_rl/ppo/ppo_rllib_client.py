@@ -88,7 +88,7 @@ def my_config():
     seed = None
 
     # Number of gpus the central driver should use
-    num_gpus = 0 if LOCAL_TESTING else 4
+    num_gpus = 0 if LOCAL_TESTING else 1
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
