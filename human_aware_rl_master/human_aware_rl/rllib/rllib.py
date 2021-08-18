@@ -238,7 +238,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         rewards = { self.curr_agents[0]: shaped_reward_p0, self.curr_agents[1]: shaped_reward_p1 }
         dones = { self.curr_agents[0]: done, self.curr_agents[1]: done, "__all__": done }
         infos = { self.curr_agents[0]: info, self.curr_agents[1]: info }
-        return obs, rewards, dones, infos
+        return obs, -1 * rewards, dones, infos
 
     def reset(self, regen_mdp=True):
         """

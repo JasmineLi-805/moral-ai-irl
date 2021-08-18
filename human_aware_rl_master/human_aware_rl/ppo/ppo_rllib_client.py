@@ -105,7 +105,7 @@ def my_config():
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 400 if not LOCAL_TESTING else 2
+    num_training_iters = 200 if not LOCAL_TESTING else 2
 
     # Stepsize of SGD.
     lr = 5e-5
