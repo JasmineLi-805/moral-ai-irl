@@ -25,6 +25,7 @@ class DummyPolicy(RllibPolicy):
         assert config
         assert config['layout']
         
+        # the 'left' and 'right' in the layout name refers to the human player's position
         possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right']
         assert config['layout'] in possible_layout
         self.model = MAIDumbAgentLeftCoop() if config['layout'] == 'mai_separate_coop_right' else MAIDumbAgentRightCoop()
@@ -106,85 +107,4 @@ def mai_dummy_feat_fn(state):
     else:
         featurized['help_obj'] = 0
     return featurized
-
-# class DummyObservationSpace(Space):
-#     """
-#     The Dummy agent takes the game state dictionary as its input. This class is a wrapper
-#     for the game state so that the OvercookedState object is compatible with Rllib.
-
-#     Example usage:
-#     self.observation_space = gym.spaces.DummyObservationSpace()
-#     """
-
-#     def __init__(self, spaces=None, **spaces_kwargs):
-#         self.spaces = spaces
-#         self.shape = -1
-#         # super(DummyObservationSpace, self).__init__(
-#         #     self.shape, None
-#         # )  # None for shape and dtype, since it'll require special handling
-
-#     def contains(self, x):
-#         if isinstance(x, OvercookedState):
-#             x = x.to_dict()
-#         elif not isinstance(x, Dict):
-#             return False
-
-#         keys = ['players', 'objects', 'bonus_orders', 'all_orders', 'timestep']
-#         for k in keys:
-#             if k not in x:
-#                 return False
-#         return True
-
-#     def __getitem__(self, key):
-#         return self.space[key]
-
-#     def __iter__(self):
-#         for key in self.spaces:
-#             yield key
-
-#     def __contains__(self, item):
-#         return self.contains(item)
-
-#     def __repr__(self):
-#         return "DummyObservationSpace()"
-
-#     def to_jsonable(self, sample_n):
-#         # serialize as dict-repr of vectors
-#         return self.spaces.to_dict()
-
-#     def from_jsonable(self, sample_n):
-#         dict_of_list = {}
-#         for key, space in self.spaces.items():
-#             dict_of_list[key] = space.from_jsonable(sample_n[key])
-#         ret = []
-#         for i, _ in enumerate(dict_of_list[key]):
-#             entry = {}
-#             for key, value in dict_of_list.items():
-#                 entry[key] = value[i]
-#             ret.append(entry)
-#         return ret
-
-#     def __eq__(self, other):
-#         return isinstance(other, DummyObservationSpace) and self.spaces == other.spaces
-
-# class DummyPreprocessor(Preprocessor):
-
-#     @override(Preprocessor)
-#     def _init_shape(self, obs_space, options):
-#         return self._obs_space.shape
-
-#     @override(Preprocessor)
-#     def transform(self, observation):
-#         self.check_shape(observation)
-#         return observation
-
-#     @override(Preprocessor)
-#     def write(self, observation, array, offset):
-#         array[offset:offset + self._size] = np.array(
-#             observation, copy=False).ravel()
-
-#     @property
-#     @override(Preprocessor)
-#     def observation_space(self):
-#         return self._obs_space
 

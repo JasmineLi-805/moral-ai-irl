@@ -38,12 +38,18 @@ The layout can be easily changed in `ppo_rllib_client.py` by setting the `layout
 
 #### Dummy agent
 
-The existing code uses RLLib to do the training. `DummyPolicy` in `human_aware_rl_master/human_aware_rl/dummy/rl_agent.py` is the wrapper around Dummy agent for it to be compatible with RLLib. In the training process, the `DummyPolicy` would be used to create an agent that interacts with the game environment.
-To insert the Dummy agent into the game evaluation,
-- <s>change the code in the evaluation function in `human_aware_rl_master/human_aware_rl/rllib/rllib.py` by manually setting one of the policies to `DummyPolicy`. The featurizing function for the dummy is set to `None`, since it does not require the featurized states to make decision.</s>
+The existing code uses RLLib to do the training. 
+`human_aware_rl_master/human_aware_rl/dummy/rl_agent.DummyPolicy`: the wrapper around Dummy agent for it to be compatible with RLLib. In the training process, the `DummyPolicy` would be used to create an agent that interacts with the game environment.
 
-- Add the Dummy's policy to the trainer, so that there is no explicit policy settings in the eval func. This way setting the policy for all three types of agents(BC, RL, Dummy) can all be done in one call to `trainer.get_policy`.
-- *Issue [solved]*: The state passed to the dummy agent is featurized even though its featurization function is set to `None`. This causes the agent's `smart_reset` to fail, as there is a type mismatch. The error is suppressed by removing `not self._find_help_object(state.objects)` in the agent's reset functions. Will further explore this issue later.
+*Add MAI_Dummy Agent to the training process*
+- `rl_agent.mai_dummy_feat_fn`: transforms the game state object into a dictionary with two keys: `player_1_held_obj`and `help_obj`, since RLlib requires the input to the agent to be specified in terms of gym.spaces. These keys are the only values used by MAI_Dummy Agent
+- `game.py`: Added conditions to handle inputs transformed by the featurization function above.
+- `rllib.py`: Inserted MAI_Dummy as the second agent in the training process.
+
+*Add MAI_Dummy Agent to Evaluation*
+- `rllib.gen_trainer_from_params`: MAI_Dummy Agent should be automatically added to the eval process when constructing the trainer.
+- `rllib.get_rllib_eval_function`: The featurization function should be set explicitly for the dummy agent, otherwise the featurization function for the ppo agent is used.
+
 
 #### Customized evaluation function
 
@@ -57,7 +63,7 @@ The `evaluate` function in `human_aware_rl_master/human_aware_rl/rllib/rllib.py`
 
 The RL agent should show improvements in rewards in the training process. This can be tested by the following methods:
 
-- [ ] The agent can be trained using the final score as the reward
+- [x] The agent can be trained using the final score as the reward
 - [ ] The agent can be trained using our customized reward function
 
 #### Code correctness
