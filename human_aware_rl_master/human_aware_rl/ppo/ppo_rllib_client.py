@@ -173,7 +173,7 @@ def my_config():
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "mai_separate_coop_left"
+    layout_name = "mai_separate_coop_right"
 
     # all_layout_names = '_'.join(layout_names)
 
