@@ -64,7 +64,7 @@ def my_config():
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = False
+    use_lstm = True
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
@@ -173,7 +173,7 @@ def my_config():
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "mai_separate_coop_right"
+    layout_name = "mai_separate_coop_left"
 
     # all_layout_names = '_'.join(layout_names)
 
