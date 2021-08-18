@@ -234,11 +234,15 @@ class OvercookedMultiAgent(MultiAgentEnv):
         shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
         shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
         
+        # REMOVE: test reverse rewards
+        shaped_reward_p0 *= -1.0
+        shaped_reward_p1 *= -1.0
+
         obs = { self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1 }
         rewards = { self.curr_agents[0]: shaped_reward_p0, self.curr_agents[1]: shaped_reward_p1 }
         dones = { self.curr_agents[0]: done, self.curr_agents[1]: done, "__all__": done }
         infos = { self.curr_agents[0]: info, self.curr_agents[1]: info }
-        return obs, -1 * rewards, dones, infos
+        return obs, rewards, dones, infos
 
     def reset(self, regen_mdp=True):
         """
