@@ -64,7 +64,7 @@ def my_config():
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = True
+    use_lstm = False
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
@@ -88,7 +88,7 @@ def my_config():
     seed = None
 
     # Number of gpus the central driver should use
-    num_gpus = 0 if LOCAL_TESTING else 1
+    num_gpus = 0 if LOCAL_TESTING else 4
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
@@ -173,7 +173,7 @@ def my_config():
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "mai_separate_coop_right"
+    layout_name = "mai_separate_coop_left"
 
     # all_layout_names = '_'.join(layout_names)
 
@@ -191,9 +191,9 @@ def my_config():
 
     # Rewards the agent will receive for intermediate actions
     rew_shaping_params = {
-        "PLACEMENT_IN_POT_REW": 3,
-        "DISH_PICKUP_REWARD": 3,
-        "SOUP_PICKUP_REWARD": 5,
+        "PLACEMENT_IN_POT_REW": 0,
+        "DISH_PICKUP_REWARD": 0,
+        "SOUP_PICKUP_REWARD": 0,
         "DISH_DISP_DISTANCE_REW": 0,
         "POT_DISTANCE_REW": 0,
         "SOUP_DISTANCE_REW": 0,
