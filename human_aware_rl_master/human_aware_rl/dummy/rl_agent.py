@@ -34,12 +34,6 @@ class DummyPolicy(RllibPolicy):
             self.model = MAIDumbAgentRightCoop()
         # self.context = self._create_execution_context()
 
-    # def _setup_shapes(self):
-    #     # This is here to make the class compatible with both tuples or gym.Space objs for the spaces
-    #     # Note: action_space = (len(Action.ALL_ACTIONS,)) is technically NOT the action space shape, which would be () since actions are scalars
-    #     self.observation_shape = self.observation_space if type(self.observation_space) == tuple else self.observation_space.shape
-    #     self.action_shape = self.action_space if type(self.action_space) == tuple else (self.action_space.n,)
-
     def compute_actions(self, obs_batch, 
                         state_batches=None, 
                         prev_action_batch=None,
@@ -66,6 +60,16 @@ class DummyPolicy(RllibPolicy):
     def get_initial_state(self):
         return []
 
+    def reset(self):
+        """
+        called after each iteration to reset agents to the initial state
+        """
+        if isinstance(self.model, MAIDumbAgentLeftCoop):
+            self.model = MAIDumbAgentLeftCoop()
+        elif isinstance(self.model, MAIDumbAgentRightCoop):
+            self.model = MAIDumbAgentRightCoop()
+        else:
+            print(f'rl_agent.DummyPolicy.reset failed on type check')
 
     def get_weights(self):
         """
@@ -86,11 +90,6 @@ class DummyPolicy(RllibPolicy):
         """
         return {}
 
-    def _forward(self, obs_batch, state_batches):
-        pass
-
-    def _create_execution_context(self):
-        pass
 
 def mai_dummy_feat_fn(state):
     featurized = {}
@@ -98,10 +97,15 @@ def mai_dummy_feat_fn(state):
     help_obj_name = 'onion'
     obj = state.objects.get(pos, None)
 
-    if state.players[1].held_object:
-        featurized['player_1_held_obj'] = 1
+    player_pos = state.player_positions
+    right_player_idx = 0
+    if player_pos[1][0] > 5:
+        right_player_idx = 1
+
+    if state.players[right_player_idx].held_object:
+        featurized['player_right_held_obj'] = 1
     else: 
-        featurized['player_1_held_obj'] = 0
+        featurized['player_right_held_obj'] = 0
 
     if obj and obj.to_dict()['name'] == help_obj_name:  # 1, if the onion is at the help position 
         featurized['help_obj'] = 1
@@ -113,4 +117,4 @@ def mai_dummy_feat_fn(state):
 
 def get_mai_dummy_obs_space():
     return gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2),
-                            "player_1_held_obj":gym.spaces.Discrete(2)})
+                            "player_right_held_obj":gym.spaces.Discrete(2)})

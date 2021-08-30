@@ -5,7 +5,7 @@ import numpy as np
 
 # environment variable that tells us whether this code is running on the server or not
 # LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
-LOCAL_TESTING = False
+LOCAL_TESTING = True
 
 # Sacred setup (must be before rllib imports)
 from sacred import Experiment
@@ -33,7 +33,7 @@ from ray.tune.registry import register_env
 from ray.rllib.models import ModelCatalog
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from human_aware_rl.ppo.ppo_rllib import RllibPPOModel, RllibLSTMPPOModel
-from human_aware_rl.rllib.rllib import OvercookedMultiAgent, save_trainer, gen_trainer_from_params
+from human_aware_rl.rllib.rllib import OvercookedMultiAgent, reset_dummy_policy, save_trainer, gen_trainer_from_params
 from human_aware_rl.imitation.behavior_cloning_tf2 import BehaviorCloningPolicy, BC_SAVE_DIR
 
 
@@ -79,7 +79,7 @@ def my_config():
     D2RL = False
     ### Training Params ###
 
-    num_workers = 12 if not LOCAL_TESTING else 2
+    num_workers = 12 if not LOCAL_TESTING else 1
 
     # list of all random seeds to use for experiments, used to reproduce results
     seeds = [0]
@@ -148,7 +148,7 @@ def my_config():
     save_freq = 25
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 200 if not LOCAL_TESTING else 1
+    evaluation_interval = 200 if not LOCAL_TESTING else 2
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -309,6 +309,7 @@ def run(params):
 
         msg = result['episode_reward_mean']
         print(f'{i}: {msg}')
+        trainer.workers.foreach_worker(lambda ev: reset_dummy_policy(ev.get_policy('dummy')))
 
         if i % params['save_every'] == 0:
             save_path = save_trainer(trainer, params)

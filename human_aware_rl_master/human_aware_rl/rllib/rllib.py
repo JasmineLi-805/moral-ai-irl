@@ -1,6 +1,6 @@
 
 # from overcooked_demo_litw.server.game import MAIDumbAgent
-from overcooked_ai_py.mdp.actions import Action
+from overcooked_ai_py.mdp.actions import Action, Direction
 from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES, OvercookedState
 from overcooked_ai_py.agents.benchmarking import AgentEvaluator
@@ -15,7 +15,7 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from ray.rllib.models import ModelCatalog
 from human_aware_rl.rllib.utils import softmax, get_base_ae, get_required_arguments, iterable_equal
-from human_aware_rl.dummy.rl_agent import DummyPolicy, mai_dummy_feat_fn
+from human_aware_rl.dummy.rl_agent import DummyPolicy, mai_dummy_feat_fn, get_mai_dummy_obs_space
 from datetime import datetime
 import tempfile
 import gym
@@ -37,6 +37,9 @@ class RlLibAgent(Agent):
         self.policy = policy
         self.agent_index = agent_index
         self.featurize = featurize_fn
+        
+        # if isinstance(self.policy, DummyPolicy):
+        #     print(f'rllib.RllibAgent._init_(): dummy policy seq = {self.policy.model.phases}')
 
     def reset(self):
         # Get initial rnn states and add batch dimension to each
@@ -47,6 +50,9 @@ class RlLibAgent(Agent):
         else:
             self.rnn_state = []
 
+        if isinstance(self.policy, DummyPolicy):
+            self.policy.reset()
+
     def action_probabilities(self, state):
         """
         Arguments:
@@ -54,6 +60,9 @@ class RlLibAgent(Agent):
         returns:
             - Normalized action probabilities determined by self.policy
         """
+        if isinstance(self.policy, DummyPolicy):
+            print(f'rllib.RllibAgent.action_probabilities(): dummy policy seq = {self.policy.model.phases}')
+
         # Preprocess the environment state
         obs = self.featurize(state, debug=False)
         my_obs = obs[self.agent_index]
@@ -76,6 +85,8 @@ class RlLibAgent(Agent):
         obs = self.featurize(state)
         if isinstance(self.policy, PPOTFPolicy):
             obs = obs[self.agent_index]
+        # if isinstance(self.policy, DummyPolicy):
+        #     print(f'rllib.RllibAgent.action(): dummy policy seq = {self.policy.model.phases}')
 
         # Use Rllib.Policy class to compute action argmax and action probabilities
         [action_idx], rnn_state, info = self.policy.compute_actions(np.array([obs]), self.rnn_state)
@@ -126,6 +137,11 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self.use_phi = use_phi
         self._setup_observation_space()
         self.action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
+        
+        # for coop count calculation
+        self.coop_cnt = 0
+        self.help_provided = False
+
         self.reset()
     
     def _validate_featurize_fns(self, mapping):
@@ -161,8 +177,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self.ppo_observation_space = gym.spaces.Box(np.float32(low), np.float32(high), dtype=np.float32)
 
         # dummy observation
-        self.dummy_obs_space = gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2),
-                                                "player_1_held_obj":gym.spaces.Discrete(2)})
+        self.dummy_obs_space = get_mai_dummy_obs_space()
 
     def _get_featurize_fn(self, agent_id):
         if agent_id.startswith('ppo'):
@@ -187,7 +202,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         return ob_p0, ob_p1
 
     def _populate_agents(self):
-        # Always include at least one ppo agent (i.e. bc_sp not supported for simplicity)
+        # Always include at least one ppo agent 
         agents = ['ppo', 'dummy']
 
         # Ensure agent names are unique
@@ -205,7 +220,21 @@ class OvercookedMultiAgent(MultiAgentEnv):
             # Calculate the new value based on linear annealing formula
             fraction = max(1 - float(off_t) / (end_t - start_t), 0)
             return fraction * start_v + (1 - fraction) * end_v
-
+    
+    def _check_coop(self, state, joint_action):
+        if self.help_provided:
+            self.help_provided = False
+            self.coop_cnt += 1
+        else:
+            pos_and_or = state.players_pos_and_or
+            help_pos = ((4, 3), Direction.EAST)
+            # TODO: check the left agent's last move was Interact
+            # TODO: check if the agent placed an onion
+            if help_pos in pos_and_or: # If the left agent is in front of and facing the counter where cooperation happens
+                if help_pos == pos_and_or[0] and joint_action[0] == Action.ACTION_TO_INDEX[Action.INTERACT]: 
+                    self.help_provided = True
+                else:
+                    pass
 
     def step(self, action_dict):
         """
@@ -229,6 +258,9 @@ class OvercookedMultiAgent(MultiAgentEnv):
             next_state, sparse_reward, done, info = self.base_env.step(joint_action, display_phi=False)
             dense_reward = info["shaped_r_by_agent"]
 
+        # TODO: calculate coop count in each state
+        self._check_coop(next_state, joint_action)
+
         ob_p0, ob_p1 = self._get_obs(next_state)
 
         shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
@@ -249,9 +281,11 @@ class OvercookedMultiAgent(MultiAgentEnv):
         NOTE: a nicer way to do this would be to just randomize starting positions, and not
         have to deal with randomizing indices.
         """
+        # print(f'coop_cnt: {self.coop_cnt}')
         self.base_env.reset(regen_mdp)
         self.curr_agents = self._populate_agents()
         ob_p0, ob_p1 = self._get_obs(self.base_env.state)
+        self.coop_cnt = 0
         return {self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1}
     
     def anneal_reward_shaping_factor(self, timesteps):
@@ -396,7 +430,9 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         # Get the corresponding rllib policy objects for each policy string name
         agent_0_policy = trainer.get_policy(agent_0_policy)
         agent_1_policy = trainer.get_policy(agent_1_policy)
-        
+        reset_dummy_policy(agent_0_policy)
+        reset_dummy_policy(agent_1_policy)
+
         agent_0_feat_fn = agent_1_feat_fn = None
         assert 'dummy' in policies
         if 'dummy' in policies:
@@ -516,6 +552,9 @@ def evaluate(eval_params, mdp_params, outer_shape, agent_0_policy, agent_1_polic
 
     return results
 
+def reset_dummy_policy(policy):
+    if isinstance(policy, DummyPolicy) and hasattr(policy, 'reset'):
+        policy.reset()
 
 ###########################
 # rllib.Trainer functions #

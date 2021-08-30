@@ -745,6 +745,7 @@ class MAIDumbAgent:
                     return phase[self.curr_tick], None
                 else:
                     self.reset_smart(state)
+                    # print(f'MAIDumbAgent.action(): dummy agent phases = {self.phases}')
             else:
                 self.curr_phase += 1
         # print(f'STAY')
@@ -784,7 +785,7 @@ def unflatten_state(state):
     """
     dict_state = {}
     dict_state['help_obj'] = state[1]
-    dict_state['player_1_held_obj'] = state[3]
+    dict_state['player_right_held_obj'] = state[3]
     return dict_state
 
 class MAIDumbAgentLeftCoop(MAIDumbAgent):
@@ -848,6 +849,8 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
     def reset_smart(self, state):
         if isinstance(state, np.ndarray):
             state = unflatten_state(state)
+            # print(f'state type check: {type(state)}; state = {str(state)}')
+
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['PLACE_ONION_HELP']:
             self.help_provided = True
@@ -940,11 +943,11 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
     def reset_smart(self, state):
         if isinstance(state, np.ndarray):
             state = unflatten_state(state)
+            # print(f'state type check: {type(state)}; state = {str(state)}')
+
         self.curr_tick = -1
         last_phase = self.phases[self.curr_phase]
-        # print(f'resetting, last phase: {last_phase}')
         if last_phase in ['STOVE_TO_CENTER', 'DELIVER_SOUP']:
-            # print(f'state type recheck: {type(state)}; state = {str(state)}')
             if isinstance(state, OvercookedState):
                 if self._find_help_object(state.objects):
                     self.phases.append('GRAB_ONION_SHORT')
@@ -965,7 +968,7 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                 else:
                     self.phases.append('GRAB_ONION_LONG')
             elif isinstance(state, Dict):
-                if state['player_1_held_obj']:
+                if state['player_right_held_obj']:
                     self.received_coop += 1
                     self.phases.append('PLACE_ONION_STOVE')
                     self.count_helps += 1
