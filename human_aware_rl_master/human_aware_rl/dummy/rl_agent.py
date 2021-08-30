@@ -10,9 +10,7 @@ from overcooked_ai_py.mdp.actions import Action
 from ray.rllib.policy import Policy as RllibPolicy
 import numpy as np
 from tensorflow.compat.v1.keras.backend import set_session, get_session
-from collections import OrderedDict
-from gym.spaces import Space
-from gym.utils import seeding
+import gym
 
 
 class DummyPolicy(RllibPolicy):
@@ -105,9 +103,14 @@ def mai_dummy_feat_fn(state):
     else: 
         featurized['player_1_held_obj'] = 0
 
-    if obj and obj.to_dict()['name'] == help_obj_name:
+    if obj and obj.to_dict()['name'] == help_obj_name:  # 1, if the onion is at the help position 
         featurized['help_obj'] = 1
     else:
         featurized['help_obj'] = 0
+
+    # print(featurized)
     return featurized
 
+def get_mai_dummy_obs_space():
+    return gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2),
+                            "player_1_held_obj":gym.spaces.Discrete(2)})

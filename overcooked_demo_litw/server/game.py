@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
 from threading import Lock, Thread
 from queue import Queue, LifoQueue, Empty, Full
+import numpy as np
 from time import time
 from typing import Dict
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, OvercookedState
 from overcooked_ai_py.mdp.actions import Action, Direction
 from overcooked_ai_py.planning.planners import MotionPlanner, NO_COUNTERS_PARAMS
-# import sys, os
-# sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master'))
-# from human_aware_rl_master.human_aware_rl.rllib.rllib import load_agent
 import random, os, pickle, json
 import ray
 
@@ -738,6 +736,7 @@ class MAIDumbAgent:
 
     def action(self, state):
         self.curr_tick += 1
+        # print(f'phase = ({self.curr_phase});seq = {self.phases}')
         if self.curr_phase < len(self.phases):
             formula_name = self.phases[self.curr_phase]
             if formula_name in self.formulas:
@@ -748,6 +747,7 @@ class MAIDumbAgent:
                     self.reset_smart(state)
             else:
                 self.curr_phase += 1
+        # print(f'STAY')
         return Action.STAY, None
 
     def reset(self):
@@ -771,6 +771,21 @@ class MAIDumbAgent:
             return True
         return False
 
+
+def unflatten_state(state):
+    """
+    rllib flattens a gym.space.Dict into a vector and passes it to agents.
+    This methods unflattens the array and restores it into a dictionary.
+
+    - state: the state of type numpy array
+
+    returns:
+    - the dictionary format of the state
+    """
+    dict_state = {}
+    dict_state['help_obj'] = state[1]
+    dict_state['player_1_held_obj'] = state[3]
+    return dict_state
 
 class MAIDumbAgentLeftCoop(MAIDumbAgent):
 
@@ -831,6 +846,8 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
         super().__init__(sequence, MAIDumbAgentLeftCoop.STEPS)
 
     def reset_smart(self, state):
+        if isinstance(state, np.ndarray):
+            state = unflatten_state(state)
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['PLACE_ONION_HELP']:
             self.help_provided = True
@@ -839,7 +856,7 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
                 self.help_provided = False
                 self.provided_coop += 1
         elif isinstance(state, Dict):
-            if state['help_obj'] == 1 and self.help_provided:
+            if state['help_obj'] != 1 and self.help_provided:
                 self.help_provided = False
                 self.provided_coop += 1
         super(MAIDumbAgentLeftCoop, self).reset_smart(state)
@@ -921,9 +938,13 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
         super().__init__(start, MAIDumbAgentRightCoop.STEPS)
 
     def reset_smart(self, state):
+        if isinstance(state, np.ndarray):
+            state = unflatten_state(state)
         self.curr_tick = -1
         last_phase = self.phases[self.curr_phase]
+        # print(f'resetting, last phase: {last_phase}')
         if last_phase in ['STOVE_TO_CENTER', 'DELIVER_SOUP']:
+            # print(f'state type recheck: {type(state)}; state = {str(state)}')
             if isinstance(state, OvercookedState):
                 if self._find_help_object(state.objects):
                     self.phases.append('GRAB_ONION_SHORT')
@@ -934,10 +955,6 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                     self.phases.append('GRAB_ONION_SHORT')
                 else:
                     self.phases.append('GRAB_ONION_LONG')
-            # if self._find_help_object(state.objects):
-            #     self.phases.append('GRAB_ONION_SHORT')
-            # else:
-            #     self.phases.append('GRAB_ONION_LONG')
         elif last_phase == 'GRAB_ONION_SHORT':
             if isinstance(state, OvercookedState):
                 if state.players[1].held_object:
