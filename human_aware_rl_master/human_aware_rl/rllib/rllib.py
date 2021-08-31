@@ -37,9 +37,6 @@ class RlLibAgent(Agent):
         self.policy = policy
         self.agent_index = agent_index
         self.featurize = featurize_fn
-        
-        # if isinstance(self.policy, DummyPolicy):
-        #     print(f'rllib.RllibAgent._init_(): dummy policy seq = {self.policy.model.phases}')
 
     def reset(self):
         # Get initial rnn states and add batch dimension to each

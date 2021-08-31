@@ -1,7 +1,7 @@
 import os, sys
 from typing import Dict
 
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState, SoupState
 from ray.rllib.models.preprocessors import Preprocessor
 sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/overcooked_demo_litw'))
 sys.path.append(os.path.dirname('/home/jasmine/moral-ai-irl/overcooked_demo_litw'))
@@ -93,28 +93,45 @@ class DummyPolicy(RllibPolicy):
 
 def mai_dummy_feat_fn(state):
     featurized = {}
-    pos = (5, 3)    # according to default value for MaiDummyAgent
+    
+    # 'help_obj': 1 if the onion is at the help position
+    pos = (5, 3)
     help_obj_name = 'onion'
     obj = state.objects.get(pos, None)
+    if obj and obj.to_dict()['name'] == help_obj_name:
+        featurized['help_obj'] = 1
+    else:
+        featurized['help_obj'] = 0
 
+    # 'player_right_held_obj': 1 if the right agent is holding something
     player_pos = state.player_positions
     right_player_idx = 0
     if player_pos[1][0] > 5:
         right_player_idx = 1
-
     if state.players[right_player_idx].held_object:
         featurized['player_right_held_obj'] = 1
     else: 
         featurized['player_right_held_obj'] = 0
 
-    if obj and obj.to_dict()['name'] == help_obj_name:  # 1, if the onion is at the help position 
-        featurized['help_obj'] = 1
+    left_stove_pos = (3, 0)
+    left_stove = state.objects.get(left_stove_pos, None)
+    if left_stove and isinstance(left_stove, SoupState) and left_stove.is_ready:
+        featurized['soup_ready_left'] = 1
     else:
-        featurized['help_obj'] = 0
+        featurized['soup_ready_left'] = 0
+    
+    right_stove_pos = (8, 0)
+    right_stove = state.objects.get(right_stove_pos, None)
+    if right_stove and isinstance(right_stove, SoupState) and right_stove.is_ready:
+        featurized['soup_ready_right'] = 1
+    else:
+        featurized['soup_ready_right'] = 0
 
-    # print(featurized)
+    print(featurized)
     return featurized
 
 def get_mai_dummy_obs_space():
     return gym.spaces.Dict({"help_obj": gym.spaces.Discrete(2),
-                            "player_right_held_obj":gym.spaces.Discrete(2)})
+                            "player_right_held_obj":gym.spaces.Discrete(2),
+                            "soup_ready_left": gym.spaces.Discrete(2),
+                            "soup_ready_right": gym.spaces.Discrete(2)})

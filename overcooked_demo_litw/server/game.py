@@ -783,9 +783,12 @@ def unflatten_state(state):
     returns:
     - the dictionary format of the state
     """
+    # print(state)
     dict_state = {}
     dict_state['help_obj'] = state[1]
     dict_state['player_right_held_obj'] = state[3]
+    dict_state['soup_ready_left'] = state[5]
+    dict_state['soup_ready_right'] = state[7]
     return dict_state
 
 class MAIDumbAgentLeftCoop(MAIDumbAgent):
@@ -919,6 +922,7 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
             Action.INTERACT
         ],
         'DELIVER_SOUP': [
+            Action.INTERACT,
             Direction.EAST,
             Direction.EAST,
             Direction.SOUTH,
@@ -928,6 +932,9 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
             Direction.WEST,
             Direction.WEST,
             Direction.WEST
+        ],
+        'WAIT_SOUP': [
+            Action.STAY
         ]
     }
 
@@ -988,9 +995,15 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                 self.phases.append('COOK_GET_PLATE')
             else:
                 self.phases.append('STOVE_TO_CENTER')
-        elif last_phase == 'COOK_GET_PLATE':
+        elif last_phase in ['COOK_GET_PLATE', 'WAIT_SOUP']:
             self.count_onions = 0
-            self.phases.append('DELIVER_SOUP')
+            if isinstance(state, Dict):
+                if  state['soup_ready_right'] == 1:
+                    self.phases.append('DELIVER_SOUP')
+                else:
+                    self.phases.append('WAIT_SOUP')
+            else:
+                self.phases.append('DELIVER_SOUP')
         self.curr_phase += 1
 
 
