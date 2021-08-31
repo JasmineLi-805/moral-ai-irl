@@ -726,7 +726,7 @@ class LITWTutorialCoop(CompetitiveOvercooked):
 
 class MAIDumbAgent:
     def __init__(self, sequence=[], steps={}, help_obj={'name': 'onion', 'position': (5, 3)}):
-        self.curr_phase = -1
+        self.curr_phase = 0
         self.curr_tick = -1
         self.phases = sequence
         self.formulas = steps
@@ -736,9 +736,9 @@ class MAIDumbAgent:
 
     def action(self, state):
         self.curr_tick += 1
-        # print(f'phase = ({self.curr_phase});seq = {self.phases}')
         if self.curr_phase < len(self.phases):
             formula_name = self.phases[self.curr_phase]
+            # print(f'tick={self.curr_tick};phase={self.curr_phase}-{formula_name};seq={self.phases}')
             if formula_name in self.formulas:
                 phase = self.formulas[formula_name]
                 if self.curr_tick < len(phase):
@@ -968,7 +968,7 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                 else:
                     self.phases.append('GRAB_ONION_LONG')
             elif isinstance(state, Dict):
-                if state['player_right_held_obj']:
+                if state['player_right_held_obj'] == 1:
                     self.received_coop += 1
                     self.phases.append('PLACE_ONION_STOVE')
                     self.count_helps += 1
