@@ -127,7 +127,7 @@ def mai_dummy_feat_fn(state):
     else:
         featurized['soup_ready_right'] = 0
 
-    print(featurized)
+    # print(featurized)
     return featurized
 
 def get_mai_dummy_obs_space():
