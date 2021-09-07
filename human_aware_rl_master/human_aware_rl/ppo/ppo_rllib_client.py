@@ -145,7 +145,7 @@ def my_config():
     num_sgd_iter = 8 if not LOCAL_TESTING else 1
 
     # How many trainind iterations (calls to trainer.train()) to run before saving model checkpoint
-    save_freq = 25
+    save_freq = 200
 
     # How many training iterations to run between each evaluation
     evaluation_interval = 200 if not LOCAL_TESTING else 10
@@ -157,7 +157,7 @@ def my_config():
     evaluation_num_games = 1
 
     # Whether to display rollouts in evaluation
-    evaluation_display = True
+    evaluation_display = False
 
     # Where to log the ray dashboard stats
     temp_dir = os.path.join(os.path.abspath(os.sep), "tmp", "ray_tmp")
@@ -308,7 +308,9 @@ def run(params):
         result = trainer.train()
 
         msg = result['episode_reward_mean']
-        print(f'{i}: {msg}')
+        msg2 = result['episode_reward_max']
+        msg3 = result['episode_reward_min']
+        print(f'{i}: ep rew mean={msg}, max={msg2}, min={msg3}')
         trainer.workers.foreach_worker(lambda ev: reset_dummy_policy(ev.get_policy('dummy')))
 
         if i % params['save_every'] == 0:
