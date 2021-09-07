@@ -827,8 +827,19 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
             Action.INTERACT
         ],
         'DELIVER_SOUP': [
+            Action.INTERACT,
             Direction.EAST,
             Action.INTERACT,
+        ],
+        'WAIT_SOUP': [
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY
         ]
     }
 
@@ -845,6 +856,7 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
             'PLACE_ONION_HELP',
             'PLACE_ONION_LONG',
             'COOK_GET_PLATE',
+            'WAIT_SOUP',
             'DELIVER_SOUP'
         ]
         super().__init__(sequence, MAIDumbAgentLeftCoop.STEPS)
