@@ -260,8 +260,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
 
         ob_p0, ob_p1 = self._get_obs(next_state)
 
-        shaped_reward_p0 = sparse_reward # + self.reward_shaping_factor * dense_reward[0]
-        shaped_reward_p1 = sparse_reward # + self.reward_shaping_factor * dense_reward[1]
+        shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
+        shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
         # if shaped_reward_p0 > 0 or shaped_reward_p1 > 0:
         #     print(f'reward shaping factor={self.reward_shaping_factor}, sparse_reward={sparse_reward}')
         #     print(f'dense reward[0]={dense_reward[0]}, dense reward[1]={dense_reward[1]}')

@@ -5,7 +5,7 @@ import numpy as np
 
 # environment variable that tells us whether this code is running on the server or not
 # LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
-LOCAL_TESTING = False
+LOCAL_TESTING = True
 
 # Sacred setup (must be before rllib imports)
 from sacred import Experiment
@@ -105,7 +105,7 @@ def my_config():
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 2000 if not LOCAL_TESTING else 1
+    num_training_iters = 2000 if not LOCAL_TESTING else 10
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -148,7 +148,7 @@ def my_config():
     save_freq = 25
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 200 if not LOCAL_TESTING else 1
+    evaluation_interval = 200 if not LOCAL_TESTING else 10
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -203,7 +203,7 @@ def my_config():
     horizon = 400
 
     # Constant by which shaped rewards are multiplied by when calculating total reward
-    reward_shaping_factor = 1.0
+    reward_shaping_factor = 0.0
 
     # Linearly anneal the reward shaping factor such that it reaches zero after this number of timesteps
     reward_shaping_horizon = float('inf')
