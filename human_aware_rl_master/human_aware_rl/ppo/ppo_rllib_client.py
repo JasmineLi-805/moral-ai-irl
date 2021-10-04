@@ -5,7 +5,7 @@ import numpy as np
 
 # environment variable that tells us whether this code is running on the server or not
 # LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
-LOCAL_TESTING = True
+LOCAL_TESTING = False
 
 # Sacred setup (must be before rllib imports)
 from sacred import Experiment
@@ -64,7 +64,7 @@ def my_config():
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = False
+    use_lstm = True
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
