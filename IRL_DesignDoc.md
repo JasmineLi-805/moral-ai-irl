@@ -8,10 +8,10 @@
   - [x] Set the game environment to use customized layout
   - [x] Add the Dummy agent to the pair of agents playing the game
     - [x] Q: states are featurized before passing to the Dummy agent, even though featurization function is set to `None`, causing type mismatch.
-    - [ ] Q: The observation requires the custumized space to have a shape, which is not applicable to the OvercookedState object.
+    - [x] Q: The observation requires the custumized space to have a shape, which is not applicable to the OvercookedState object.
   - [ ] Change the reward evaluation method to customized reward function
     - [x] Add a customized evaluate function where new reward calculation can be inserted
-    - [ ] Find a suitable reward function (model structure)
+    - [ ] Find a suitable reward function (using linear function for now)
   - [ ] Test the correctness of the code (agents learning, layout correctly loaded, etc.)
   - [ ] Tune the hyperparameters for training.
   - [ ] Estimate the time required for training.
