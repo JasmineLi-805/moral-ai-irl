@@ -258,14 +258,17 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # TODO: calculate coop count in each state
         self._check_coop(next_state, joint_action)
 
+        # get the hand-selected state features
+        reward_features = self.base_env.featurize_state_mdp(next_state)
+        print(f'reward feature shape {reward_features.shape}')
+        # TODO: add coop cnt to the features
+
+        # TODO: feed into the reward function
+
         ob_p0, ob_p1 = self._get_obs(next_state)
 
         shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
         shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
-        # if shaped_reward_p0 > 0 or shaped_reward_p1 > 0:
-        #     print(f'reward shaping factor={self.reward_shaping_factor}, sparse_reward={sparse_reward}')
-        #     print(f'dense reward[0]={dense_reward[0]}, dense reward[1]={dense_reward[1]}')
-        #     print(f'shaped reward[0]={shaped_reward_p0}, shaped reward[1]={shaped_reward_p1}')
 
         obs = { self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1 }
         rewards = { self.curr_agents[0]: shaped_reward_p0, self.curr_agents[1]: shaped_reward_p1 }
