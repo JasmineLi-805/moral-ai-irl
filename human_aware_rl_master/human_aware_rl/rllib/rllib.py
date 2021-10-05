@@ -259,7 +259,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self._check_coop(next_state, joint_action)
 
         # get the hand-selected state features
-        reward_features = self.base_env.featurize_state_mdp(next_state)
+        reward_features = np.array(self.base_env.featurize_state_mdp(next_state))
         print(f'reward feature shape {reward_features.shape}')
         # TODO: add coop cnt to the features
 
