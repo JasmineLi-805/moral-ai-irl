@@ -110,15 +110,11 @@ class OvercookedMultiAgent(MultiAgentEnv):
     # List of all agent types currently supported
     supported_agents = ['ppo', 'dummy']
 
-    def __init__(self, base_env, reward_shaping_factor=0.0, reward_shaping_horizon=0,
-                            # bc_schedule=None, 
-                            use_phi=True):
+    def __init__(self, base_env, reward_shaping_factor=0.0, reward_shaping_horizon=0, use_phi=True, custom_reward_func=None):
         """
         base_env: OvercookedEnv
         reward_shaping_factor (float): Coefficient multiplied by dense reward before adding to sparse reward to determine shaped reward
         reward_shaping_horizon (int): Timestep by which the reward_shaping_factor reaches zero through linear annealing
-        bc_schedule (list[tuple]): List of (t_i, v_i) pairs where v_i represents the value of bc_factor at timestep t_i
-            with linear interpolation in between the t_i
         use_phi (bool): Whether to use 'shaped_r_by_agent' or 'phi_s_prime' - 'phi_s' to determine dense reward
         """
         self.base_env = base_env
@@ -138,6 +134,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # for coop count calculation
         self.coop_cnt = 0
         self.help_provided = False
+
+        self.custom_reward_func = custom_reward_func
 
         self.reset()
     
@@ -259,17 +257,21 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self._check_coop(next_state, joint_action)
 
         # get the hand-selected state features
-        reward_features = np.array(self.base_env.featurize_state_mdp(next_state))
-        print(f'reward feature shape {reward_features.shape}')
+        reward_features = np.array(self.base_env.featurize_state_mdp(next_state))   # (2, 96), is player centric, [0] -> player 0, [1] -> player 1
+        print(f'reward feature shape {reward_features.shape}') 
+        
         # TODO: add coop cnt to the features
 
-        # TODO: feed into the reward function
+        shaped_reward_p0 = 0
+        shaped_reward_p1 = 0
+        if self.custom_reward_func:
+            shaped_reward_p0 = self.custom_reward_func(reward_features[0])
+            shaped_reward_p1 = self.custom_reward_func(reward_features[1])
+        else:
+            shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
+            shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
 
         ob_p0, ob_p1 = self._get_obs(next_state)
-
-        shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
-        shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
-
         obs = { self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1 }
         rewards = { self.curr_agents[0]: shaped_reward_p0, self.curr_agents[1]: shaped_reward_p1 }
         dones = { self.curr_agents[0]: done, self.curr_agents[1]: done, "__all__": done }

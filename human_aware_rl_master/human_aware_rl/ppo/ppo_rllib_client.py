@@ -268,6 +268,8 @@ def my_config():
             "reward_shaping_factor" : reward_shaping_factor,
             "reward_shaping_horizon" : reward_shaping_horizon,
             "use_phi" : use_phi,
+            # customized reward calculation
+            "custom_reward_func": None
         }
     }
 
