@@ -8,10 +8,8 @@ class LinearReward(nn.Module):
 
     def forward(self, x):
         print('in forward')
-        print(x)
         x = self.fc(x)
         print('after fc')
-        print(x)
         x = self.act(x)
         print('after act')
         return x
