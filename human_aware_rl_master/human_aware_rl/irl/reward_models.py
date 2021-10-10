@@ -7,6 +7,7 @@ class LinearReward(nn.Module):
         self.act = nn.ReLU6()
 
     def forward(self, x):
+        print(x)
         x = self.fc(x)
         return self.act(x)
 
