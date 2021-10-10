@@ -34,7 +34,8 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from human_aware_rl.ppo.ppo_rllib import RllibPPOModel, RllibLSTMPPOModel
 from human_aware_rl.rllib.rllib import OvercookedMultiAgent, reset_dummy_policy, save_trainer, gen_trainer_from_params
-from human_aware_rl.imitation.behavior_cloning_tf2 import BehaviorCloningPolicy, BC_SAVE_DIR
+from human_aware_rl.irl.reward_models import LinearReward
+# from human_aware_rl.imitation.behavior_cloning_tf2 import BehaviorCloningPolicy, BC_SAVE_DIR
 
 
 ###################### Temp Documentation #######################
@@ -250,6 +251,7 @@ def my_config():
         "display" : evaluation_display
     }
 
+    model = LinearReward(num_in_feature=96)
 
     environment_params = {
         # To be passed into OvercookedGridWorld constructor
@@ -269,7 +271,7 @@ def my_config():
             "reward_shaping_horizon" : reward_shaping_horizon,
             "use_phi" : use_phi,
             # customized reward calculation
-            "custom_reward_func": None
+            "custom_reward_func": model.forward
         }
     }
 

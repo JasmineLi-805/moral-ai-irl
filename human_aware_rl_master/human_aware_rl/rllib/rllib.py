@@ -267,6 +267,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         if self.custom_reward_func:
             shaped_reward_p0 = self.custom_reward_func(reward_features[0])
             shaped_reward_p1 = self.custom_reward_func(reward_features[1])
+            print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
         else:
             shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
             shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
