@@ -259,7 +259,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
 
         # get the hand-selected state features
         reward_features = np.array(self.base_env.featurize_state_mdp(next_state))   # (2, 96), is player centric, [0] -> player 0, [1] -> player 1
-        print(f'reward feature shape {reward_features.shape}') 
+        # print(f'reward feature shape {reward_features.shape}') 
         
         # TODO: add coop cnt to the features
 
@@ -272,7 +272,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
             with torch.no_grad():
                 shaped_reward_p0 = self.custom_reward_func(reward_features_0).detach().numpy()
                 shaped_reward_p1 = self.custom_reward_func(reward_features_1).detach().numpy()
-            print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
+            print(f'gen custom reward {shaped_reward_p0.shape}-{shaped_reward_p1.shape}')
         else:
             shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
             shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
