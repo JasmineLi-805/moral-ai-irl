@@ -23,6 +23,7 @@ import numpy as np
 import os, copy, dill
 import ray
 import logging
+import torch
 
 action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
 obs_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
@@ -265,6 +266,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         shaped_reward_p0 = 0
         shaped_reward_p1 = 0
         if self.custom_reward_func:
+            reward_features = torch.tensor(reward_features)
             shaped_reward_p0 = self.custom_reward_func(reward_features[0])
             shaped_reward_p1 = self.custom_reward_func(reward_features[1])
             print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
