@@ -266,7 +266,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         shaped_reward_p0 = 0
         shaped_reward_p1 = 0
         if self.custom_reward_func:
-            reward_features = torch.from_numpy(reward_features).double()
+            reward_features = torch.from_numpy(reward_features).type('torch.DoubleTensor')
             print(reward_features)
             shaped_reward_p0 = self.custom_reward_func(reward_features[0])
             shaped_reward_p1 = self.custom_reward_func(reward_features[1])
