@@ -1,6 +1,7 @@
 from torch import nn
+import numpy as np
 
-class LinearReward(nn.Module):
+class TorchLinearReward(nn.Module):
     def __init__(self, num_in_feature):
         super().__init__()
         self.fc = nn.Linear(in_features=num_in_feature, out_features=1, bias=True)
@@ -13,6 +14,21 @@ class LinearReward(nn.Module):
         x = self.act(x)
         print('after act')
         return x
+
+class LinearReward:
+    def __init__(self, num_in_feature) -> None:
+        self.num_in_feature = num_in_feature
+        self.weights = np.random.rand(self.num_in_feature, 1)
+
+    def updateWeights(self, weights):
+        self.weights = weights
+    
+    def getFeatureExpectation(self, states):
+        # print(states.shape)
+        assert states.shape[-1] == self.num_in_feature
+        FE = np.matmul(states, self.weights)
+        assert len(states.shape) == 1 or FE.shape[0] == states.shape[0]
+        return FE
 
 
 

@@ -263,16 +263,15 @@ class OvercookedMultiAgent(MultiAgentEnv):
         
         # TODO: add coop cnt to the features
 
-        shaped_reward_p0 = 0
-        shaped_reward_p1 = 0
+    
         if self.custom_reward_func:
-            reward_features_0 = torch.from_numpy(reward_features[0]).float()
-            reward_features_1 = torch.from_numpy(reward_features[1]).float()
+            # reward_features_0 = torch.from_numpy(reward_features[0]).float()
+            # reward_features_1 = torch.from_numpy(reward_features[1]).float()
             # print(reward_features_0)
             with torch.no_grad():
-                shaped_reward_p0 = self.custom_reward_func(reward_features_0).detach().numpy()
+                shaped_reward_p0 = self.custom_reward_func(reward_features[0])
                 shaped_reward_p0 = shaped_reward_p0[0]
-                shaped_reward_p1 = self.custom_reward_func(reward_features_1).detach().numpy()
+                shaped_reward_p1 = self.custom_reward_func(reward_features[1])
                 shaped_reward_p1 = shaped_reward_p1[0]
             print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
         else:
