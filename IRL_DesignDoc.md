@@ -4,20 +4,24 @@
 
 - [x] Configure coding environment
 - [x] Data preprocessing (data file loading, dataset cleaning)
-- [ ] Implement RL training code
+- [x] Implement RL training code
   - [x] Set the game environment to use customized layout
   - [x] Add the Dummy agent to the pair of agents playing the game
     - [x] Q: states are featurized before passing to the Dummy agent, even though featurization function is set to `None`, causing type mismatch.
-    - [ ] Q: The observation requires the custumized space to have a shape, which is not applicable to the OvercookedState object.
-  - [ ] Change the reward evaluation method to customized reward function
-    - [x] Add a customized evaluate function where new reward calculation can be inserted
-    - [ ] Find a suitable reward function (model structure)
-  - [ ] Test the correctness of the code (agents learning, layout correctly loaded, etc.)
-  - [ ] Tune the hyperparameters for training.
-  - [ ] Estimate the time required for training.
+    - [x] Q: The observation requires the custumized space to have a shape, which is not applicable to the OvercookedState object.
+- [ ] Test the correctness of the code (agents learning, layout correctly loaded, etc.)
+  - [ ] Hyperparamter tuning:
+    - [ ] LSTM model vs. Non-LSTM model
+    - [x] Training epochs
+    - [x] w/ dense reward vs. w/o dense reward
+  - [ ] Analyze what could the agent learn in the training process
+  - [ ] Estimate the time required for training an agent.
+- [ ] Use customized reward function
+  - [x] Add a customized evaluate function where new reward calculation can be inserted
+  - [ ] Implement a linear reward function
 - [ ] IRL implementation
-  - [ ] Code that initializes the IRL training environment
-  - [ ] Training code using Pytorch and the RL training code
+  - [ ] IRL training environment initialization
+  - [ ] Training code
   - [ ] Add util methods for loading and automatically saving the models
   - [ ] Test the correctness of the code (reward function converges, RL agent learning the rewards, etc.)
 
@@ -28,7 +32,7 @@
 `human_aware_rl_master/human_aware_rl/ppo/ppo_rllib_client.py` contains the training code for a client to train their own agent to play with a trained behavioral cloning agent. Our RL training code can adopt the existing code by making the following modifications:
     1. Change the layout to ours (`mai_separate_coop_left` and `mai_separate_coop_right`).
     2. Change the BC agent to the Dummy agent used in our game.
-    3. Add our own reward function to the evaluation function.
+    3. Add our own reward function to the evaluation.
 
 ### Implementation
 
