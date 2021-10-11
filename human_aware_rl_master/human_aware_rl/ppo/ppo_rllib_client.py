@@ -34,7 +34,8 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from human_aware_rl.ppo.ppo_rllib import RllibPPOModel, RllibLSTMPPOModel
 from human_aware_rl.rllib.rllib import OvercookedMultiAgent, reset_dummy_policy, save_trainer, gen_trainer_from_params
-from human_aware_rl.imitation.behavior_cloning_tf2 import BehaviorCloningPolicy, BC_SAVE_DIR
+from human_aware_rl.irl.reward_models import LinearReward
+# from human_aware_rl.imitation.behavior_cloning_tf2 import BehaviorCloningPolicy, BC_SAVE_DIR
 
 
 ###################### Temp Documentation #######################
@@ -64,7 +65,7 @@ def my_config():
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = False
+    use_lstm = True
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
@@ -105,7 +106,7 @@ def my_config():
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 2000 if not LOCAL_TESTING else 10
+    num_training_iters = 2000 if not LOCAL_TESTING else 2
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -148,7 +149,7 @@ def my_config():
     save_freq = 200
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 200 if not LOCAL_TESTING else 10
+    evaluation_interval = 200 if not LOCAL_TESTING else 2
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -250,6 +251,7 @@ def my_config():
         "display" : evaluation_display
     }
 
+    model = LinearReward(num_in_feature=96)
 
     environment_params = {
         # To be passed into OvercookedGridWorld constructor
@@ -268,6 +270,8 @@ def my_config():
             "reward_shaping_factor" : reward_shaping_factor,
             "reward_shaping_horizon" : reward_shaping_horizon,
             "use_phi" : use_phi,
+            # customized reward calculation
+            "custom_reward_func": model.forward
         }
     }
 

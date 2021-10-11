@@ -23,6 +23,7 @@ import numpy as np
 import os, copy, dill
 import ray
 import logging
+import torch
 
 action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
 obs_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
@@ -110,15 +111,11 @@ class OvercookedMultiAgent(MultiAgentEnv):
     # List of all agent types currently supported
     supported_agents = ['ppo', 'dummy']
 
-    def __init__(self, base_env, reward_shaping_factor=0.0, reward_shaping_horizon=0,
-                            # bc_schedule=None, 
-                            use_phi=True):
+    def __init__(self, base_env, reward_shaping_factor=0.0, reward_shaping_horizon=0, use_phi=True, custom_reward_func=None):
         """
         base_env: OvercookedEnv
         reward_shaping_factor (float): Coefficient multiplied by dense reward before adding to sparse reward to determine shaped reward
         reward_shaping_horizon (int): Timestep by which the reward_shaping_factor reaches zero through linear annealing
-        bc_schedule (list[tuple]): List of (t_i, v_i) pairs where v_i represents the value of bc_factor at timestep t_i
-            with linear interpolation in between the t_i
         use_phi (bool): Whether to use 'shaped_r_by_agent' or 'phi_s_prime' - 'phi_s' to determine dense reward
         """
         self.base_env = base_env
@@ -138,6 +135,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # for coop count calculation
         self.coop_cnt = 0
         self.help_provided = False
+
+        self.custom_reward_func = custom_reward_func
 
         self.reset()
     
@@ -258,15 +257,29 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # TODO: calculate coop count in each state
         self._check_coop(next_state, joint_action)
 
+        # get the hand-selected state features
+        reward_features = np.array(self.base_env.featurize_state_mdp(next_state))   # (2, 96), is player centric, [0] -> player 0, [1] -> player 1
+        # print(f'reward feature shape {reward_features.shape}') 
+        
+        # TODO: add coop cnt to the features
+
+        shaped_reward_p0 = 0
+        shaped_reward_p1 = 0
+        if self.custom_reward_func:
+            reward_features_0 = torch.from_numpy(reward_features[0]).float()
+            reward_features_1 = torch.from_numpy(reward_features[1]).float()
+            # print(reward_features_0)
+            with torch.no_grad():
+                shaped_reward_p0 = self.custom_reward_func(reward_features_0).detach().numpy()
+                shaped_reward_p0 = shaped_reward_p0[0]
+                shaped_reward_p1 = self.custom_reward_func(reward_features_1).detach().numpy()
+                shaped_reward_p1 = shaped_reward_p1[0]
+            print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
+        else:
+            shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
+            shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
+
         ob_p0, ob_p1 = self._get_obs(next_state)
-
-        shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
-        shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
-        # if shaped_reward_p0 > 0 or shaped_reward_p1 > 0:
-        #     print(f'reward shaping factor={self.reward_shaping_factor}, sparse_reward={sparse_reward}')
-        #     print(f'dense reward[0]={dense_reward[0]}, dense reward[1]={dense_reward[1]}')
-        #     print(f'shaped reward[0]={shaped_reward_p0}, shaped reward[1]={shaped_reward_p1}')
-
         obs = { self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1 }
         rewards = { self.curr_agents[0]: shaped_reward_p0, self.curr_agents[1]: shaped_reward_p1 }
         dones = { self.curr_agents[0]: done, self.curr_agents[1]: done, "__all__": done }
