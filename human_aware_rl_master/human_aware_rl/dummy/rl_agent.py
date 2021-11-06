@@ -1,5 +1,6 @@
 import os, sys
 from typing import Dict
+from overcooked_ai_py.agents.agent import Agent
 
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState, SoupState
 from ray.rllib.models.preprocessors import Preprocessor
@@ -136,3 +137,49 @@ def get_mai_dummy_obs_space():
                             "player_right_held_obj":gym.spaces.Discrete(2),
                             "soup_ready_left": gym.spaces.Discrete(2),
                             "soup_ready_right": gym.spaces.Discrete(2)})
+
+class MAIDummyLeftCoopAgent(Agent):
+    
+    def __init__(self):
+        self.agent = MAIDumbAgentLeftCoop()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAIDummyRightCoopAgent(Agent):
+    
+    def __init__(self):
+        self.agent = MAIDumbAgentRightCoop()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None

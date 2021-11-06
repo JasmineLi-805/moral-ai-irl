@@ -4,77 +4,43 @@
 import numpy as np
 import logging
 import scipy
-# from playing import play #get the RL Test agent, gives out feature expectations after 2000 frames
 # from nn import neural_net #construct the nn and send to playing
 from cvxopt import matrix, solvers  #convex optimization library
-# from flat_game import carmunk # get the environment
-
-NUM_STATES = 8 
-BEHAVIOR = 'red' # yellow/brown/red/bumping
-FRAMES = 100000 # number of RL training frames per iteration of IRL
+from human_aware_rl.ppo.ppo_rllib_client import run
+from human_aware_rl.rllib.utils import get_base_ae
 
 class irlAppAgent:
-    def __init__(self, randomFE, expertFE, epsilon, num_states, num_frames, behavior, reward_func):
-        self.randomPolicy = randomFE
+    def __init__(self, expertFE):
+        # self.randomPolicy = randomFE
         self.expertPolicy = expertFE
-        self.num_states = num_states
-        self.num_frames = num_frames
-        self.behavior = behavior
-        self.epsilon = epsilon # termination when t<0.1
-        self.randomT = np.linalg.norm(np.asarray(self.expertPolicy)-np.asarray(self.randomPolicy)) #norm of the diff in expert and random
-        self.policiesFE = {self.randomT:self.randomPolicy} # storing the policies and their respective t values in a dictionary
-        print ("Expert - Random at the Start (t) :: " , self.randomT) 
-        self.currentT = self.randomT
-        self.minimumT = self.randomT
-
-        self.reward_func = reward_func
-
-    def getRLAgentFE(self, train_config): #get the feature expectations of a new policy using RL agent
-        '''
-        Trains an RL agent with the current reward function. 
-        Then rolls out one trial of the trained agent and calculate the feature expectation of the RL agent.
-        - train_config: the configuration taken by the rllib trainer
-        
-        Returns the feature expectation.
-        '''
-        # TODO: implement
-        pass
-
-    def getExpertFE(self):
-        '''
-        Get the expert's feature expectation with the current reward function
-        '''
-        expertFE = self.reward_func.getFeatureExpectation(self.expertPolicy)
-        return expertFE
+        # self.randomT = np.linalg.norm(np.asarray(self.expertPolicy)-np.asarray(self.randomPolicy)) #norm of the diff in expert and random
+        self.policiesFE = {} # storing the policies and their respective t values in a dictionary
+        # print ("Expert - Random at the Start (t) :: " , self.randomT) 
     
-    def policyListUpdater(self, tempFE):  #add the policyFE list and differences
+    def _policyListUpdater(self, tempFE, reward_func):  #add the policyFE list and differences
         '''
         Calculate the hyper distance with the current reward function
         - tempFE: the feature expectation of the RL agent with the current reward func
         '''
-        expertFE = self.getExpertFE()
-        hyperDistance = np.abs(expertFE-tempFE) #hyperdistance = t
+        expt_to_agent = np.asarray(self.expertPolicy)-np.asarray(tempFE)
+        hyperDistance = np.abs(reward_func(expt_to_agent)) #hyperdistance = t
+        hyperDistance = hyperDistance.item()
         self.policiesFE[hyperDistance] = tempFE
         return hyperDistance # t = (weights.tanspose)*(expert-newPolicy)
         
-    def optimalWeightFinder(self):
-        # f = open('weights-'+BEHAVIOR+'.txt', 'w')
-        i = 1
-        while True:
-            W = self.optimization() # optimize to find new weights in the list of policies
-            print ("weights ::", W )
-            # f.write( str(W) )
-            # f.write('\n')
-            print ("the distances  ::", self.policiesFE.keys())
-            self.currentT = self.policyListUpdater(W, i)
-            print ("Current distance (t) is:: ", self.currentT )
-            if self.currentT <= self.epsilon: # terminate if the point reached close enough
-                break
-            i += 1
-        # f.close()
-        return W
+    def optimalWeightFinder(self, tempFE, reward_func):
+        # while True:
+        print ("the distances  ::", self.policiesFE.keys())
+        currentT = self._policyListUpdater(tempFE, reward_func)
+        print ("Current distance (t) is:: ", currentT )
+        # if self.currentT <= self.epsilon: # terminate if the point reached close enough
+        #     break
+        # i += 1
+        W = self._optimization() # optimize to find new weights in the list of policies
+        # print ("new weights ::", W )
+        return W, currentT
     
-    def optimization(self): # implement the convex optimization, posed as an SVM problem
+    def _optimization(self): # implement the convex optimization, posed as an SVM problem
         m = len(self.expertPolicy)
         P = matrix(2.0*np.eye(m), tc='d') # min ||w||
         q = matrix(np.zeros(m), tc='d')

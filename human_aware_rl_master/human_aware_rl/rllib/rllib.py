@@ -268,11 +268,9 @@ class OvercookedMultiAgent(MultiAgentEnv):
             # reward_features_0 = torch.from_numpy(reward_features[0]).float()
             # reward_features_1 = torch.from_numpy(reward_features[1]).float()
             # print(reward_features_0)
-            with torch.no_grad():
-                shaped_reward_p0 = self.custom_reward_func(reward_features[0])
-                shaped_reward_p0 = shaped_reward_p0[0]
-                shaped_reward_p1 = self.custom_reward_func(reward_features[1])
-                shaped_reward_p1 = shaped_reward_p1[0]
+            reward_features = np.reshape(reward_features, (-1,))
+            shaped_reward_p0 = self.custom_reward_func(reward_features).item()
+            shaped_reward_p1 = self.custom_reward_func(reward_features).item()
             print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
         else:
             shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
@@ -459,68 +457,11 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         # Compute the evauation rollout. Note this doesn't use the rllib passed in evaluation_workers, so this 
         # computation all happens on the CPU. Could change this if evaluation becomes a bottleneck
         results = evaluate(eval_params, eval_mdp_params, outer_shape, agent_0_policy, agent_1_policy, agent_0_feat_fn, agent_1_feat_fn, verbose=verbose)
+        # print(len(results['ep_states'][0]))
 
         # Log any metrics we care about for rllib tensorboard visualization
         metrics = {}
-        metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
-        return metrics
-
-    # TODO: Define a new evaluation function
-    def _evaluate_customized_reward(trainer, evaluation_workers):
-        if verbose:
-            print("Computing rollout of current trained policy")
-
-        # Randomize starting indices
-        policies = [agent_0_policy_str, agent_1_policy_str]
-        print(f'the policies are: {policies}')
-        # np.random.shuffle(policies)
-        agent_0_policy, agent_1_policy = policies
-
-        # Get the corresponding rllib policy objects for each policy string name
-        if agent_0_policy != 'dummy':
-            agent_0_policy = trainer.get_policy(agent_0_policy)
-        else:
-            agent_0_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
-        if agent_1_policy != 'dummy':
-            agent_1_policy = trainer.get_policy(agent_1_policy)
-        else:
-            agent_1_policy = DummyPolicy(observation_space=None, action_space=None, config={'layout': eval_mdp_params['layout_name']})
-
-        agent_0_feat_fn = agent_1_feat_fn = None
-        if 'bc' in policies:
-            base_ae = get_base_ae(eval_mdp_params, env_params)
-            base_env = base_ae.env
-            featurize_fn = lambda state : base_env.featurize_state_mdp(state)
-            if policies[0] == 'bc':
-                agent_0_feat_fn = featurize_fn
-            if policies[1] == 'bc':
-                agent_1_feat_fn = featurize_fn
-        
-        if 'dummy' in policies:
-            featurize_fn = None
-            if policies[0] == 'dummy':
-                agent_0_feat_fn = featurize_fn
-            if policies[1] == 'dummy':
-                agent_1_feat_fn = featurize_fn
-
-        # Compute the evauation rollout. Note this doesn't use the rllib passed in evaluation_workers, so this 
-        # computation all happens on the CPU. Could change this if evaluation becomes a bottleneck
-        results = evaluate(eval_params, eval_mdp_params, outer_shape, agent_0_policy, agent_1_policy, agent_0_feat_fn, agent_1_feat_fn, verbose=verbose)
-
-        ep_state = results['ep_states']
-        # print(type(ep_state[0][0])) # <class 'overcooked_ai_py.mdp.overcooked_mdp.OvercookedState'>
-        base_ae = get_base_ae(eval_mdp_params, env_params)
-        base_env = base_ae.env
-        featurize_func = lambda state : base_env.featurize_state_mdp(state)
-        # print(featurize_func(ep_state[0][0])[0].shape)  # (96,)
-        ep_state = [featurize_func(eps) for eps in ep_state[0]]
-        ep_state = np.concatenate(ep_state, axis=0)
-        # print(ep_state.shape)      # (800, 96)
-
-        # TODO: add metric calculation function
-
-        # Log any metrics we care about for rllib tensorboard visualization
-        metrics = {}
+        metrics['states'] = results['ep_states'][0]
         metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
         return metrics
 

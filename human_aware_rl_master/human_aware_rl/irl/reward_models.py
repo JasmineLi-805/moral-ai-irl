@@ -23,12 +23,12 @@ class LinearReward:
     def updateWeights(self, weights):
         self.weights = weights
     
-    def getFeatureExpectation(self, states):
+    def getRewards(self, states):
         # print(states.shape)
         assert states.shape[-1] == self.num_in_feature
-        FE = np.matmul(states, self.weights)
-        assert len(states.shape) == 1 or FE.shape[0] == states.shape[0]
-        return FE
+        reward = np.matmul(states, self.weights)
+        assert len(states.shape) == 1 or reward.shape[0] == states.shape[0]
+        return reward
 
 
 
