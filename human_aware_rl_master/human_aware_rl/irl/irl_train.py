@@ -26,7 +26,7 @@ def get_train_config(reward_func):
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = True
+    use_lstm = False
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
@@ -50,7 +50,7 @@ def get_train_config(reward_func):
     seed = None
 
     # Number of gpus the central driver should use
-    num_gpus = 0 # if LOCAL_TESTING else 1
+    num_gpus = 0 if LOCAL_TESTING else 1
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
