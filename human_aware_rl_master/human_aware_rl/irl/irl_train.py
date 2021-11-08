@@ -1,6 +1,5 @@
 import sys
 from human_aware_rl.irl.irl_agent import irlAppAgent
-
 from human_aware_rl.ppo.ppo_rllib import RllibLSTMPPOModel, RllibPPOModel
 from human_aware_rl.ppo.ppo_rllib_client import run
 from ray.tune.result import CONFIG_PREFIX
@@ -12,7 +11,8 @@ from human_aware_rl.rllib.utils import get_base_ae
 from human_aware_rl.rllib.rllib import gen_trainer_from_params
 from overcooked_ai_py.agents.agent import AgentPair
 
-LOCAL_TESTING = True
+LOCAL_TESTING = False
+GERLACH = True
 
 def _env_creator(env_config):
     # Re-import required here to work with serialization
@@ -50,7 +50,7 @@ def get_train_config(reward_func):
     seed = None
 
     # Number of gpus the central driver should use
-    num_gpus = 0 if LOCAL_TESTING else 1
+    num_gpus = 0 # if LOCAL_TESTING else 1
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
@@ -67,7 +67,7 @@ def get_train_config(reward_func):
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 2000 if not LOCAL_TESTING else 100
+    num_training_iters = 200 if not LOCAL_TESTING else 100
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -119,10 +119,13 @@ def get_train_config(reward_func):
     evaluation_num_games = 1
 
     # Whether to display rollouts in evaluation
-    evaluation_display = False
+    evaluation_display = True
 
     # Where to store model checkpoints and training stats
     results_dir = "/Users/jasmineli/Desktop/moral-ai-irl/result"
+    if GERLACH:
+        results_dir = "/home/jasmine/moral-ai-irl/result"
+    
 
     # Whether tensorflow should execute eagerly or not
     eager = False
