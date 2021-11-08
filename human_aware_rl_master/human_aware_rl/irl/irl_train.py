@@ -237,7 +237,7 @@ def get_train_config(reward_func):
     ray_params = {
         "custom_model_id" : "MyPPOModel",
         "custom_model_cls" : RllibLSTMPPOModel if model_params['use_lstm'] else RllibPPOModel,
-        "temp_dir" : "/Users/jasmineli/Desktop/tmp",
+        "temp_dir" : "/Users/jasmineli/Desktop/tmp" if not GERLACH else "/home/jasmine/moral-ai-irl/result",
         "env_creator" : _env_creator
     }
 
