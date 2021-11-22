@@ -314,18 +314,20 @@ def run(params):
         msg = result['episode_reward_mean']
         msg2 = result['episode_reward_max']
         msg3 = result['episode_reward_min']
-        print(f'{i}: ep rew mean={msg}, max={msg2}, min={msg3}')
+        if i % 10 == 0:
+            print(f'{i}: ep rew mean={msg}, max={msg2}, min={msg3}')
         trainer.workers.foreach_worker(lambda ev: reset_dummy_policy(ev.get_policy('dummy')))
 
-        if i % params['save_every'] == 0:
+        if params['save_every'] != -1 and i % params['save_every'] == 0:
             save_path = save_trainer(trainer, params)
             if params['verbose']:
                 print("saved trainer at", save_path)
 
     # Save the state of the experiment at end
-    save_path = save_trainer(trainer, params)
-    if params['verbose']:
-        print("saved trainer at", save_path)
+    if params['save_every'] != -1:
+        save_path = save_trainer(trainer, params)
+        if params['verbose']:
+            print("saved trainer at", save_path)
 
     return result
 

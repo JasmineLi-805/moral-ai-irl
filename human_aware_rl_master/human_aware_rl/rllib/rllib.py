@@ -593,18 +593,34 @@ def gen_trainer_from_params(params):
 
     if "mdp_params" in environment_params:
         environment_params["eval_mdp_params"] = environment_params["mdp_params"]
-    trainer = PPOTrainer(env="overcooked_multi_agent", config={
-        "multiagent": multi_agent_config,
-        "callbacks" : TrainingCallbacks,
-        "custom_eval_function" : get_rllib_eval_function(evaluation_params, environment_params['eval_mdp_params'], 
-                                        environment_params['env_params'],
-                                        environment_params["outer_shape"], 
-                                        agent_0_policy_str=all_policies[0], agent_1_policy_str=all_policies[1],
-                                        verbose=params['verbose']),
-        "env_config" : environment_params,
-        "eager" : False,
-        **training_params
-    }, logger_creator=custom_logger_creator)
+    
+    trainer = None
+    if params['save_every'] != -1:
+        trainer = PPOTrainer(env="overcooked_multi_agent", config={
+            "multiagent": multi_agent_config,
+            "callbacks" : TrainingCallbacks,
+            "custom_eval_function" : get_rllib_eval_function(evaluation_params, environment_params['eval_mdp_params'], 
+                                            environment_params['env_params'],
+                                            environment_params["outer_shape"], 
+                                            agent_0_policy_str=all_policies[0], agent_1_policy_str=all_policies[1],
+                                            verbose=params['verbose']),
+            "env_config" : environment_params,
+            "eager" : False,
+            **training_params
+        }, logger_creator=custom_logger_creator)
+    else:
+        trainer = PPOTrainer(env="overcooked_multi_agent", config={
+            "multiagent": multi_agent_config,
+            "callbacks" : TrainingCallbacks,
+            "custom_eval_function" : get_rllib_eval_function(evaluation_params, environment_params['eval_mdp_params'], 
+                                            environment_params['env_params'],
+                                            environment_params["outer_shape"], 
+                                            agent_0_policy_str=all_policies[0], agent_1_policy_str=all_policies[1],
+                                            verbose=params['verbose']),
+            "env_config" : environment_params,
+            "eager" : False,
+            **training_params
+        })
     return trainer
 
 

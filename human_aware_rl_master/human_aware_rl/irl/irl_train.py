@@ -1,9 +1,10 @@
 import sys
+sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
+sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 from human_aware_rl.irl.irl_agent import irlAppAgent
 from human_aware_rl.ppo.ppo_rllib import RllibLSTMPPOModel, RllibPPOModel
 from human_aware_rl.ppo.ppo_rllib_client import run
 from ray.tune.result import CONFIG_PREFIX
-sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
 from human_aware_rl_master.human_aware_rl.irl.reward_models import LinearReward
 from human_aware_rl.dummy.rl_agent import *
@@ -41,7 +42,7 @@ def get_train_config(reward_func):
     D2RL = False
     ### Training Params ###
 
-    num_workers = 12 if not LOCAL_TESTING else 1
+    num_workers = 12 if not LOCAL_TESTING else 2
 
     # list of all random seeds to use for experiments, used to reproduce results
     seeds = [0]
@@ -67,7 +68,7 @@ def get_train_config(reward_func):
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 200 if not LOCAL_TESTING else 100
+    num_training_iters = 200 if not LOCAL_TESTING else 10
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -107,10 +108,10 @@ def get_train_config(reward_func):
     num_sgd_iter = 8 if not LOCAL_TESTING else 1
 
     # How many trainind iterations (calls to trainer.train()) to run before saving model checkpoint
-    save_freq = 200
+    save_freq = -1  # do not store intermediate RL agent results
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 200 if not LOCAL_TESTING else 1
+    evaluation_interval = 200 if not LOCAL_TESTING else 10
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -135,7 +136,7 @@ def get_train_config(reward_func):
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "mai_separate_coop_left"
+    layout_name = "mai_separate_coop_right"
 
     # all_layout_names = '_'.join(layout_names)
 
@@ -320,7 +321,7 @@ if __name__ == "__main__":
     # print(f'targets = {targets.shape}')
 
     EPSILON = 100
-    TRIAL = 1
+    TRIAL = 2
 
     # init 
     reward_model = LinearReward(2*96)
