@@ -2,12 +2,8 @@
 
 # IRL algorith developed for the toy car obstacle avoidance problem for testing.
 import numpy as np
-import logging
-import scipy
 # from nn import neural_net #construct the nn and send to playing
 from cvxopt import matrix, solvers  #convex optimization library
-from human_aware_rl.ppo.ppo_rllib_client import run
-from human_aware_rl.rllib.utils import get_base_ae
 
 class irlAppAgent:
     def __init__(self, expertFE):

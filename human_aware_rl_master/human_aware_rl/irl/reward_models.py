@@ -30,7 +30,6 @@ class LinearReward:
         return reward
 
 
-
 # class RecurrentReward(nn.Module):
 #     def __init__(self):
 #         super().__init__()
