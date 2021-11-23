@@ -1,6 +1,8 @@
-import sys
+from math import inf
+import sys, os
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
+import pickle
 from human_aware_rl.irl.irl_agent import irlAppAgent
 from human_aware_rl.ppo.ppo_rllib import RllibLSTMPPOModel, RllibPPOModel
 from human_aware_rl.ppo.ppo_rllib_client import run
@@ -359,6 +361,11 @@ if __name__ == "__main__":
     EPSILON = 100
     TRIAL = 2
 
+    cwd = os.getcwd()
+    save_dir = f'{cwd}/result/T{TRIAL}'
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+
     # init 
     reward_model = LinearReward(96)
     config = get_train_config(reward_func=reward_model.getRewards)
@@ -368,6 +375,7 @@ if __name__ == "__main__":
     irl_agent = irlAppAgent(expertFE=expertFE)
 
     i = 0
+    bestT = inf
     while True:
         print(f'----------------  {i}  ----------------')
         config = get_train_config(reward_func=reward_model.getRewards)
@@ -381,6 +389,32 @@ if __name__ == "__main__":
 
         if currentT <= EPSILON:
             break
+        
+        # save file as pickle
+        pack = {
+            "reward_func": reward_model,
+            "currentT": currentT,
+            "bestT": bestT,
+            "epsilon": EPSILON,
+            "rl_config": config,
+            "irl_agent": irl_agent,
+            "max_epoch": -1,
+            "curr_epoch": i
+        }
+        file_name = 'latest.pickle'
+        with open(os.path.join(save_dir, file_name), 'wb') as save_file:
+            pickle.dump(pack, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+        print(f'current model saved to {os.path.join(save_dir, file_name)}')
+        
+        if currentT < bestT:
+            bestT = currentT
+            pack["bestT"] = bestT
+            file_name = 'best.pickle'
+            with open(os.path.join(save_dir, file_name), 'wb') as save_file:
+                pickle.dump(pack, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+            print(f'best model saved to {os.path.join(save_dir, file_name)}')
+            
+        
         i += 1
         
 
