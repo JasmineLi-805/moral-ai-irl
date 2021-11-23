@@ -111,7 +111,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
     # List of all agent types currently supported
     supported_agents = ['ppo', 'dummy']
 
-    def __init__(self, base_env, reward_shaping_factor=0.0, reward_shaping_horizon=0, use_phi=True, custom_reward_func=None):
+    def __init__(self, base_env, reward_shaping_factor=0.0, reward_shaping_horizon=0, use_phi=True, custom_reward_func=None, discount_factor=0.99):
         """
         base_env: OvercookedEnv
         reward_shaping_factor (float): Coefficient multiplied by dense reward before adding to sparse reward to determine shaped reward
@@ -137,6 +137,9 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self.help_provided = False
 
         self.custom_reward_func = custom_reward_func
+        self.discount = discount_factor
+        self.prev_reward_p0 = 0.0
+        self.prev_reward_p1 = 0.0
 
         self.reset()
     
@@ -263,12 +266,11 @@ class OvercookedMultiAgent(MultiAgentEnv):
         
         # TODO: add coop cnt to the features
 
-    
         if self.custom_reward_func:
-            print(next_state.player_positions)
-            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()
-            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item()
-            print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
+            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item() + self.prev_reward_p0 * self.discount
+            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item() + self.prev_reward_p1 * self.discount
+            self.prev_reward_p0 = shaped_reward_p0
+            self.prev_reward_p1 = shaped_reward_p1
         else:
             shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
             shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
@@ -281,19 +283,13 @@ class OvercookedMultiAgent(MultiAgentEnv):
         return obs, rewards, dones, infos
 
     def reset(self, regen_mdp=True):
-        """
-        When training on individual maps, we want to randomize which agent is assigned to which
-        starting location, in order to make sure that the agents are trained to be able to 
-        complete the task starting at either of the hardcoded positions.
-
-        NOTE: a nicer way to do this would be to just randomize starting positions, and not
-        have to deal with randomizing indices.
-        """
         # print(f'coop_cnt: {self.coop_cnt}')
         self.base_env.reset(regen_mdp)
         self.curr_agents = self._populate_agents()
         ob_p0, ob_p1 = self._get_obs(self.base_env.state)
         self.coop_cnt = 0
+        self.prev_reward_p0 = 0.0
+        self.prev_reward_p1 = 0.0
         return {self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1}
     
     def anneal_reward_shaping_factor(self, timesteps):
