@@ -19,7 +19,7 @@ from human_aware_rl.human.data_processing_utils import convert_joint_df_trajs_to
 
 def get_human_human_trajectories(layouts, dataset_type='train', data_path=None, **kwargs):
     """
-    Get human-human trajectories for a layout. Automatically 
+    Get human-human trajectories for a layout.
 
     Arguments:
         layouts (list): List of strings corresponding to layouts we wish to retrieve data for

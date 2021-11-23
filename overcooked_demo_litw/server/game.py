@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from threading import Lock, Thread
 from queue import Queue, LifoQueue, Empty, Full
+import numpy as np
 from time import time
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
+from typing import Dict
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, OvercookedState
 from overcooked_ai_py.mdp.actions import Action, Direction
 from overcooked_ai_py.planning.planners import MotionPlanner, NO_COUNTERS_PARAMS
-from human_aware_rl.rllib.rllib import load_agent
 import random, os, pickle, json
 import ray
 
@@ -580,7 +581,7 @@ class OvercookedGame(Game):
             try:
                 # Loading rllib agents requires additional helpers
                 fpath = os.path.join(AGENT_DIR, npc_id, 'agent', 'agent')
-                agent = load_agent(fpath, agent_index=idx)
+                # agent = load_agent(fpath, agent_index=idx)
                 return agent
             except Exception as e:
                 raise IOError("Error loading Rllib Agent\n{}".format(e.__repr__()))
@@ -725,7 +726,7 @@ class LITWTutorialCoop(CompetitiveOvercooked):
 
 class MAIDumbAgent:
     def __init__(self, sequence=[], steps={}, help_obj={'name': 'onion', 'position': (5, 3)}):
-        self.curr_phase = -1
+        self.curr_phase = 0
         self.curr_tick = -1
         self.phases = sequence
         self.formulas = steps
@@ -737,14 +738,17 @@ class MAIDumbAgent:
         self.curr_tick += 1
         if self.curr_phase < len(self.phases):
             formula_name = self.phases[self.curr_phase]
+            # print(f'tick={self.curr_tick};phase={self.curr_phase}-{formula_name};seq={self.phases}')
             if formula_name in self.formulas:
                 phase = self.formulas[formula_name]
                 if self.curr_tick < len(phase):
                     return phase[self.curr_tick], None
                 else:
                     self.reset_smart(state)
+                    # print(f'MAIDumbAgent.action(): dummy agent phases = {self.phases}')
             else:
                 self.curr_phase += 1
+        # print(f'STAY')
         return Action.STAY, None
 
     def reset(self):
@@ -768,6 +772,24 @@ class MAIDumbAgent:
             return True
         return False
 
+
+def unflatten_state(state):
+    """
+    rllib flattens a gym.space.Dict into a vector and passes it to agents.
+    This methods unflattens the array and restores it into a dictionary.
+
+    - state: the state of type numpy array
+
+    returns:
+    - the dictionary format of the state
+    """
+    # print(state)
+    dict_state = {}
+    dict_state['help_obj'] = state[1]
+    dict_state['player_right_held_obj'] = state[3]
+    dict_state['soup_ready_left'] = state[5]
+    dict_state['soup_ready_right'] = state[7]
+    return dict_state
 
 class MAIDumbAgentLeftCoop(MAIDumbAgent):
 
@@ -805,8 +827,19 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
             Action.INTERACT
         ],
         'DELIVER_SOUP': [
+            Action.INTERACT,
             Direction.EAST,
             Action.INTERACT,
+        ],
+        'WAIT_SOUP': [
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY,
+            Action.STAY
         ]
     }
 
@@ -823,17 +856,27 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
             'PLACE_ONION_HELP',
             'PLACE_ONION_LONG',
             'COOK_GET_PLATE',
+            'WAIT_SOUP',
             'DELIVER_SOUP'
         ]
         super().__init__(sequence, MAIDumbAgentLeftCoop.STEPS)
 
     def reset_smart(self, state):
+        if isinstance(state, np.ndarray):
+            state = unflatten_state(state)
+            # print(f'state type check: {type(state)}; state = {str(state)}')
+
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['PLACE_ONION_HELP']:
             self.help_provided = True
-        if (not self._find_help_object(state.objects)) and self.help_provided:
-            self.help_provided = False
-            self.provided_coop += 1
+        if isinstance(state, OvercookedState):
+            if (not self._find_help_object(state.objects)) and self.help_provided:
+                self.help_provided = False
+                self.provided_coop += 1
+        elif isinstance(state, Dict):
+            if state['help_obj'] != 1 and self.help_provided:
+                self.help_provided = False
+                self.provided_coop += 1
         super(MAIDumbAgentLeftCoop, self).reset_smart(state)
 
 
@@ -891,6 +934,7 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
             Action.INTERACT
         ],
         'DELIVER_SOUP': [
+            Action.INTERACT,
             Direction.EAST,
             Direction.EAST,
             Direction.SOUTH,
@@ -900,6 +944,9 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
             Direction.WEST,
             Direction.WEST,
             Direction.WEST
+        ],
+        'WAIT_SOUP': [
+            Action.STAY
         ]
     }
 
@@ -913,21 +960,40 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
         super().__init__(start, MAIDumbAgentRightCoop.STEPS)
 
     def reset_smart(self, state):
+        if isinstance(state, np.ndarray):
+            state = unflatten_state(state)
+            # print(f'state type check: {type(state)}; state = {str(state)}')
+
         self.curr_tick = -1
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['STOVE_TO_CENTER', 'DELIVER_SOUP']:
-            if self._find_help_object(state.objects):
-                self.phases.append('GRAB_ONION_SHORT')
-            else:
-                self.phases.append('GRAB_ONION_LONG')
+            if isinstance(state, OvercookedState):
+                if self._find_help_object(state.objects):
+                    self.phases.append('GRAB_ONION_SHORT')
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
+            elif isinstance(state, Dict):
+                if state['help_obj'] == 1:
+                    self.phases.append('GRAB_ONION_SHORT')
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
         elif last_phase == 'GRAB_ONION_SHORT':
-            if state.players[1].held_object:
-                self.received_coop += 1
-                self.phases.append('PLACE_ONION_STOVE')
-                self.count_helps += 1
-                self.was_helped = True
-            else:
-                self.phases.append('GRAB_ONION_LONG')
+            if isinstance(state, OvercookedState):
+                if state.players[1].held_object:
+                    self.received_coop += 1
+                    self.phases.append('PLACE_ONION_STOVE')
+                    self.count_helps += 1
+                    self.was_helped = True
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
+            elif isinstance(state, Dict):
+                if state['player_right_held_obj'] == 1:
+                    self.received_coop += 1
+                    self.phases.append('PLACE_ONION_STOVE')
+                    self.count_helps += 1
+                    self.was_helped = True
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
         elif last_phase == 'GRAB_ONION_LONG':
             if self.was_helped:
                 self.phases.append('PLACE_ONION_STOVE')
@@ -941,9 +1007,15 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                 self.phases.append('COOK_GET_PLATE')
             else:
                 self.phases.append('STOVE_TO_CENTER')
-        elif last_phase == 'COOK_GET_PLATE':
+        elif last_phase in ['COOK_GET_PLATE', 'WAIT_SOUP']:
             self.count_onions = 0
-            self.phases.append('DELIVER_SOUP')
+            if isinstance(state, Dict):
+                if  state['soup_ready_right'] == 1:
+                    self.phases.append('DELIVER_SOUP')
+                else:
+                    self.phases.append('WAIT_SOUP')
+            else:
+                self.phases.append('DELIVER_SOUP')
         self.curr_phase += 1
 
 

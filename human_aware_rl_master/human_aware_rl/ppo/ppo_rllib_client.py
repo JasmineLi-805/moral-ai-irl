@@ -4,7 +4,8 @@ from overcooked_ai_py.agents.benchmarking import AgentEvaluator
 import numpy as np
 
 # environment variable that tells us whether this code is running on the server or not
-LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
+# LOCAL_TESTING = os.getenv('RUN_ENV', 'production') == 'local'
+LOCAL_TESTING = True
 
 # Sacred setup (must be before rllib imports)
 from sacred import Experiment
@@ -32,8 +33,9 @@ from ray.tune.registry import register_env
 from ray.rllib.models import ModelCatalog
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from human_aware_rl.ppo.ppo_rllib import RllibPPOModel, RllibLSTMPPOModel
-from human_aware_rl.rllib.rllib import OvercookedMultiAgent, save_trainer, gen_trainer_from_params
-from human_aware_rl.imitation.behavior_cloning_tf2 import BehaviorCloningPolicy, BC_SAVE_DIR
+from human_aware_rl.rllib.rllib import OvercookedMultiAgent, reset_dummy_policy, save_trainer, gen_trainer_from_params
+from human_aware_rl.irl.reward_models import LinearReward
+# from human_aware_rl.imitation.behavior_cloning_tf2 import BehaviorCloningPolicy, BC_SAVE_DIR
 
 
 ###################### Temp Documentation #######################
@@ -63,7 +65,7 @@ def my_config():
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = False
+    use_lstm = True
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
@@ -78,7 +80,7 @@ def my_config():
     D2RL = False
     ### Training Params ###
 
-    num_workers = 30 if not LOCAL_TESTING else 2
+    num_workers = 12 if not LOCAL_TESTING else 1
 
     # list of all random seeds to use for experiments, used to reproduce results
     seeds = [0]
@@ -91,11 +93,11 @@ def my_config():
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
-    train_batch_size = 12000 if not LOCAL_TESTING else 800
+    train_batch_size = 4800 if not LOCAL_TESTING else 800
 
     # size of minibatches we divide up each batch into before
     # performing gradient steps
-    sgd_minibatch_size = 2000 if not LOCAL_TESTING else 800
+    sgd_minibatch_size = 1200 if not LOCAL_TESTING else 800
 
     # Rollout length
     rollout_fragment_length = 400
@@ -104,7 +106,7 @@ def my_config():
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 420 if not LOCAL_TESTING else 2
+    num_training_iters = 2000 if not LOCAL_TESTING else 2
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -144,10 +146,10 @@ def my_config():
     num_sgd_iter = 8 if not LOCAL_TESTING else 1
 
     # How many trainind iterations (calls to trainer.train()) to run before saving model checkpoint
-    save_freq = 25
+    save_freq = 200
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 50 if not LOCAL_TESTING else 1
+    evaluation_interval = 200 if not LOCAL_TESTING else 2
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -170,19 +172,9 @@ def my_config():
     # Whether to log training progress and debugging info
     verbose = True
 
-
-    ### BC Params ###
-    # path to pickled policy model for behavior cloning
-    bc_model_dir = os.path.join(BC_SAVE_DIR, "default")
-
-    # Whether bc agents should return action logit argmax or sample
-    bc_stochastic = True
-
-
-
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "cramped_room"
+    layout_name = "mai_separate_coop_left"
 
     # all_layout_names = '_'.join(layout_names)
 
@@ -200,9 +192,9 @@ def my_config():
 
     # Rewards the agent will receive for intermediate actions
     rew_shaping_params = {
-        "PLACEMENT_IN_POT_REW": 3,
-        "DISH_PICKUP_REWARD": 3,
-        "SOUP_PICKUP_REWARD": 5,
+        "PLACEMENT_IN_POT_REW": 0,
+        "DISH_PICKUP_REWARD": 0,
+        "SOUP_PICKUP_REWARD": 0,
         "DISH_DISP_DISTANCE_REW": 0,
         "POT_DISTANCE_REW": 0,
         "SOUP_DISTANCE_REW": 0,
@@ -212,17 +204,10 @@ def my_config():
     horizon = 400
 
     # Constant by which shaped rewards are multiplied by when calculating total reward
-    reward_shaping_factor = 1.0
+    reward_shaping_factor = 0.0
 
     # Linearly anneal the reward shaping factor such that it reaches zero after this number of timesteps
     reward_shaping_horizon = float('inf')
-
-    # bc_factor represents that ppo agent gets paired with a bc agent for any episode
-    # schedule for bc_factor is represented by a list of points (t_i, v_i) where v_i represents the 
-    # value of bc_factor at timestep t_i. Values are linearly interpolated between points
-    # The default listed below represents bc_factor=0 for all timesteps
-    bc_schedule = OvercookedMultiAgent.self_play_bc_schedule
-
 
     # To be passed into rl-lib model/custom_options config
     model_params = {
@@ -266,6 +251,7 @@ def my_config():
         "display" : evaluation_display
     }
 
+    model = LinearReward(num_in_feature=96)
 
     environment_params = {
         # To be passed into OvercookedGridWorld constructor
@@ -284,16 +270,8 @@ def my_config():
             "reward_shaping_factor" : reward_shaping_factor,
             "reward_shaping_horizon" : reward_shaping_horizon,
             "use_phi" : use_phi,
-            "bc_schedule" : bc_schedule
-        }
-    }
-
-    bc_params = {
-        "bc_policy_cls" : BehaviorCloningPolicy,
-        "bc_config" : {
-            "model_dir" : bc_model_dir,
-            "stochastic" : bc_stochastic,
-            "eager" : eager
+            # customized reward calculation
+            "custom_reward_func": model.getFeatureExpectation
         }
     }
 
@@ -308,7 +286,6 @@ def my_config():
         "model_params" : model_params,
         "training_params" : training_params,
         "environment_params" : environment_params,
-        "bc_params" : bc_params,
         "shared_policy" : shared_policy,
         "num_training_iters" : num_training_iters,
         "evaluation_params" : evaluation_params,
@@ -334,21 +311,30 @@ def run(params):
             print("Starting training iteration", i)
         result = trainer.train()
 
-        if i % params['save_every'] == 0:
+        msg = result['episode_reward_mean']
+        msg2 = result['episode_reward_max']
+        msg3 = result['episode_reward_min']
+        if i % 10 == 0:
+            print(f'{i}: ep rew mean={msg}, max={msg2}, min={msg3}')
+        trainer.workers.foreach_worker(lambda ev: reset_dummy_policy(ev.get_policy('dummy')))
+
+        if params['save_every'] != -1 and i % params['save_every'] == 0:
             save_path = save_trainer(trainer, params)
             if params['verbose']:
                 print("saved trainer at", save_path)
 
     # Save the state of the experiment at end
-    save_path = save_trainer(trainer, params)
-    if params['verbose']:
-        print("saved trainer at", save_path)
+    if params['save_every'] != -1:
+        save_path = save_trainer(trainer, params)
+        if params['verbose']:
+            print("saved trainer at", save_path)
 
     return result
 
 
 @ex.automain
 def main(params):
+    print(f'is local testing mode = {LOCAL_TESTING}')
     # List of each random seed to run
     seeds = params['seeds']
     del params['seeds']
