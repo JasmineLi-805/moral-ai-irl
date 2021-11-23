@@ -24,7 +24,6 @@ class LinearReward:
         self.weights = weights
     
     def getRewards(self, states):
-        # print(states.shape)
         assert states.shape[-1] == self.num_in_feature
         reward = np.matmul(states, self.weights)
         assert len(states.shape) == 1 or reward.shape[0] == states.shape[0]

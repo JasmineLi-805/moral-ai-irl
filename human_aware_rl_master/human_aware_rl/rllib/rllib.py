@@ -265,12 +265,9 @@ class OvercookedMultiAgent(MultiAgentEnv):
 
     
         if self.custom_reward_func:
-            # reward_features_0 = torch.from_numpy(reward_features[0]).float()
-            # reward_features_1 = torch.from_numpy(reward_features[1]).float()
-            # print(reward_features_0)
-            reward_features = np.reshape(reward_features, (-1,))
-            shaped_reward_p0 = self.custom_reward_func(reward_features).item()
-            shaped_reward_p1 = self.custom_reward_func(reward_features).item()
+            print(next_state.player_positions)
+            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()
+            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item()
             print(f'gen custom reward {shaped_reward_p0}-{shaped_reward_p1}')
         else:
             shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]

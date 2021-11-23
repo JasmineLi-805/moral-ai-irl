@@ -271,20 +271,35 @@ def getMAIDummyFE(train_config):
     results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
     
     states = results['ep_states'][0]
+    # check which index corresponds to agent on the left and vice versa
+    left_idx = -1 
+    right_idx = -1
+    pos = states[0].player_positions
+    if pos[0] == (3,1) and pos[1] == (8,1):
+        right_idx = 1
+        left_idx = 0
+    elif pos[1] == (3,1) and pos[0] == (8,1):
+        right_idx = 0
+        left_idx = 1
+    assert left_idx != -1 and right_idx != -1
+    # print(f'RL agent position={pos}, left idx={left_idx}, right idx={right_idx}')
+
     feat_states = []
     for s in states:
         feat = env.featurize_state_mdp(s)
         feat_states.append(feat)
     feat_states = np.array(feat_states)
-    feat_states = feat_states.reshape((400, -1))
-    print(f'dummy rollout feat shape = {feat_states.shape}')
+    feat_states = np.swapaxes(feat_states,0,1)
     
-    feat_states = np.sum(feat_states, axis=0)
-    print(f'dummy FE shape = {feat_states.shape}')
+    left_state = feat_states[left_idx]
+    left_state = np.sum(left_state, axis=0)
+    right_state = feat_states[right_idx]
+    right_state = np.sum(right_state, axis=0)
     
+    feat_states = {"leftFE": left_state, "rightFE": right_state}
     return feat_states
 
-def getRLAgentFE(train_config): #get the feature expectations of a new policy using RL agent
+def getRLAgentFE(train_config, layout): #get the feature expectations of a new policy using RL agent
     '''
     Trains an RL agent with the current reward function. 
     Then rolls out one trial of the trained agent and calculate the feature expectation of the RL agent.
@@ -296,6 +311,18 @@ def getRLAgentFE(train_config): #get the feature expectations of a new policy us
     results = run(train_config)
     agent_rollout = results['evaluation']['states']
 
+    left_idx = -1
+    right_idx = -1
+    pos = agent_rollout[0].player_positions
+    if pos[0] == (3,1) and pos[1] == (8,1):
+        right_idx = 1
+        left_idx = 0
+    elif pos[1] == (3,1) and pos[0] == (8,1):
+        right_idx = 0
+        left_idx = 1
+    assert left_idx != -1 and right_idx != -1
+    # print(f'RL agent position={pos}, left idx={left_idx}, right idx={right_idx}')
+
     # featurize states
     mdp_params = train_config["environment_params"]["mdp_params"]
     env_params = train_config["environment_params"]["env_params"]
@@ -303,16 +330,25 @@ def getRLAgentFE(train_config): #get the feature expectations of a new policy us
     env = ae.env
     feat_states = []
     for state in agent_rollout:
+        if state == agent_rollout[0]:
+            print(layout)
+            print(state.player_positions)
         res = env.featurize_state_mdp(state)
         feat_states.append(res)
     feat_states = np.array(feat_states)
-    feat_states = feat_states.reshape((400, -1))
-    print(f'agent rollout feat shape = {feat_states.shape}')
+    feat_states = np.swapaxes(feat_states,0,1)
     
-    feat_states = np.sum(feat_states, axis=0)
-    print(f'agent FE shape = {feat_states.shape}')
-    
-    return feat_states
+    if layout == 'mai_separate_coop_right':
+        right_state = feat_states[right_idx]
+        right_state = np.sum(right_state, axis=0)
+        # print(f'RL right FE shape = {right_state.shape}')
+        return right_state
+    else:
+        assert layout == 'mai_separate_coop_left'
+        left_state = feat_states[left_idx]
+        left_state = np.sum(left_state, axis=0)
+        # print(f'RL left FE shape = {left_state.shape}')
+        return left_state
 
 
 if __name__ == "__main__":
@@ -324,16 +360,18 @@ if __name__ == "__main__":
     TRIAL = 2
 
     # init 
-    reward_model = LinearReward(2*96)
+    reward_model = LinearReward(96)
     config = get_train_config(reward_func=reward_model.getRewards)
     expertFE = getMAIDummyFE(config)    # the expert feature expectation (only uses mdp_params and env_params in config)
+    layout = config["environment_params"]["mdp_params"]["layout_name"]
+    expertFE = expertFE['leftFE'] if layout == 'mai_separate_coop_left' else expertFE['rightFE']
     irl_agent = irlAppAgent(expertFE=expertFE)
 
     i = 0
     while True:
         print(f'----------------  {i}  ----------------')
         config = get_train_config(reward_func=reward_model.getRewards)
-        agentFE = getRLAgentFE(config)
+        agentFE = getRLAgentFE(config, layout=layout)
         # print(agentFE)
         W, currentT = irl_agent.optimalWeightFinder(agentFE, reward_model.getRewards)
         
