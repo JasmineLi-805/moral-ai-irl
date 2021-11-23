@@ -39,15 +39,15 @@ def get_train_config(reward_func):
     seed = None
 
     # Number of gpus the central driver should use
-    num_gpus = 0 if LOCAL_TESTING else 1
+    num_gpus = 0 if LOCAL_TESTING else 2
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
-    train_batch_size = 4800 if not LOCAL_TESTING else 800
+    train_batch_size = 2400 if not LOCAL_TESTING else 800
 
     # size of minibatches we divide up each batch into before
     # performing gradient steps
-    sgd_minibatch_size = 1200 if not LOCAL_TESTING else 800
+    sgd_minibatch_size = 800 if not LOCAL_TESTING else 800
 
     # Rollout length
     rollout_fragment_length = 400
@@ -56,7 +56,7 @@ def get_train_config(reward_func):
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 200 if not LOCAL_TESTING else 10
+    num_training_iters = 100 if not LOCAL_TESTING else 10
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -93,13 +93,13 @@ def get_train_config(reward_func):
 
     # Number of SGD iterations in each outer loop (i.e., number of epochs to
     # execute per train batch).
-    num_sgd_iter = 8 if not LOCAL_TESTING else 1
+    num_sgd_iter = 1 if not LOCAL_TESTING else 1
 
     # How many trainind iterations (calls to trainer.train()) to run before saving model checkpoint
     save_freq = -1  # do not store intermediate RL agent results
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 200 if not LOCAL_TESTING else 10
+    evaluation_interval = 100 if not LOCAL_TESTING else 10
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 400
@@ -108,7 +108,7 @@ def get_train_config(reward_func):
     evaluation_num_games = 1
 
     # Whether to display rollouts in evaluation
-    evaluation_display = False
+    evaluation_display = True
 
     # Where to store model checkpoints and training stats
     results_dir = "/Users/jasmineli/Desktop/moral-ai-irl/result"
