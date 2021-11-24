@@ -3,6 +3,7 @@ import sys, os
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
+import argparse
 from human_aware_rl.irl.irl_agent import irlAppAgent
 from human_aware_rl.ppo.ppo_rllib_client import run
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
@@ -118,6 +119,17 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
         # print(f'RL left FE shape = {left_state.shape}')
         return left_state
 
+def load_checkpoint(file_path):
+    assert os.path.isfile(file_path)
+    with open(file_path, 'rb') as file:
+        checkpoint = pickle.load(file)
+    return checkpoint
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='train')
+    parser.add_argument('--resume_from', type=str, default=None, help='pickle file to resume training')
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
     # inputs, targets, seq_lens = load_data()
@@ -131,15 +143,24 @@ if __name__ == "__main__":
         os.mkdir(save_dir)
 
     # init 
-    reward_model = LinearReward(96)
-    config = get_train_config(reward_func=reward_model.getRewards)
-    irl_config = config['irl_params']
+    args = parse_args()
+    if not args.resume_from:
+        reward_model = LinearReward(96)
+        config = get_train_config(reward_func=reward_model.getRewards)
+        irl_config = config['irl_params']
+        expertFE = getMAIDummyFE(config, irl_config)    # the expert feature expectation (only uses mdp_params and env_params in config)
+        irl_agent = irlAppAgent(expertFE=expertFE)
+        i = 0
+        bestT = inf
+    else:
+        checkpoint = load_checkpoint(args.resume_from)
+        reward_model = checkpoint['reward_func']
+        config = get_train_config(reward_func=reward_model.getRewards)
+        irl_config = config['irl_params']
+        irl_agent = checkpoint['irl_agent']
+        i = checkpoint['curr_epoch']
+        bestT = checkpoint['bestT']
 
-    expertFE = getMAIDummyFE(config, irl_config)    # the expert feature expectation (only uses mdp_params and env_params in config)
-    irl_agent = irlAppAgent(expertFE=expertFE)
-
-    i = 0
-    bestT = inf
     while True:
         print(f'----------------  {i}  ----------------')
         config = get_train_config(reward_func=reward_model.getRewards)
