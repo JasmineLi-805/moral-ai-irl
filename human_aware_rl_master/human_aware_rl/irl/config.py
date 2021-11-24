@@ -124,7 +124,7 @@ def get_train_config(reward_func):
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "mai_separate_coop_right"
+    layout_name = "mai_separate_coop_left"
 
     # IRL params
     discount_factor = 0.99
@@ -234,7 +234,7 @@ def get_train_config(reward_func):
 
     irl_params = {
         "discount_factor": discount_factor,
-        "epsilon": 10,
+        "epsilon": 1,
         "layout": layout_name
     }
 
