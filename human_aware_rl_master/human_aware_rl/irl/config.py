@@ -127,7 +127,7 @@ def get_train_config(reward_func):
     layout_name = "mai_separate_coop_left"
 
     # IRL params
-    discount_factor = 0.99
+    discount_factor = 1.0
 
     # Name of directory to store training results in (stored in ~/ray_results/<experiment_name>)
 
