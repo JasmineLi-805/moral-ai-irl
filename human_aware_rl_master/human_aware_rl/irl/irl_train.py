@@ -143,6 +143,7 @@ if __name__ == "__main__":
         os.mkdir(save_dir)
 
     # init 
+    config = None
     args = parse_args()
     if not args.resume_from:
         reward_model = LinearReward(96)
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     else:
         checkpoint = load_checkpoint(args.resume_from)
         reward_model = checkpoint['reward_func']
-        config = get_train_config(reward_func=reward_model.getRewards)
+        config = checkpoint['config']
         irl_config = config['irl_params']
         irl_agent = checkpoint['irl_agent']
         i = checkpoint['curr_epoch']
@@ -163,7 +164,6 @@ if __name__ == "__main__":
 
     while True:
         print(f'----------------  {i}  ----------------')
-        config = get_train_config(reward_func=reward_model.getRewards)
         agentFE = getRLAgentFE(config, irl_config)
         # print(agentFE)
         W, currentT = irl_agent.optimalWeightFinder(agentFE, reward_model.getRewards)
