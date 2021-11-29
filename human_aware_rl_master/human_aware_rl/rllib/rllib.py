@@ -267,8 +267,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # TODO: add coop cnt to the features
 
         if self.custom_reward_func:
-            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item() + self.prev_reward_p0 * self.discount
-            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item() + self.prev_reward_p1 * self.discount
+            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()#  + self.prev_reward_p0 * self.discount
+            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item()#  + self.prev_reward_p1 * self.discount
             self.prev_reward_p0 = shaped_reward_p0
             self.prev_reward_p1 = shaped_reward_p1
         else:

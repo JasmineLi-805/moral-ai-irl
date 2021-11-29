@@ -68,7 +68,7 @@ def get_train_config(reward_func):
     grad_clip = 0.1
 
     # Discount factor
-    gamma = 0.99
+    gamma = 1.0
 
     # Exponential decay factor for GAE (how much weight to put on monte carlo samples)
     # Reference: https://arxiv.org/pdf/1506.02438.pdf
