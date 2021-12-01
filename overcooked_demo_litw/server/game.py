@@ -879,6 +879,22 @@ class MAIDumbAgentLeftCoop(MAIDumbAgent):
                 self.provided_coop += 1
         super(MAIDumbAgentLeftCoop, self).reset_smart(state)
 
+class MAIDumbAgentLeftNoCoop(MAIDumbAgentLeftCoop):
+    def __init__(self):
+        super().__init__()
+
+    def _get_sequence(self):
+        return [
+            'GRAB_ONION_LONG',
+            'PLACE_ONION_LONG',
+            'GRAB_ONION_LONG',
+            'PLACE_ONION_LONG',
+            'GRAB_ONION_LONG',
+            'PLACE_ONION_LONG',
+            'COOK_GET_PLATE',
+            'DELIVER_SOUP'
+        ]
+
 
 class MAIDumbAgentRightCoop(MAIDumbAgent):
     STEPS = {
@@ -934,7 +950,6 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
             Action.INTERACT
         ],
         'DELIVER_SOUP': [
-            Action.INTERACT,
             Direction.EAST,
             Direction.EAST,
             Direction.SOUTH,
@@ -944,62 +959,28 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
             Direction.WEST,
             Direction.WEST,
             Direction.WEST
-        ],
-        'WAIT_SOUP': [
-            Action.STAY
         ]
     }
 
     def __init__(self):
         self.count_onions = 0
         self.was_helped = False
-        self.count_helps = 0
         start = [
             'STOVE_TO_CENTER'
         ]
         super().__init__(start, MAIDumbAgentRightCoop.STEPS)
 
     def reset_smart(self, state):
-        if isinstance(state, np.ndarray):
-            state = unflatten_state(state)
-            # print(f'state type check: {type(state)}; state = {str(state)}')
-
         self.curr_tick = -1
         last_phase = self.phases[self.curr_phase]
         if last_phase in ['STOVE_TO_CENTER', 'DELIVER_SOUP']:
-            if isinstance(state, OvercookedState):
-                if self._find_help_object(state.objects):
-                    self.phases.append('GRAB_ONION_SHORT')
-                else:
-                    self.phases.append('GRAB_ONION_LONG')
-            elif isinstance(state, Dict):
-                if state['help_obj'] == 1:
-                    self.phases.append('GRAB_ONION_SHORT')
-                else:
-                    self.phases.append('GRAB_ONION_LONG')
+            self.phases.append('GRAB_ONION_SHORT')
         elif last_phase == 'GRAB_ONION_SHORT':
-            if isinstance(state, OvercookedState):
-                if state.players[1].held_object:
-                    self.received_coop += 1
-                    self.phases.append('PLACE_ONION_STOVE')
-                    self.count_helps += 1
-                    self.was_helped = True
-                else:
-                    self.phases.append('GRAB_ONION_LONG')
-            elif isinstance(state, Dict):
-                if state['player_right_held_obj'] == 1:
-                    self.received_coop += 1
-                    self.phases.append('PLACE_ONION_STOVE')
-                    self.count_helps += 1
-                    self.was_helped = True
-                else:
-                    self.phases.append('GRAB_ONION_LONG')
-        elif last_phase == 'GRAB_ONION_LONG':
-            if self.was_helped:
+            if state.players[1].held_object:
+                self.received_coop += 1
                 self.phases.append('PLACE_ONION_STOVE')
-                self.was_helped = False
             else:
-                self.phases.append('PLACE_ONION_HELP')
+                self.phases.append('GRAB_ONION_LONG')
                 self.phases.append('PLACE_ONION_STOVE')
         elif last_phase == 'PLACE_ONION_STOVE':
             self.count_onions += 1
@@ -1007,15 +988,9 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                 self.phases.append('COOK_GET_PLATE')
             else:
                 self.phases.append('STOVE_TO_CENTER')
-        elif last_phase in ['COOK_GET_PLATE', 'WAIT_SOUP']:
+        elif last_phase == 'COOK_GET_PLATE':
             self.count_onions = 0
-            if isinstance(state, Dict):
-                if  state['soup_ready_right'] == 1:
-                    self.phases.append('DELIVER_SOUP')
-                else:
-                    self.phases.append('WAIT_SOUP')
-            else:
-                self.phases.append('DELIVER_SOUP')
+            self.phases.append('DELIVER_SOUP')
         self.curr_phase += 1
 
 
