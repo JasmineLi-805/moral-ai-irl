@@ -151,7 +151,7 @@ if __name__ == "__main__":
         irl_config = config['irl_params']
         expertFE = getMAIDummyFE(config, irl_config)    # the expert feature expectation (only uses mdp_params and env_params in config)
         irl_agent = irlAppAgent(expertFE=expertFE)
-        i = 0
+        i = 1
         bestT = inf
     else:
         checkpoint = load_checkpoint(args.resume_from)
@@ -159,21 +159,40 @@ if __name__ == "__main__":
         config = checkpoint['config']
         irl_config = config['irl_params']
         irl_agent = checkpoint['irl_agent']
-        i = checkpoint['curr_epoch']
+        i = checkpoint['curr_epoch'] + 1
         bestT = checkpoint['bestT']
 
+    # randomly pick some policy, and compute the feature expectation
+    agentFE = getRLAgentFE(config, irl_config)
     while True:
         print(f'----------------  {i}  ----------------')
-        agentFE = getRLAgentFE(config, irl_config)
-        # print(agentFE)
+        # compute t_i and W_i
         W, currentT = irl_agent.optimalWeightFinder(agentFE, reward_model.getRewards)
+
+        # if t_i <= epsilon, then terminate
+        if currentT <= irl_config['epsilon']:
+            final_pack = {
+                "reward_func": reward_model,
+                "t": currentT,
+                "bestT": currentT,
+                "epsilon": irl_config['epsilon'],
+                "config": config,
+                "irl_agent": irl_agent,
+                "max_epoch": -1,
+                "curr_epoch": i
+            }
+            file_name = 'final.pickle'
+            with open(os.path.join(save_dir, file_name), 'wb') as save_file:
+                pickle.dump(pack, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+            print(f'final model saved to {os.path.join(save_dir, file_name)}')
+            break
         
+        # Using the RL algorithm, compute the optimal policy using reward weights W_i
+        # and compute the feature expectation
         W = W.reshape((-1, 1))
         assert reward_model.weights.shape == W.shape
         reward_model.updateWeights(W)
-
-        if currentT <= irl_config['epsilon']:
-            break
+        agentFE = getRLAgentFE(config, irl_config)
         
         # save file as pickle
         pack = {
@@ -200,6 +219,8 @@ if __name__ == "__main__":
             print(f'best model saved to {os.path.join(save_dir, file_name)}')
             
         i += 1
+    
+    print('Final weights found, irl training completed.')
 
 
 
