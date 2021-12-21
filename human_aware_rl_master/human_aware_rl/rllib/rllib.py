@@ -264,12 +264,13 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # reward_features = np.array(self.base_env.featurize_state_mdp(next_state))   # (2, 96), is player centric, [0] -> player 0, [1] -> player 1
         reward_features = np.array(self.base_env.lossless_state_encoding_mdp(next_state))
         print(f'reward feature shape {reward_features.shape}') 
+        print(reward_features[0][0][0:10])
         
         # TODO: add coop cnt to the features
 
         if self.custom_reward_func:
-            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()#  + self.prev_reward_p0 * self.discount
-            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item()#  + self.prev_reward_p1 * self.discount
+            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()
+            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item()
             self.prev_reward_p0 = shaped_reward_p0
             self.prev_reward_p1 = shaped_reward_p1
         else:
