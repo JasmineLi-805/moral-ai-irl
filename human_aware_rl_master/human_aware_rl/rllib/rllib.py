@@ -261,8 +261,9 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self._check_coop(next_state, joint_action)
 
         # get the hand-selected state features
-        reward_features = np.array(self.base_env.featurize_state_mdp(next_state))   # (2, 96), is player centric, [0] -> player 0, [1] -> player 1
-        # print(f'reward feature shape {reward_features.shape}') 
+        # reward_features = np.array(self.base_env.featurize_state_mdp(next_state))   # (2, 96), is player centric, [0] -> player 0, [1] -> player 1
+        reward_features = np.array(self.base_env.lossless_state_encoding_mdp(next_state))
+        print(f'reward feature shape {reward_features.shape}') 
         
         # TODO: add coop cnt to the features
 
