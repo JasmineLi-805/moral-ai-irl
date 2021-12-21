@@ -2194,6 +2194,51 @@ class OvercookedGridworld(object):
         dy_loc, dx_loc = pos_distance(location, player.position)
         return dy_loc, dx_loc
 
+    @property
+    def visual_featurization_shape(self):
+        warnings.warn(
+            "Using the `featurize_state_shape` property is deprecated. Please use `get_visual_featurization_shape` method instead",
+            DeprecationWarning
+        )
+        return self.get_visual_featurization_shape()
+    
+    def get_visual_featurization_shape(self):
+        return (1 + 11*8, 8,)
+
+    def visual_featurization(self, overcooked_state, **kwargs):
+        state_str = self.state_string(overcooked_state)
+        state_str = state_str.split('\n\n')
+        assert (len(state_str) == 8)
+
+        encoding = {
+            ' ': 0,
+            'X': 1,
+            'P': 2,
+            'D': 3,
+            'S': 4,
+            'O': 5,
+            'o': 6,
+            '✓': 7,
+            'ø': 8,
+            '↑': 9,
+            '↓': 10,
+            '→': 11,
+            '←': 12,
+            '0': 13,
+            '1': 14,
+        }
+
+        curr_layout = []
+        for line in state_str:
+            row = []
+            for c in line:
+                if c in encoding:
+                    row.append(encoding[c])
+                else:
+                    row.append(len(encoding))
+            curr_layout.append(row)
+        
+        return curr_layout
 
     ###############################
     # POTENTIAL REWARD SHAPING FN #
