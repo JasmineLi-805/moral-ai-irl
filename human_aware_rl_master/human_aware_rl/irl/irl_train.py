@@ -1,4 +1,4 @@
-from math import inf
+from math import e, inf
 import sys, os
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
@@ -79,7 +79,14 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     '''
     layout = irl_config['layout']
     # train and get rollouts
-    results = run(train_config)
+    results = None
+    while True:
+        try:
+            results = run(train_config)
+            break
+        except Exception as e:
+            print(e)
+
     agent_rollout = results['evaluation']['states']
 
     left_idx = -1
@@ -135,7 +142,7 @@ if __name__ == "__main__":
     # inputs, targets, seq_lens = load_data()
     # print(f'input = {inputs.shape}')
     # print(f'targets = {targets.shape}')
-    TRIAL = 1
+    TRIAL = 2
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{TRIAL}'
