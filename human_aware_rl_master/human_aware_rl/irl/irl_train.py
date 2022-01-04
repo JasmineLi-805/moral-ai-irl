@@ -53,8 +53,17 @@ def getMAIDummyFE(train_config, irl_config):
 
     feat_states = []
     for s in states:
-        feat = env.featurize_state_mdp(s)
-        feat_states.append(feat)
+        # using lossless feats
+        reward_features = np.array(env.lossless_state_encoding_mdp(s))
+        idx = np.arange(1.0, 27.0)
+        reward_features = reward_features * idx
+        reward_features = np.sum(reward_features, axis=3)
+        reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
+        feat_states.append(reward_features)
+
+        # using hand selected feats
+        # feat = env.featurize_state_mdp(s)
+        # feat_states.append(feat)
     feat_states = np.array(feat_states)
     feat_states = np.swapaxes(feat_states,0,1)
     
@@ -108,11 +117,17 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     env = ae.env
     feat_states = []
     for state in agent_rollout:
-        if state == agent_rollout[0]:
-            print(layout)
-            print(state.player_positions)
-        res = env.featurize_state_mdp(state)
-        feat_states.append(res)
+        # using lossless feats
+        reward_features = np.array(env.lossless_state_encoding_mdp(state))
+        idx = np.arange(1.0, 27.0)
+        reward_features = reward_features * idx
+        reward_features = np.sum(reward_features, axis=3)
+        reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
+        feat_states.append(reward_features)
+
+        # using hand selected feats
+        # res = env.featurize_state_mdp(state)
+        # feat_states.append(res)
     feat_states = np.array(feat_states)
     feat_states = np.swapaxes(feat_states,0,1)
     
