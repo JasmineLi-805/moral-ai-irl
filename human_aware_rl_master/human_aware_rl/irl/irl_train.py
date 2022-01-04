@@ -157,7 +157,7 @@ if __name__ == "__main__":
     # inputs, targets, seq_lens = load_data()
     # print(f'input = {inputs.shape}')
     # print(f'targets = {targets.shape}')
-    TRIAL = 10
+    TRIAL = 20
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{TRIAL}'
