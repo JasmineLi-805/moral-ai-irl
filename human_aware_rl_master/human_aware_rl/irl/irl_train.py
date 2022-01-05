@@ -55,6 +55,7 @@ def getMAIDummyFE(train_config, irl_config):
     for s in states:
         # using lossless feats
         reward_features = np.array(env.lossless_state_encoding_mdp(s))
+        reward_features = reward_features[:, :6, :5]
         idx = np.arange(1.0, 27.0)
         reward_features = reward_features * idx
         reward_features = np.sum(reward_features, axis=3)
@@ -119,6 +120,7 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     for state in agent_rollout:
         # using lossless feats
         reward_features = np.array(env.lossless_state_encoding_mdp(state))
+        reward_features = reward_features[:,:6,:5]
         idx = np.arange(1.0, 27.0)
         reward_features = reward_features * idx
         reward_features = np.sum(reward_features, axis=3)
@@ -157,7 +159,7 @@ if __name__ == "__main__":
     # inputs, targets, seq_lens = load_data()
     # print(f'input = {inputs.shape}')
     # print(f'targets = {targets.shape}')
-    TRIAL = 20
+    TRIAL = 30
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{TRIAL}'
@@ -168,7 +170,7 @@ if __name__ == "__main__":
     config = None
     args = parse_args()
     if not args.resume_from:
-        reward_model = LinearReward(96)
+        reward_model = LinearReward(30)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
         expertFE = getMAIDummyFE(config, irl_config)    # the expert feature expectation (only uses mdp_params and env_params in config)

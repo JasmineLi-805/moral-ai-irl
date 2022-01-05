@@ -264,6 +264,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # reward_features = np.array(self.base_env.featurize_state_mdp(next_state))   # (2, 96), is player centric, [0] -> player 0, [1] -> player 1
         # get lossless state features
         reward_features = np.array(self.base_env.lossless_state_encoding_mdp(next_state))
+        reward_features = reward_features[:,:6,:5]
         idx = np.arange(1.0, 27.0)
         reward_features = reward_features * idx
         reward_features = np.sum(reward_features, axis=3)
