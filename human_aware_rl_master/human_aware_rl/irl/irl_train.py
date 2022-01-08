@@ -159,7 +159,7 @@ if __name__ == "__main__":
     # inputs, targets, seq_lens = load_data()
     # print(f'input = {inputs.shape}')
     # print(f'targets = {targets.shape}')
-    TRIAL = 30
+    TRIAL = 31
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{TRIAL}'
@@ -170,6 +170,7 @@ if __name__ == "__main__":
     config = None
     args = parse_args()
     if not args.resume_from:
+        accumulateT = []
         reward_model = LinearReward(30)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
@@ -180,11 +181,13 @@ if __name__ == "__main__":
     else:
         checkpoint = load_checkpoint(args.resume_from)
         reward_model = checkpoint['reward_func']
-        config = checkpoint['config']
+        # config = checkpoint['config']
+        config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
         irl_agent = checkpoint['irl_agent']
         i = checkpoint['curr_epoch'] + 1
         bestT = checkpoint['bestT']
+        accumulateT = checkpoint['accumulateT']
 
     # randomly pick some policy, and compute the feature expectation
     agentFE = getRLAgentFE(config, irl_config)
@@ -192,6 +195,7 @@ if __name__ == "__main__":
         print(f'----------------  {i}  ----------------')
         # compute t_i and W_i
         W, currentT = irl_agent.optimalWeightFinder(agentFE, reward_model.getRewards)
+        accumulateT.append(currentT)
 
         # if t_i <= epsilon, then terminate
         if currentT <= irl_config['epsilon']:
@@ -203,7 +207,8 @@ if __name__ == "__main__":
                 "config": config,
                 "irl_agent": irl_agent,
                 "max_epoch": -1,
-                "curr_epoch": i
+                "curr_epoch": i,
+                "accumulateT": accumulateT
             }
             file_name = 'final.pickle'
             with open(os.path.join(save_dir, file_name), 'wb') as save_file:
@@ -216,6 +221,8 @@ if __name__ == "__main__":
         W = W.reshape((-1, 1))
         assert reward_model.weights.shape == W.shape
         reward_model.updateWeights(W)
+        
+        config = get_train_config(reward_func=reward_model.getRewards)
         agentFE = getRLAgentFE(config, irl_config)
         
         # save file as pickle
@@ -227,7 +234,8 @@ if __name__ == "__main__":
             "config": config,
             "irl_agent": irl_agent,
             "max_epoch": -1,
-            "curr_epoch": i
+            "curr_epoch": i,
+            "accumulateT": accumulateT
         }
         file_name = 'latest.pickle'
         with open(os.path.join(save_dir, file_name), 'wb') as save_file:
