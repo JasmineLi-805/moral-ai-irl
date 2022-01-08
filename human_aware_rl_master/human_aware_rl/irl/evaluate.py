@@ -97,7 +97,6 @@ def featurize_game_state(agent_rollout, train_config, irl_config):
 
 def main():
     args = parse_args()
-    print(args.checkpoint)
     checkpoint = load_checkpoint(args.checkpoint)
     # checkpoint = load_checkpoint('/Users/jasmineli/Desktop/moral-ai-irl/result/T0/latest.pickle')
     

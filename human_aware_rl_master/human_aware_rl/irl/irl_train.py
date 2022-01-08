@@ -159,7 +159,7 @@ if __name__ == "__main__":
     # inputs, targets, seq_lens = load_data()
     # print(f'input = {inputs.shape}')
     # print(f'targets = {targets.shape}')
-    TRIAL = 31
+    TRIAL = 30
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{TRIAL}'
@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     # randomly pick some policy, and compute the feature expectation
     agentFE = getRLAgentFE(config, irl_config)
-    while True:
+    while i < 101:
         print(f'----------------  {i}  ----------------')
         # compute t_i and W_i
         W, currentT = irl_agent.optimalWeightFinder(agentFE, reward_model.getRewards)
