@@ -1952,7 +1952,7 @@ class OvercookedGridworld(object):
         reward_features = np.sum(reward_features, axis=3)
         reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
 
-        return final_obs_for_players
+        return reward_features
 
     @property
     def lossless_state_encoding_shape(self):

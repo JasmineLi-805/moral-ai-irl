@@ -210,6 +210,12 @@ class OvercookedEnv(object):
         timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"])
         return (next_state, timestep_sparse_reward, done, env_info)
 
+    def irl_reward_state_encoding(self, state):
+        """
+        Wrapper of the mdp's irl_reward_encoding
+        """
+        return self.mdp.irl_reward_state_encoding(state, self.horizon)
+
     def lossless_state_encoding_mdp(self, state):
         """
         Wrapper of the mdp's lossless_encoding
