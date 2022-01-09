@@ -54,12 +54,13 @@ def getMAIDummyFE(train_config, irl_config):
     feat_states = []
     for s in states:
         # using lossless feats
-        reward_features = np.array(env.lossless_state_encoding_mdp(s))
-        reward_features = reward_features[:, :6, :5]
-        idx = np.arange(1.0, 27.0)
-        reward_features = reward_features * idx
-        reward_features = np.sum(reward_features, axis=3)
-        reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
+        reward_features = env.irl_reward_state_encoding(s)
+        # reward_features = np.array(env.irl_reward_state_encoding(s))
+        # reward_features = reward_features[:, :6, :5]
+        # idx = np.arange(1.0, 27.0)
+        # reward_features = reward_features * idx
+        # reward_features = np.sum(reward_features, axis=3)
+        # reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
         feat_states.append(reward_features)
 
         # using hand selected feats
@@ -119,12 +120,13 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     feat_states = []
     for state in agent_rollout:
         # using lossless feats
-        reward_features = np.array(env.lossless_state_encoding_mdp(state))
-        reward_features = reward_features[:,:6,:5]
-        idx = np.arange(1.0, 27.0)
-        reward_features = reward_features * idx
-        reward_features = np.sum(reward_features, axis=3)
-        reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
+        reward_features = env.irl_reward_state_encoding(state)
+        # reward_features = np.array(env.lossless_state_encoding_mdp(state))
+        # reward_features = reward_features[:,:6,:5]
+        # idx = np.arange(1.0, 27.0)
+        # reward_features = reward_features * idx
+        # reward_features = np.sum(reward_features, axis=3)
+        # reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
         feat_states.append(reward_features)
 
         # using hand selected feats
