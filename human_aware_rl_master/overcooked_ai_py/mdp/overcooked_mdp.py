@@ -1840,7 +1840,7 @@ class OvercookedGridworld(object):
                              "dish_disp_loc", "serve_loc"]
         variable_map_features = ["onions_in_pot", "tomatoes_in_pot", "onions_in_soup", "tomatoes_in_soup",
                                  "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
-        urgency_features = ["urgency"]
+        # urgency_features = ["urgency"]
         all_objects = overcooked_state.all_objects_list
 
         def make_layer(position, value):
@@ -1855,13 +1855,13 @@ class OvercookedGridworld(object):
                         ["player_{}_orientation_{}".format(i, Direction.DIRECTION_TO_INDEX[d])
                         for i, d in itertools.product([primary_agent_idx, other_agent_idx], Direction.ALL_DIRECTIONS)]
 
-            # LAYERS = ordered_player_features + base_map_features + variable_map_features
-            LAYERS = ordered_player_features + base_map_features + variable_map_features + urgency_features
+            LAYERS = ordered_player_features + base_map_features + variable_map_features
+            # LAYERS = ordered_player_features + base_map_features + variable_map_features + urgency_features
             state_mask_dict = {k:np.zeros(self.shape) for k in LAYERS}
 
             # MAP LAYERS
-            if horizon - overcooked_state.timestep < 40:
-                state_mask_dict["urgency"] = np.ones(self.shape)
+            # if horizon - overcooked_state.timestep < 40:
+            #     state_mask_dict["urgency"] = np.ones(self.shape)
 
             for loc in self.get_counter_locations():
                 state_mask_dict["counter_loc"][loc] = 1
@@ -1947,7 +1947,7 @@ class OvercookedGridworld(object):
         # reshape the featurization
         reward_features = np.array(final_obs_for_players)
         reward_features = reward_features[:, :6, :5]
-        idx = np.arange(1.0, 27.0)
+        idx = np.arange(1.0, 26.0)
         reward_features = reward_features * idx
         reward_features = np.sum(reward_features, axis=3)
         reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
