@@ -152,6 +152,7 @@ def load_checkpoint(file_path):
 def parse_args():
     parser = argparse.ArgumentParser(description='train')
     parser.add_argument('--resume_from', type=str, default=None, help='pickle file to resume training')
+    parser.add_argument('--epochs', type=int, default=100, help='total number of epochs to train')
     args = parser.parse_args()
     return args
 
@@ -169,6 +170,7 @@ if __name__ == "__main__":
     # init 
     config = None
     args = parse_args()
+    n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
         reward_model = LinearReward(30)
@@ -191,7 +193,7 @@ if __name__ == "__main__":
 
     # randomly pick some policy, and compute the feature expectation
     agentFE = getRLAgentFE(config, irl_config)
-    while i < 101:
+    while i < n_epochs:
         print(f'----------------  {i}  ----------------')
         # compute t_i and W_i
         W, currentT = irl_agent.optimalWeightFinder(agentFE, reward_model.getRewards)

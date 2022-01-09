@@ -1,15 +1,3 @@
-# pack = {
-#             "reward_func": reward_model,
-#             "currentT": currentT,
-#             "bestT": bestT,
-#             "epsilon": irl_config['epsilon'],
-#             "config": config,
-#             "irl_agent": irl_agent,
-#             "max_epoch": -1,
-#             "curr_epoch": i,
-#             "accumulateT": accumulateT
-#         }
-#         file_name = 'latest.pickle'
 import os
 import argparse
 import pickle
@@ -103,8 +91,8 @@ def main():
     # run the training with 
     reward_model = checkpoint['reward_func']
     config = get_train_config(reward_func=reward_model.getRewards)
-    config['num_training_iters'] = 10
-    config['evaluation_interval '] = 10
+    # config['num_training_iters'] = 10
+    # config['evaluation_interval'] = 10
     run_rl_training(config)
 
     # display T values
