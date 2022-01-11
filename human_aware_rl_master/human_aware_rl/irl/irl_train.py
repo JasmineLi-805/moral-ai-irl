@@ -55,29 +55,18 @@ def getMAIDummyFE(train_config, irl_config):
     for s in states:
         # using lossless feats
         reward_features = env.irl_reward_state_encoding(s)
-        # reward_features = np.array(env.irl_reward_state_encoding(s))
-        # reward_features = reward_features[:, :6, :5]
-        # idx = np.arange(1.0, 27.0)
-        # reward_features = reward_features * idx
-        # reward_features = np.sum(reward_features, axis=3)
-        # reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
         feat_states.append(reward_features)
 
-        # using hand selected feats
-        # feat = env.featurize_state_mdp(s)
-        # feat_states.append(feat)
     feat_states = np.array(feat_states)
     feat_states = np.swapaxes(feat_states,0,1)
     
     layout = irl_config['layout']
     if layout == 'mai_separate_coop_right':
         right_state = calculateFE(feat_states[right_idx], irl_config)
-        # print(f'RL right FE shape = {right_state.shape}')
         return right_state
     else:
         assert layout == 'mai_separate_coop_left'
         left_state = calculateFE(feat_states[left_idx], irl_config)
-        # print(f'RL left FE shape = {left_state.shape}')
         return left_state
 
 def getRLAgentFE(train_config, irl_config): #get the feature expectations of a new policy using RL agent
@@ -121,28 +110,17 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     for state in agent_rollout:
         # using lossless feats
         reward_features = env.irl_reward_state_encoding(state)
-        # reward_features = np.array(env.lossless_state_encoding_mdp(state))
-        # reward_features = reward_features[:,:6,:5]
-        # idx = np.arange(1.0, 27.0)
-        # reward_features = reward_features * idx
-        # reward_features = np.sum(reward_features, axis=3)
-        # reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
         feat_states.append(reward_features)
 
-        # using hand selected feats
-        # res = env.featurize_state_mdp(state)
-        # feat_states.append(res)
     feat_states = np.array(feat_states)
     feat_states = np.swapaxes(feat_states,0,1)
     
     if layout == 'mai_separate_coop_right':
         right_state = calculateFE(feat_states[right_idx], irl_config)
-        # print(f'RL right FE shape = {right_state.shape}')
         return right_state
     else:
         assert layout == 'mai_separate_coop_left'
         left_state = calculateFE(feat_states[left_idx], irl_config)
-        # print(f'RL left FE shape = {left_state.shape}')
         return left_state
 
 def load_checkpoint(file_path):
@@ -159,9 +137,6 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
-    # inputs, targets, seq_lens = load_data()
-    # print(f'input = {inputs.shape}')
-    # print(f'targets = {targets.shape}')
     TRIAL = 31
 
     cwd = os.getcwd()
@@ -185,8 +160,9 @@ if __name__ == "__main__":
     else:
         checkpoint = load_checkpoint(args.resume_from)
         reward_model = checkpoint['reward_func']
-        # config = checkpoint['config']
-        config = get_train_config(reward_func=reward_model.getRewards)
+        config = checkpoint['config']
+        config["environment_params"]["custom_reward_func"] = reward_model.getRewards
+        # config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
         irl_agent = checkpoint['irl_agent']
         i = checkpoint['curr_epoch'] + 1
@@ -226,7 +202,8 @@ if __name__ == "__main__":
         assert reward_model.weights.shape == W.shape
         reward_model.updateWeights(W)
         
-        config = get_train_config(reward_func=reward_model.getRewards)
+        # config = get_train_config(reward_func=reward_model.getRewards)
+        config["environment_params"]["custom_reward_func"] = reward_model.getRewards
         agentFE = getRLAgentFE(config, irl_config)
         
         # save file as pickle
