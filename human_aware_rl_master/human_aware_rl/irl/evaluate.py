@@ -58,17 +58,9 @@ def featurize_game_state(agent_rollout, train_config, irl_config):
     feat_states = []
     for state in agent_rollout:
         # using lossless feats
-        reward_features = np.array(env.lossless_state_encoding_mdp(state))
-        reward_features = reward_features[:,:6,:5]
-        idx = np.arange(1.0, 27.0)
-        reward_features = reward_features * idx
-        reward_features = np.sum(reward_features, axis=3)
-        reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
+        reward_features = env.irl_reward_state_encoding(state)
         feat_states.append(reward_features)
 
-        # using hand selected feats
-        # res = env.featurize_state_mdp(state)
-        # feat_states.append(res)
     feat_states = np.array(feat_states)
     feat_states = np.swapaxes(feat_states,0,1)
     

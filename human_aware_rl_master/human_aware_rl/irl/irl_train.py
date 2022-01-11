@@ -150,7 +150,8 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_model = LinearReward(30)
+        reward_obs_shape = 30
+        reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
         expertFE = getMAIDummyFE(config, irl_config)    # the expert feature expectation (only uses mdp_params and env_params in config)
@@ -159,7 +160,12 @@ if __name__ == "__main__":
         bestT = inf
     else:
         checkpoint = load_checkpoint(args.resume_from)
-        reward_model = checkpoint['reward_func']
+        if "reward_obs_shape" in checkpoint:
+            reward_obs_shape = checkpoint["reward_obs_shape"]
+            reward_model = LinearReward(reward_obs_shape)
+            reward_model.updateWeights(checkpoint["reward_model_weights"])
+        else:
+            reward_model = checkpoint["reward_func"]
         config = checkpoint['config']
         config["environment_params"]["custom_reward_func"] = reward_model.getRewards
         # config = get_train_config(reward_func=reward_model.getRewards)
@@ -180,15 +186,16 @@ if __name__ == "__main__":
         # if t_i <= epsilon, then terminate
         if currentT <= irl_config['epsilon']:
             final_pack = {
-                "reward_func": reward_model,
+                # "reward_func": reward_model,
                 "t": currentT,
                 "bestT": currentT,
                 "epsilon": irl_config['epsilon'],
                 "config": config,
                 "irl_agent": irl_agent,
-                "max_epoch": -1,
                 "curr_epoch": i,
-                "accumulateT": accumulateT
+                "accumulateT": accumulateT,
+                "reward_model_weights": reward_model.weights,
+                "reward_obs_shape": reward_obs_shape
             }
             file_name = 'final.pickle'
             with open(os.path.join(save_dir, file_name), 'wb') as save_file:
@@ -208,7 +215,7 @@ if __name__ == "__main__":
         
         # save file as pickle
         pack = {
-            "reward_func": reward_model,
+            # "reward_func": reward_model,
             "currentT": currentT,
             "bestT": bestT,
             "epsilon": irl_config['epsilon'],
@@ -216,7 +223,9 @@ if __name__ == "__main__":
             "irl_agent": irl_agent,
             "max_epoch": -1,
             "curr_epoch": i,
-            "accumulateT": accumulateT
+            "accumulateT": accumulateT,
+            "reward_model_weights": reward_model.weights,
+            "reward_obs_shape": reward_obs_shape
         }
         file_name = 'latest.pickle'
         with open(os.path.join(save_dir, file_name), 'wb') as save_file:
