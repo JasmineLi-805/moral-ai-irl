@@ -1,7 +1,10 @@
 from human_aware_rl.ppo.ppo_rllib import RllibLSTMPPOModel, RllibPPOModel
 
+HOME_DIR = '/PROJECT_PATH/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl/'
+# There is a bug when using too long directory names in RAY TMP folders: https://github.com/ray-project/ray/issues/7724
+TMP_DIR = '/tmp/'
 LOCAL_TESTING = False
-GERLACH = True
+GERLACH = False
 
 def _env_creator(env_config):
     # Re-import required here to work with serialization
@@ -111,7 +114,7 @@ def get_train_config(reward_func):
     evaluation_display = True
 
     # Where to store model checkpoints and training stats
-    results_dir = "/Users/jasmineli/Desktop/moral-ai-irl/result"
+    results_dir = HOME_DIR+"result"
     if GERLACH:
         results_dir = "/home/jasmine/moral-ai-irl/result"
     
@@ -228,7 +231,7 @@ def get_train_config(reward_func):
     ray_params = {
         "custom_model_id" : "MyPPOModel",
         "custom_model_cls" : RllibLSTMPPOModel if model_params['use_lstm'] else RllibPPOModel,
-        "temp_dir" : "/Users/jasmineli/Desktop/tmp" if not GERLACH else "/home/jasmine/moral-ai-irl/result",
+        "temp_dir" : TMP_DIR+"tmp" if not GERLACH else "/home/jasmine/moral-ai-irl/result",
         "env_creator" : _env_creator
     }
 

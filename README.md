@@ -1,6 +1,24 @@
 # moral-ai-irl
 
-## IRL Training
+## SETUP
+
+### Start with a NO-GPU version of it:
+
+1. Add both `human_aware` and `overcooked_demo` as part of your project source / python path.
+2. Create and start a virtual/conda environment
+3. Install dependencies: `python3 -m pip install -r requirements.txt`
+
+### Let's add GPU capabilities:
+...
+
+### Trying it out:
+
+1. Access IRL folder: `human_aware_rl_master/human_aware_rl/irl`
+2. Configure `HOME_DIR` and `TMP_DIR` inside the `config.py`
+3. run one iteration of the IRL training: `PYTHONPATH=../../:../../../ python irl_train.py --epochs 1`
+
+
+## Project Structure
 
 The IRL related code are mainly located in the `human_aware_rl_master/human_aware_rl/irl` directory
 - `human_aware_rl_master/human_aware_rl/irl/irl_agent.py`: does most of the calculation in the Apprenticeship Algorithm

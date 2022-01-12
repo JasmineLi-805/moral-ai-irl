@@ -1,0 +1,7 @@
+tensorflow>=2<3
+ray[rllib]==0.8.5
+cvxopt
+tqdm
+sacred
+dill
+torch
