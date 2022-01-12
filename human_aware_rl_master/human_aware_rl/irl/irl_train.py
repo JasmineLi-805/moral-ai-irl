@@ -137,7 +137,7 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
-    TRIAL = 31
+    TRIAL = 32
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{TRIAL}'

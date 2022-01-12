@@ -3,8 +3,9 @@ from human_aware_rl.ppo.ppo_rllib import RllibLSTMPPOModel, RllibPPOModel
 HOME_DIR = '/PROJECT_PATH/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl/'
 # There is a bug when using too long directory names in RAY TMP folders: https://github.com/ray-project/ray/issues/7724
 TMP_DIR = '/tmp/'
+
 LOCAL_TESTING = False
-GERLACH = False
+GERLACH = True
 
 def _env_creator(env_config):
     # Re-import required here to work with serialization
@@ -18,7 +19,7 @@ def get_train_config(reward_func):
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = True
+    use_lstm = False
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
@@ -42,7 +43,7 @@ def get_train_config(reward_func):
     seed = None
 
     # Number of gpus the central driver should use
-    num_gpus = 0 # if LOCAL_TESTING else 2
+    num_gpus = 0 if LOCAL_TESTING else 2
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
