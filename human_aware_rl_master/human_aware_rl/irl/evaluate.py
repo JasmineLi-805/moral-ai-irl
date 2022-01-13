@@ -81,7 +81,12 @@ def main():
     # checkpoint = load_checkpoint('/Users/jasmineli/Desktop/moral-ai-irl/result/T0/latest.pickle')
     
     # run the training with 
-    reward_model = checkpoint['reward_func']
+    if "reward_obs_shape" in checkpoint:
+        reward_obs_shape = checkpoint["reward_obs_shape"]
+        reward_model = LinearReward(reward_obs_shape)
+        reward_model.updateWeights(checkpoint["reward_model_weights"])
+    else:
+        reward_model = checkpoint["reward_func"]
     config = get_train_config(reward_func=reward_model.getRewards)
     # config['num_training_iters'] = 10
     # config['evaluation_interval'] = 10
