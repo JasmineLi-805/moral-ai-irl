@@ -19,7 +19,7 @@ def calculateFE(states, irl_config):
         for i in range(len(states)):
             g = pow(gamma, len(states) - i - 1)
             result[i] = g * states[i]
-        return states
+        return result
     
     gamma = irl_config['discount_factor']
     result = _apply_discount(states, gamma)
@@ -166,6 +166,7 @@ if __name__ == "__main__":
             reward_model.updateWeights(checkpoint["reward_model_weights"])
         else:
             reward_model = checkpoint["reward_func"]
+            reward_obs_shape = 30
         config = checkpoint['config']
         config["environment_params"]["custom_reward_func"] = reward_model.getRewards
         # config = get_train_config(reward_func=reward_model.getRewards)
