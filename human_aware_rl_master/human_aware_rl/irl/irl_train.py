@@ -131,13 +131,17 @@ def load_checkpoint(file_path):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='train')
+    parser = parser.add_argument('-t', '--trial', type=str, help='trial num')
     parser.add_argument('--resume_from', type=str, default=None, help='pickle file to resume training')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs to train')
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
-    TRIAL = 32
+    args = parse_args()
+    assert args.t
+    TRIAL = args.t
+
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{TRIAL}'
@@ -146,7 +150,6 @@ if __name__ == "__main__":
 
     # init 
     config = None
-    args = parse_args()
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
@@ -177,8 +180,9 @@ if __name__ == "__main__":
         accumulateT = checkpoint['accumulateT']
 
     num_gpu = config['training_params']['num_gpus']
+    config['training_params']['num_gpus'] = 4
     print(f'num gpu = {num_gpu}')
-    
+
     # randomly pick some policy, and compute the feature expectation
     agentFE = getRLAgentFE(config, irl_config)
     while i < n_epochs:
