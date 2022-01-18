@@ -131,7 +131,7 @@ def load_checkpoint(file_path):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='train')
-    parser = parser.add_argument('-t', '--trial', type=str, help='trial num')
+    parser.add_argument('-t', '--trial', type=int, help='trial num')
     parser.add_argument('--resume_from', type=str, default=None, help='pickle file to resume training')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs to train')
     args = parser.parse_args()
