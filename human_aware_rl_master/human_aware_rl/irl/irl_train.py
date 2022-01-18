@@ -139,8 +139,8 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    assert args.t
-    TRIAL = args.t
+    assert args.trial
+    TRIAL = args.trial
 
 
     cwd = os.getcwd()
