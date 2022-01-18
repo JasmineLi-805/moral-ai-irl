@@ -176,6 +176,9 @@ if __name__ == "__main__":
         bestT = checkpoint['bestT']
         accumulateT = checkpoint['accumulateT']
 
+    num_gpu = config['training_params']['num_gpus']
+    print(f'num gpu = {num_gpu}')
+    
     # randomly pick some policy, and compute the feature expectation
     agentFE = getRLAgentFE(config, irl_config)
     while i < n_epochs:
@@ -183,6 +186,10 @@ if __name__ == "__main__":
         # compute t_i and W_i
         W, currentT = irl_agent.optimalWeightFinder(agentFE, reward_model.getRewards)
         accumulateT.append(currentT)
+        if len(accumulateT) <= 20:
+            print(f'the distances  :: {accumulateT}')
+        else:
+            print(f'the distances  :: {accumulateT[-20:]}')
 
         # if t_i <= epsilon, then terminate
         if currentT <= irl_config['epsilon']:

@@ -26,7 +26,7 @@ class irlAppAgent:
         
     def optimalWeightFinder(self, tempFE, reward_func):
         # while True:
-        print ("the distances  ::", self.policiesFE.keys())
+        # print ("the distances  ::", self.policiesFE.keys())
         currentT = self._policyListUpdater(tempFE, reward_func)
         print ("Current distance (t) is:: ", currentT )
         # if self.currentT <= self.epsilon: # terminate if the point reached close enough
