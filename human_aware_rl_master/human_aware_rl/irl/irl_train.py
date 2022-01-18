@@ -180,7 +180,6 @@ if __name__ == "__main__":
         accumulateT = checkpoint['accumulateT']
 
     num_gpu = config['training_params']['num_gpus']
-    config['training_params']['num_gpus'] = 4
     print(f'num gpu = {num_gpu}')
 
     # randomly pick some policy, and compute the feature expectation
