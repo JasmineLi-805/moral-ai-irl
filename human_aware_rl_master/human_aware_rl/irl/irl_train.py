@@ -13,14 +13,16 @@ from human_aware_rl.rllib.utils import get_base_ae
 from overcooked_ai_py.agents.agent import AgentPair
 from human_aware_rl.irl.config import get_train_config
 
+
+def _apply_discount(states, gamma):
+    result = states.copy()
+    for i in range(len(states)):
+        g = pow(gamma, len(states) - i - 1)
+        result[i] = g * states[i]
+    return result
+
+
 def calculateFE(states, irl_config):
-    def _apply_discount(states, gamma):
-        result = states.copy()
-        for i in range(len(states)):
-            g = pow(gamma, len(states) - i - 1)
-            result[i] = g * states[i]
-        return result
-    
     gamma = irl_config['discount_factor']
     result = _apply_discount(states, gamma)
     result = np.sum(result, axis=0)

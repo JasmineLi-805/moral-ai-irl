@@ -1,2 +1,4 @@
 data/bc_runs/bc_testing/
 temp.npz
+human_aware_rl_master/human_aware_rl/irl/tmp/
+human_aware_rl_master/human_aware_rl/irl/config.py
