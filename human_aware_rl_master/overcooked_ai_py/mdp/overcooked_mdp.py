@@ -1947,9 +1947,9 @@ class OvercookedGridworld(object):
         # reshape the featurization
         reward_features = np.array(final_obs_for_players)
         reward_features = reward_features[:, :6, :5]
-        idx = np.arange(1.0, 26.0)
-        reward_features = reward_features * idx
-        reward_features = np.sum(reward_features, axis=3)
+        # idx = np.arange(1.0, 26.0)
+        # reward_features = reward_features * idx
+        # reward_features = np.sum(reward_features, axis=3)
         reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
 
         return reward_features

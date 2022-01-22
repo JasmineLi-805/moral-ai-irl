@@ -140,11 +140,11 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     assert args.trial
-    TRIAL = args.trial
+    trial = args.trial
 
 
     cwd = os.getcwd()
-    save_dir = f'{cwd}/result/T{TRIAL}'
+    save_dir = f'{cwd}/result/T{trial}'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30
+        reward_obs_shape = 30*26
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
@@ -167,9 +167,9 @@ if __name__ == "__main__":
             reward_obs_shape = checkpoint["reward_obs_shape"]
             reward_model = LinearReward(reward_obs_shape)
             reward_model.updateWeights(checkpoint["reward_model_weights"])
-        else:
-            reward_model = checkpoint["reward_func"]
-            reward_obs_shape = 30
+        # else:
+            # reward_model = checkpoint["reward_func"]
+            # reward_obs_shape = 30
         config = checkpoint['config']
         config["environment_params"]["custom_reward_func"] = reward_model.getRewards
         # config = get_train_config(reward_func=reward_model.getRewards)
