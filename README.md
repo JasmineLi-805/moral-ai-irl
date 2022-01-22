@@ -14,8 +14,9 @@
 ### Trying it out:
 
 1. Access IRL folder: `human_aware_rl_master/human_aware_rl/irl`
-2. Configure `HOME_DIR` and `TMP_DIR` inside the `config.py`
-3. run one iteration of the IRL training: `PYTHONPATH=../../:../../../ python irl_train.py --epochs 1`
+2. Copy the `config_model.py` to `config.py`
+3. Configure `HOME_DIR` and `TMP_DIR` inside the `config.py`
+4. run one iteration of the IRL training: `PYTHONPATH=../../:../../../ python irl_train.py --epochs 1 -t 1`
 
 
 ## Project Structure
