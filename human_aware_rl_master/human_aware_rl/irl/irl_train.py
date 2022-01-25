@@ -144,6 +144,9 @@ if __name__ == "__main__":
     assert args.trial
     trial = args.trial
 
+    import tensorflow as tf
+    print("tensorflow visible gpus:")
+    print(tf.config.list_physical_devices('GPU'))
 
     cwd = os.getcwd()
     save_dir = f'{cwd}/result/T{trial}'
