@@ -19,7 +19,7 @@ def get_train_config(reward_func):
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = False
+    use_lstm = True
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
