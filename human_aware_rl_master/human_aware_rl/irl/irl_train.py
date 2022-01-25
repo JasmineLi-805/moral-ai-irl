@@ -82,12 +82,12 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     layout = irl_config['layout']
     # train and get rollouts
     results = None
-    # while True:
-    try:
-        results = run(train_config)
-        # break
-    except Exception as e:
-        print(e)
+    while True:
+        try:
+            results = run(train_config)
+            break
+        except Exception as e:
+            print(e)
 
     agent_rollout = results['evaluation']['states']
 
@@ -229,8 +229,6 @@ if __name__ == "__main__":
         config["environment_params"]["custom_reward_func"] = reward_model.getRewards
         agentFE = getRLAgentFE(config, irl_config)
         
-        break
-
         # save file as pickle
         pack = {
             # "reward_func": reward_model,
