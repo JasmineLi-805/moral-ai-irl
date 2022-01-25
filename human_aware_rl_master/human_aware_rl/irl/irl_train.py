@@ -11,16 +11,18 @@ from human_aware_rl_master.human_aware_rl.irl.reward_models import LinearReward
 from human_aware_rl.dummy.rl_agent import *
 from human_aware_rl.rllib.utils import get_base_ae
 from overcooked_ai_py.agents.agent import AgentPair
-from human_aware_rl.irl.config import get_train_config
+from human_aware_rl.irl.config_model import get_train_config
+
+
+def _apply_discount(states, gamma):
+    result = states.copy()
+    for i in range(len(states)):
+        g = pow(gamma, len(states) - i - 1)
+        result[i] = g * states[i]
+    return result
+
 
 def calculateFE(states, irl_config):
-    def _apply_discount(states, gamma):
-        result = states.copy()
-        for i in range(len(states)):
-            g = pow(gamma, len(states) - i - 1)
-            result[i] = g * states[i]
-        return result
-    
     gamma = irl_config['discount_factor']
     result = _apply_discount(states, gamma)
     result = np.sum(result, axis=0)
@@ -140,11 +142,14 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     assert args.trial
-    TRIAL = args.trial
+    trial = args.trial
 
+    import tensorflow as tf
+    print("tensorflow visible gpus:")
+    print(tf.config.list_physical_devices('GPU'))
 
     cwd = os.getcwd()
-    save_dir = f'{cwd}/result/T{TRIAL}'
+    save_dir = f'{cwd}/result/T{trial}'
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
@@ -153,7 +158,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30
+        reward_obs_shape = 30*25
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
@@ -167,9 +172,9 @@ if __name__ == "__main__":
             reward_obs_shape = checkpoint["reward_obs_shape"]
             reward_model = LinearReward(reward_obs_shape)
             reward_model.updateWeights(checkpoint["reward_model_weights"])
-        else:
-            reward_model = checkpoint["reward_func"]
-            reward_obs_shape = 30
+        # else:
+            # reward_model = checkpoint["reward_func"]
+            # reward_obs_shape = 30
         config = checkpoint['config']
         config["environment_params"]["custom_reward_func"] = reward_model.getRewards
         # config = get_train_config(reward_func=reward_model.getRewards)

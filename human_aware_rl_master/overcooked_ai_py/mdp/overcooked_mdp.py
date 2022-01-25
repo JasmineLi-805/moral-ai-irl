@@ -1836,10 +1836,15 @@ class OvercookedGridworld(object):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
-        base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "tomato_disp_loc",
-                             "dish_disp_loc", "serve_loc"]
-        variable_map_features = ["onions_in_pot", "tomatoes_in_pot", "onions_in_soup", "tomatoes_in_soup",
+        # T35
+        base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "dish_disp_loc", "serve_loc"]
+        variable_map_features = ["onions_in_pot", "onions_in_soup",
                                  "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
+        # prev
+        # base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "tomato_disp_loc",
+        #                      "dish_disp_loc", "serve_loc"]
+        # variable_map_features = ["onions_in_pot", "tomatoes_in_pot", "onions_in_soup", "tomatoes_in_soup",
+        #                          "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
         # urgency_features = ["urgency"]
         all_objects = overcooked_state.all_objects_list
 
@@ -1899,10 +1904,10 @@ class OvercookedGridworld(object):
                         if obj.is_idle:
                             # onions_in_pot and tomatoes_in_pot are used when the soup is idling, and ingredients could still be added
                             state_mask_dict["onions_in_pot"] += make_layer(obj.position, ingredients_dict["onion"])
-                            state_mask_dict["tomatoes_in_pot"] += make_layer(obj.position, ingredients_dict["tomato"])
+                            # state_mask_dict["tomatoes_in_pot"] += make_layer(obj.position, ingredients_dict["tomato"])
                         else:
                             state_mask_dict["onions_in_soup"] += make_layer(obj.position, ingredients_dict["onion"])
-                            state_mask_dict["tomatoes_in_soup"] += make_layer(obj.position, ingredients_dict["tomato"])
+                            # state_mask_dict["tomatoes_in_soup"] += make_layer(obj.position, ingredients_dict["tomato"])
                             state_mask_dict["soup_cook_time_remaining"] += make_layer(obj.position, obj.cook_time - obj._cooking_tick)
                             if obj.is_ready:
                                 state_mask_dict["soup_done"] += make_layer(obj.position, 1)
@@ -1910,15 +1915,15 @@ class OvercookedGridworld(object):
                     else:
                         # If player soup is not in a pot, treat it like a soup that is cooked with remaining time 0
                         state_mask_dict["onions_in_soup"] += make_layer(obj.position, ingredients_dict["onion"])
-                        state_mask_dict["tomatoes_in_soup"] += make_layer(obj.position, ingredients_dict["tomato"])
+                        # state_mask_dict["tomatoes_in_soup"] += make_layer(obj.position, ingredients_dict["tomato"])
                         state_mask_dict["soup_done"] += make_layer(obj.position, 1)
 
                 elif obj.name == "dish":
                     state_mask_dict["dishes"] += make_layer(obj.position, 1)
                 elif obj.name == "onion":
                     state_mask_dict["onions"] += make_layer(obj.position, 1)
-                elif obj.name == "tomato":
-                    state_mask_dict["tomatoes"] += make_layer(obj.position, 1)
+                # elif obj.name == "tomato":
+                #     state_mask_dict["tomatoes"] += make_layer(obj.position, 1)
                 else:
                     raise ValueError("Unrecognized object")
 
@@ -1947,10 +1952,11 @@ class OvercookedGridworld(object):
         # reshape the featurization
         reward_features = np.array(final_obs_for_players)
         reward_features = reward_features[:, :6, :5]
-        idx = np.arange(1.0, 26.0)
-        reward_features = reward_features * idx
-        reward_features = np.sum(reward_features, axis=3)
-        reward_features = np.reshape(reward_features, (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]))
+        # idx = np.arange(1.0, 26.0)
+        # reward_features = reward_features * idx
+        # reward_features = np.sum(reward_features, axis=3)
+        target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3])
+        reward_features = np.reshape(reward_features, target_shape)
 
         return reward_features
 
