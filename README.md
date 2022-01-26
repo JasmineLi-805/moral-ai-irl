@@ -30,8 +30,8 @@ The IRL related code are mainly located in the `human_aware_rl_master/human_awar
 
 ### Training Instructions
 1. Navigate to the irl directory using `cd human_aware_rl_master/human_aware_rl/irl`
-2. Run IRL training with the command `python irl_train.py [--epochs n]`
-3. The result is saved to the `result/T[trial num]` directory in the current directory, `trial num` is set in `irl_train.py`
+2. Run IRL training with the command `python irl_train.py [--epochs n] [--trial t]`
+3. The result is saved to the `result/T[t]` directory in the current directory.
 
 ### Evaluation Instruction
 1. Navigate to the irl directory using `cd human_aware_rl_master/human_aware_rl/irl`

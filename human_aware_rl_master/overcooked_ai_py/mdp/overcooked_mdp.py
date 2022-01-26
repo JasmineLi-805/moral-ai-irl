@@ -1838,7 +1838,7 @@ class OvercookedGridworld(object):
         assert type(debug) is bool
         # T35
         base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "dish_disp_loc", "serve_loc"]
-        variable_map_features = ["onions_in_pot", "onions_in_soup",
+        variable_map_features = ["onions_in_pot", "onions_in_soup", "pot_is_full",
                                  "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
         # prev
         # base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "tomato_disp_loc",
@@ -1905,6 +1905,7 @@ class OvercookedGridworld(object):
                             # onions_in_pot and tomatoes_in_pot are used when the soup is idling, and ingredients could still be added
                             state_mask_dict["onions_in_pot"] += make_layer(obj.position, ingredients_dict["onion"])
                             # state_mask_dict["tomatoes_in_pot"] += make_layer(obj.position, ingredients_dict["tomato"])
+                            state_mask_dict["pot_is_full"] += make_layer(obj.position, obj.is_full)
                         else:
                             state_mask_dict["onions_in_soup"] += make_layer(obj.position, ingredients_dict["onion"])
                             # state_mask_dict["tomatoes_in_soup"] += make_layer(obj.position, ingredients_dict["tomato"])
@@ -1951,6 +1952,7 @@ class OvercookedGridworld(object):
 
         # reshape the featurization
         reward_features = np.array(final_obs_for_players)
+        # print(f'reward feat shape: {reward_features.shape}')
         reward_features = reward_features[:, :6, :5]
         # idx = np.arange(1.0, 26.0)
         # reward_features = reward_features * idx
@@ -2321,51 +2323,6 @@ class OvercookedGridworld(object):
         dy_loc, dx_loc = pos_distance(location, player.position)
         return dy_loc, dx_loc
 
-    @property
-    def visual_featurization_shape(self):
-        warnings.warn(
-            "Using the `featurize_state_shape` property is deprecated. Please use `get_visual_featurization_shape` method instead",
-            DeprecationWarning
-        )
-        return self.get_visual_featurization_shape()
-    
-    def get_visual_featurization_shape(self):
-        return (1 + 11*8, 8,)
-
-    def visual_featurization(self, overcooked_state, **kwargs):
-        state_str = self.state_string(overcooked_state)
-        state_str = state_str.split('\n\n')
-        assert (len(state_str) == 8)
-
-        encoding = {
-            ' ': 0,
-            'X': 1,
-            'P': 2,
-            'D': 3,
-            'S': 4,
-            'O': 5,
-            'o': 6,
-            '✓': 7,
-            'ø': 8,
-            '↑': 9,
-            '↓': 10,
-            '→': 11,
-            '←': 12,
-            '0': 13,
-            '1': 14,
-        }
-
-        curr_layout = []
-        for line in state_str:
-            row = []
-            for c in line:
-                if c in encoding:
-                    row.append(encoding[c])
-                else:
-                    row.append(len(encoding))
-            curr_layout.append(row)
-        
-        return curr_layout
 
     ###############################
     # POTENTIAL REWARD SHAPING FN #
