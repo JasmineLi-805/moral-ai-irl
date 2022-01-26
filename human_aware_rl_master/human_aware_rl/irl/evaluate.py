@@ -9,7 +9,7 @@ from human_aware_rl_master.human_aware_rl.irl.reward_models import LinearReward
 from human_aware_rl.dummy.rl_agent import *
 from human_aware_rl.rllib.utils import get_base_ae
 from overcooked_ai_py.agents.agent import AgentPair
-from human_aware_rl.irl.config import get_train_config
+from human_aware_rl.irl.config_model import get_train_config
 from human_aware_rl.irl.irl_train import calculateFE
 
 def parse_args():
