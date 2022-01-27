@@ -219,21 +219,6 @@ class OvercookedMultiAgent(MultiAgentEnv):
             # Calculate the new value based on linear annealing formula
             fraction = max(1 - float(off_t) / (end_t - start_t), 0)
             return fraction * start_v + (1 - fraction) * end_v
-    
-    def _check_coop(self, state, joint_action):
-        if self.help_provided:
-            self.help_provided = False
-            self.coop_cnt += 1
-        else:
-            pos_and_or = state.players_pos_and_or
-            help_pos = ((4, 3), Direction.EAST)
-            # TODO: check the left agent's last move was Interact
-            # TODO: check if the agent placed an onion
-            if help_pos in pos_and_or: # If the left agent is in front of and facing the counter where cooperation happens
-                if help_pos == pos_and_or[0] and joint_action[0] == Action.ACTION_TO_INDEX[Action.INTERACT]: 
-                    self.help_provided = True
-                else:
-                    pass
 
     def step(self, action_dict):
         """
@@ -257,13 +242,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
             next_state, sparse_reward, done, info = self.base_env.step(joint_action, display_phi=False)
             dense_reward = info["shaped_r_by_agent"]
 
-        # TODO: calculate coop count in each state
-        self._check_coop(next_state, joint_action)
-
         # get lossless state features
         reward_features = self.base_env.irl_reward_state_encoding(next_state)
-        
-        # TODO: add coop cnt to the features
 
         if self.custom_reward_func:
             shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()
