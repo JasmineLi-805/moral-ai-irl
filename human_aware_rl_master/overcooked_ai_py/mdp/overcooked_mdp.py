@@ -1969,10 +1969,10 @@ class OvercookedGridworld(object):
             "Using the `lossless_state_encoding_shape` property is deprecated. Please use `get_lossless_state_encoding_shape` method instead",
             DeprecationWarning
         )
-        return np.array(list(self.shape) + [26])
+        return np.array(list(self.shape) + [27])
 
     def get_lossless_state_encoding_shape(self):
-        return np.array(list(self.shape) + [26])
+        return np.array(list(self.shape) + [27])
 
 
     def lossless_state_encoding(self, overcooked_state, horizon=400, debug=False):
@@ -1980,7 +1980,7 @@ class OvercookedGridworld(object):
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
         base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "tomato_disp_loc",
-                             "dish_disp_loc", "serve_loc"]
+                             "dish_disp_loc", "serve_loc", "pot_is_full"]
         variable_map_features = ["onions_in_pot", "tomatoes_in_pot", "onions_in_soup", "tomatoes_in_soup",
                                  "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
         urgency_features = ["urgency"]
@@ -2049,7 +2049,7 @@ class OvercookedGridworld(object):
                             state_mask_dict["soup_cook_time_remaining"] += make_layer(obj.position, obj.cook_time - obj._cooking_tick)
                             if obj.is_ready:
                                 state_mask_dict["soup_done"] += make_layer(obj.position, 1)
-
+                        state_mask_dict["pot_is_full"] += make_layer(obj.position, obj.is_full)
                     else:
                         # If player soup is not in a pot, treat it like a soup that is cooked with remaining time 0
                         state_mask_dict["onions_in_soup"] += make_layer(obj.position, ingredients_dict["onion"])
