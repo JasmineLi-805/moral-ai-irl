@@ -2049,7 +2049,7 @@ class OvercookedGridworld(object):
                             state_mask_dict["soup_cook_time_remaining"] += make_layer(obj.position, obj.cook_time - obj._cooking_tick)
                             if obj.is_ready:
                                 state_mask_dict["soup_done"] += make_layer(obj.position, 1)
-                        state_mask_dict["pot_is_full"] += make_layer(obj.position, obj.is_full)
+                        # state_mask_dict["pot_is_full"] += make_layer(obj.position, obj.is_full)
                     else:
                         # If player soup is not in a pot, treat it like a soup that is cooked with remaining time 0
                         state_mask_dict["onions_in_soup"] += make_layer(obj.position, ingredients_dict["onion"])
