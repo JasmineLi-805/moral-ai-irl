@@ -88,6 +88,7 @@ def main():
     else:
         reward_model = checkpoint["reward_func"]
     config = get_train_config(reward_func=reward_model.getRewards)
+    config['training_params']['num_gpus']=0
     # config['num_training_iters'] = 10
     # config['evaluation_interval'] = 10
     run_rl_training(config)
