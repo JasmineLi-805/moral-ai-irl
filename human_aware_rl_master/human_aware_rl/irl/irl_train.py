@@ -1,5 +1,7 @@
 from math import e, inf
 import sys, os
+
+from overcooked_demo_litw.server.game import MAIClockwiseLeftAgent
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
@@ -31,13 +33,14 @@ def calculateFE(states, irl_config):
 def getMAIDummyFE(train_config, irl_config):
     mdp_params = train_config["environment_params"]["mdp_params"]
     env_params = train_config["environment_params"]["env_params"]
-    agent_0_policy = MAIDummyLeftCoopAgent()
+    # agent_0_policy = MAIDummyLeftCoopAgent()
+    agent_0_policy = MAIClockwiseLeftAgent()
     agent_1_policy = MAIDummyRightCoopAgent()
     agent_pair = AgentPair(agent_0_policy, agent_1_policy)
 
     ae = get_base_ae(mdp_params, env_params)
     env = ae.env
-    results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
+    results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
     
     states = results['ep_states'][0]
     # check which index corresponds to agent on the left and vice versa
@@ -51,11 +54,9 @@ def getMAIDummyFE(train_config, irl_config):
         right_idx = 0
         left_idx = 1
     assert left_idx != -1 and right_idx != -1
-    # print(f'RL agent position={pos}, left idx={left_idx}, right idx={right_idx}')
 
     feat_states = []
     for s in states:
-        # using lossless feats
         reward_features = env.irl_reward_state_encoding(s)
         feat_states.append(reward_features)
 

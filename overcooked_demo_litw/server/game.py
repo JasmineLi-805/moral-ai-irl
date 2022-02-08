@@ -738,17 +738,14 @@ class MAIDumbAgent:
         self.curr_tick += 1
         if self.curr_phase < len(self.phases):
             formula_name = self.phases[self.curr_phase]
-            # print(f'tick={self.curr_tick};phase={self.curr_phase}-{formula_name};seq={self.phases}')
             if formula_name in self.formulas:
                 phase = self.formulas[formula_name]
                 if self.curr_tick < len(phase):
                     return phase[self.curr_tick], None
                 else:
                     self.reset_smart(state)
-                    # print(f'MAIDumbAgent.action(): dummy agent phases = {self.phases}')
             else:
                 self.curr_phase += 1
-        # print(f'STAY')
         return Action.STAY, None
 
     def reset(self):
@@ -1322,3 +1319,52 @@ class TutorialAI():
     def reset(self):
         self.curr_tick = -1
         self.curr_phase += 1
+
+
+##################
+## IRL Subtasks ##
+##################
+
+# The bots below are used for subtasks in IRL training.
+
+# 1.1 clockwise walk-only agent
+class MAIClockwiseLeftAgent(MAIDumbAgent):
+
+    STEPS = {
+        'MOVE_CLOCKWISE': [
+            Direction.EAST,
+            Direction.SOUTH,
+            Direction.SOUTH,
+            Direction.WEST,
+            Direction.WEST,
+            Direction.WEST,
+            Direction.NORTH,
+            Direction.NORTH,
+            Direction.EAST,
+            Direction.EAST
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'MOVE_CLOCKWISE'
+        ]
+        super().__init__(sequence, MAIClockwiseLeftAgent.STEPS)
+
+    def reset_smart(self, state):
+        if isinstance(state, np.ndarray):
+            state = unflatten_state(state)
+
+        last_phase = self.phases[self.curr_phase]
+        if last_phase in ['PLACE_ONION_HELP']:
+            self.help_provided = True
+        if isinstance(state, OvercookedState):
+            if (not self._find_help_object(state.objects)) and self.help_provided:
+                self.help_provided = False
+                self.provided_coop += 1
+        elif isinstance(state, Dict):
+            if state['help_obj'] != 1 and self.help_provided:
+                self.help_provided = False
+                self.provided_coop += 1
+        super(MAIClockwiseLeftAgent, self).reset_smart(state)
