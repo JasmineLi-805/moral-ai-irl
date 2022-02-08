@@ -7,7 +7,7 @@ from ray.rllib.models.preprocessors import Preprocessor
 sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/overcooked_demo_litw'))
 sys.path.append(os.path.dirname('/homes/iws/jl9985/moral-ai-irl/overcooked_demo_litw'))
 sys.path.append(os.path.dirname('/home/jasmine/moral-ai-irl/overcooked_demo_litw'))
-from overcooked_demo_litw.server.game import MAIDumbAgent, MAIDumbAgentLeftCoop, MAIDumbAgentRightCoop
+from overcooked_demo_litw.server.game import *
 from overcooked_ai_py.mdp.actions import Action
 from ray.rllib.policy import Policy as RllibPolicy
 import numpy as np
@@ -165,6 +165,35 @@ class MAIDummyRightCoopAgent(Agent):
     
     def __init__(self):
         self.agent = MAIDumbAgentRightCoop()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+
+##################
+## IRL Subtasks ##
+##################
+
+# 1.1 clockwise walk-only agent
+class MAIClockwiseLeftAgent(Agent):
+    
+    def __init__(self):
+        self.agent = MAIClockwiseLeft()
 
     def action(self, state):
         act = self.agent.action(state)

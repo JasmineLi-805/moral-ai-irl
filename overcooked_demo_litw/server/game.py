@@ -1328,7 +1328,7 @@ class TutorialAI():
 # The bots below are used for subtasks in IRL training.
 
 # 1.1 clockwise walk-only agent
-class MAIClockwiseLeftAgent(MAIDumbAgent):
+class MAIClockwiseLeft(MAIDumbAgent):
 
     STEPS = {
         'MOVE_CLOCKWISE': [
@@ -1350,7 +1350,7 @@ class MAIClockwiseLeftAgent(MAIDumbAgent):
         sequence = [
             'MOVE_CLOCKWISE'
         ]
-        super().__init__(sequence, MAIClockwiseLeftAgent.STEPS)
+        super().__init__(sequence, MAIClockwiseLeft.STEPS)
 
     def reset_smart(self, state):
         if isinstance(state, np.ndarray):
@@ -1367,4 +1367,4 @@ class MAIClockwiseLeftAgent(MAIDumbAgent):
             if state['help_obj'] != 1 and self.help_provided:
                 self.help_provided = False
                 self.provided_coop += 1
-        super(MAIClockwiseLeftAgent, self).reset_smart(state)
+        super(MAIClockwiseLeft, self).reset_smart(state)

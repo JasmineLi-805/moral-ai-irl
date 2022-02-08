@@ -1,7 +1,6 @@
 from math import e, inf
 import sys, os
 
-from overcooked_demo_litw.server.game import MAIClockwiseLeftAgent
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
