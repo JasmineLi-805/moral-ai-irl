@@ -4,8 +4,8 @@ HOME_DIR = '/PROJECT_PATH/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl/
 # There is a bug when using too long directory names in RAY TMP folders: https://github.com/ray-project/ray/issues/7724
 TMP_DIR = '/tmp/'
 
-LOCAL_TESTING = True
-GERLACH = False
+LOCAL_TESTING = False
+GERLACH = True
 
 def _env_creator(env_config):
     # Re-import required here to work with serialization
