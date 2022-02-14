@@ -215,7 +215,7 @@ if __name__ == "__main__":
             }
             file_name = 'final.pickle'
             with open(os.path.join(save_dir, file_name), 'wb') as save_file:
-                pickle.dump(pack, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(final_pack, save_file, protocol=pickle.HIGHEST_PROTOCOL)
             print(f'final model saved to {os.path.join(save_dir, file_name)}')
             break
         
