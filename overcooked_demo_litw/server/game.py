@@ -4,7 +4,7 @@ from queue import Queue, LifoQueue, Empty, Full
 import numpy as np
 from time import time
 from typing import Dict
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, OvercookedState
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, OvercookedState, SoupState
 from overcooked_ai_py.mdp.actions import Action, Direction
 from overcooked_ai_py.planning.planners import MotionPlanner, NO_COUNTERS_PARAMS
 import random, os, pickle, json
@@ -1006,7 +1006,12 @@ class MAIDumbAgentRightCoop(MAIDumbAgent):
                 else:
                     self.phases.append('WAIT_SOUP')
             else:
-                self.phases.append('DELIVER_SOUP')
+                right_stove_pos = (8, 0)
+                right_stove = state.objects.get(right_stove_pos, None)
+                if right_stove and isinstance(right_stove, SoupState) and right_stove.is_ready:
+                    self.phases.append('DELIVER_SOUP')
+                else:
+                    self.phases.append('WAIT_SOUP')
         self.curr_phase += 1
 
 
