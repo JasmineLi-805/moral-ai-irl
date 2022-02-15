@@ -1836,17 +1836,12 @@ class OvercookedGridworld(object):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
-        # T35
+
         base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "dish_disp_loc", "serve_loc"]
         variable_map_features = ["onions_in_pot", "onions_in_soup", "pot_is_full",
                                  "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
-        # prev
-        # base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "tomato_disp_loc",
-        #                      "dish_disp_loc", "serve_loc"]
-        # variable_map_features = ["onions_in_pot", "tomatoes_in_pot", "onions_in_soup", "tomatoes_in_soup",
-        #                          "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
-        # urgency_features = ["urgency"]
         all_objects = overcooked_state.all_objects_list
+        print(f'all objects: {all_objects}')
 
         def make_layer(position, value):
                 layer = np.zeros(self.shape)
@@ -1894,6 +1889,7 @@ class OvercookedGridworld(object):
 
             # OBJECT & STATE LAYERS
             for obj in all_objects:
+                print(f'obj = {obj}')
                 if obj.name == "soup":
                     # removed the next line because onion doesn't have to be in all the soups?
                     # if Recipe.ONION in obj.ingredients:
