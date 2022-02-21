@@ -238,7 +238,7 @@ def get_train_config(reward_func):
 
     irl_params = {
         "discount_factor": discount_factor,
-        "epsilon": 1,
+        "epsilon": 0.1,
         "layout": layout_name
     }
 
