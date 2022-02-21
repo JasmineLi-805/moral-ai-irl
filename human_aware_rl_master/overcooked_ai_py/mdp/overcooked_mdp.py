@@ -1936,11 +1936,11 @@ class OvercookedGridworld(object):
         reward_features = np.array(final_obs_for_players)
         # print(f'reward feat shape: {reward_features.shape}')
         reward_features = reward_features[:, :6, :5]
-        idx = np.arange(1.0, 12.0)
-        reward_features = reward_features * idx
-        reward_features = np.sum(reward_features, axis=3)
-        target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2])    # for squeezed bitmap
-        # target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3]) # for unsqueezed bitmap
+        # idx = np.arange(1.0, 12.0)
+        # reward_features = reward_features * idx
+        # reward_features = np.sum(reward_features, axis=3)
+        # target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2])    # for squeezed bitmap
+        target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3]) # for unsqueezed bitmap
         reward_features = np.reshape(reward_features, target_shape)
 
         return reward_features

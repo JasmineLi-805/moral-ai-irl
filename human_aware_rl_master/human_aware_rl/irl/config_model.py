@@ -54,7 +54,7 @@ def get_train_config(reward_func):
     sgd_minibatch_size = 800 if not LOCAL_TESTING else 800
 
     # Rollout length
-    rollout_fragment_length = 400
+    rollout_fragment_length = 11
     
     # Whether all PPO agents should share the same policy network
     shared_policy = True
@@ -106,7 +106,7 @@ def get_train_config(reward_func):
     evaluation_interval = 100 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
-    evaluation_ep_length = 400
+    evaluation_ep_length = 11
 
     # Number of games to simulation each evaluation
     evaluation_num_games = 1
@@ -156,7 +156,7 @@ def get_train_config(reward_func):
     }
 
     # Max episode length
-    horizon = 400
+    horizon = 11
 
     # Constant by which shaped rewards are multiplied by when calculating total reward
     reward_shaping_factor = 0.0
