@@ -109,10 +109,10 @@ def get_train_config(reward_func):
     evaluation_ep_length = 11
 
     # Number of games to simulation each evaluation
-    evaluation_num_games = 1
+    evaluation_num_games = 20
 
     # Whether to display rollouts in evaluation
-    evaluation_display = True
+    evaluation_display = False
 
     # Where to store model checkpoints and training stats
     results_dir = HOME_DIR+"result"
