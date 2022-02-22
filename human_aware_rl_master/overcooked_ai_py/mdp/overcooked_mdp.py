@@ -1833,6 +1833,17 @@ class OvercookedGridworld(object):
     # STATE ENCODINGS #
     ###################
     def irl_reward_state_encoding(self, overcooked_state, horizon=400, debug=False):
+        # encode the only the left player state in the format np.array(Orientation, position_0, position_1)
+        for i, player in enumerate(overcooked_state.players):
+            if player.position[0] < 5:
+                result = np.zeros((2,3))
+                result[0][0] = Direction.DIRECTION_TO_INDEX[player.orientation]
+                result[0][1] = player.position[0]
+                result[0][2] = player.position[1]
+                # print(result)
+                return result
+
+    def temp_irl_reward_state_encoding(self, overcooked_state, horizon=400, debug=False):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool

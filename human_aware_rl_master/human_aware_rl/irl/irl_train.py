@@ -25,8 +25,8 @@ def _apply_discount(states, gamma):
 
 def calculateFE(states, irl_config):
     gamma = irl_config['discount_factor']
-    result = _apply_discount(states, gamma)
-    result = np.sum(result, axis=0)
+    # result = _apply_discount(states, gamma)
+    result = np.sum(states, axis=0)
     return result
 
 def getMAIDummyFE(train_config, irl_config):
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30 * 11            # change if reward shape changed.
+        reward_obs_shape = 3            # change if reward shape changed.
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
