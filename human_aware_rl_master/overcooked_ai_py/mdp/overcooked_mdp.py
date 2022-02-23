@@ -1833,17 +1833,6 @@ class OvercookedGridworld(object):
     # STATE ENCODINGS #
     ###################
     def irl_reward_state_encoding(self, overcooked_state, horizon=400, debug=False):
-        # encode the only the left player state in the format np.array(Orientation, position_0, position_1)
-        for i, player in enumerate(overcooked_state.players):
-            if player.position[0] < 5:
-                result = np.zeros((2,3))
-                result[0][0] = Direction.DIRECTION_TO_INDEX[player.orientation]
-                result[0][1] = player.position[0]
-                result[0][2] = player.position[1]
-                # print(result)
-                return result
-
-    def temp_irl_reward_state_encoding(self, overcooked_state, horizon=400, debug=False):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
@@ -1862,64 +1851,13 @@ class OvercookedGridworld(object):
         def process_for_player(primary_agent_idx):
             # Ensure that primary_agent_idx layers are ordered before other_agent_idx layers
             other_agent_idx = 1 - primary_agent_idx
-            ordered_player_features = ["player_{}_loc".format(primary_agent_idx), "player_{}_loc".format(other_agent_idx)] + \
-                        ["player_{}_orientation_{}".format(i, Direction.DIRECTION_TO_INDEX[d])
-                        for i, d in itertools.product([primary_agent_idx, other_agent_idx], Direction.ALL_DIRECTIONS)]
+            ordered_player_features = ["player_{}_loc".format(primary_agent_idx), "player_{}_loc".format(other_agent_idx)]
 
-            LAYERS = ordered_player_features + obstacle_features
+            LAYERS = ordered_player_features
             state_mask_dict = {k:np.zeros(self.shape) for k in LAYERS}
-
-            for loc in self.get_counter_locations():
-                state_mask_dict["wall"][loc] = 1
-
-            for loc in self.get_pot_locations():
-                state_mask_dict["wall"][loc] = 1
-
-            for loc in self.get_onion_dispenser_locations():
-                state_mask_dict["wall"][loc] = 1
-
-            for loc in self.get_dish_dispenser_locations():
-                state_mask_dict["wall"][loc] = 1
-
-            for loc in self.get_serving_locations():
-                state_mask_dict["wall"][loc] = 1
-
             # PLAYER LAYERS
             for i, player in enumerate(overcooked_state.players):
-                player_orientation_idx = Direction.DIRECTION_TO_INDEX[player.orientation]
                 state_mask_dict["player_{}_loc".format(i)] = make_layer(player.position, 1)
-                state_mask_dict["player_{}_orientation_{}".format(i, player_orientation_idx)] = make_layer(player.position, 1)
-
-            # OBJECT & STATE LAYERS
-            # for obj in all_objects:
-            #     print(f'obj = {obj}')
-            #     if obj.name == "soup":
-            #         # get the ingredients into a {object: number} dictionary
-            #         ingredients_dict = Counter(obj.ingredients)
-            #         # assert "onion" in ingredients_dict.keys()
-            #         if obj.position in self.get_pot_locations():
-            #             if obj.is_idle:
-            #                 # onions_in_pot and tomatoes_in_pot are used when the soup is idling, and ingredients could still be added
-            #                 state_mask_dict["onions_in_pot"] += make_layer(obj.position, ingredients_dict["onion"])
-            #                 # state_mask_dict["tomatoes_in_pot"] += make_layer(obj.position, ingredients_dict["tomato"])
-            #                 state_mask_dict["pot_is_full"] += make_layer(obj.position, obj.is_full)
-            #             else:
-            #                 state_mask_dict["onions_in_soup"] += make_layer(obj.position, ingredients_dict["onion"])
-            #                 # state_mask_dict["tomatoes_in_soup"] += make_layer(obj.position, ingredients_dict["tomato"])
-            #                 state_mask_dict["soup_cook_time_remaining"] += make_layer(obj.position, obj.cook_time - obj._cooking_tick)
-            #                 if obj.is_ready:
-            #                     state_mask_dict["soup_done"] += make_layer(obj.position, 1)
-            #         else:
-            #             # If player soup is not in a pot, treat it like a soup that is cooked with remaining time 0
-            #             state_mask_dict["onions_in_soup"] += make_layer(obj.position, ingredients_dict["onion"])
-            #             # state_mask_dict["tomatoes_in_soup"] += make_layer(obj.position, ingredients_dict["tomato"])
-            #             state_mask_dict["soup_done"] += make_layer(obj.position, 1)
-            #     elif obj.name == "dish":
-            #         state_mask_dict["dishes"] += make_layer(obj.position, 1)
-            #     elif obj.name == "onion":
-            #         state_mask_dict["onions"] += make_layer(obj.position, 1)
-            #     else:
-            #         raise ValueError("Unrecognized object")
 
             if debug:
                 print("terrain----")
@@ -1945,15 +1883,16 @@ class OvercookedGridworld(object):
 
         # reshape the featurization
         reward_features = np.array(final_obs_for_players)
-        # print(f'reward feat shape: {reward_features.shape}')
-        reward_features = reward_features[:, :6, :5]
+        
+        # print(reward_features)
+        # reward_features = reward_features[:, :5, :6]
+        reward_features = reward_features[:, :5, :6, :]
         # idx = np.arange(1.0, 12.0)
         # reward_features = reward_features * idx
-        # reward_features = np.sum(reward_features, axis=3)
-        # target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2])    # for squeezed bitmap
-        target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3]) # for unsqueezed bitmap
+        reward_features = np.sum(reward_features, axis=3)
+        target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2])    # for squeezed bitmap
+        # target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3]) # for unsqueezed bitmap
         reward_features = np.reshape(reward_features, target_shape)
-
         return reward_features
 
     @property
