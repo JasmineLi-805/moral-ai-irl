@@ -24,52 +24,36 @@ def _apply_discount(states, gamma):
 
 
 def calculateFE(states, irl_config):
-    gamma = irl_config['discount_factor']
-    # result = _apply_discount(states, gamma)
     result = np.sum(states, axis=0)
     return result
 
-def getMAIDummyFE(train_config, irl_config):
-    mdp_params = train_config["environment_params"]["mdp_params"]
-    env_params = train_config["environment_params"]["env_params"]
-    # agent_0_policy = MAIDummyLeftCoopAgent()
-    agent_0_policy = MAIClockwiseLeftAgent()
-    agent_1_policy = MAIDummyRightCoopAgent()
-    agent_pair = AgentPair(agent_0_policy, agent_1_policy)
-
-    ae = get_base_ae(mdp_params, env_params)
-    env = ae.env
-    results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
-    
-    states = results['ep_states'][0]
-    # check which index corresponds to agent on the left and vice versa
-    left_idx = -1 
-    right_idx = -1
-    pos = states[0].player_positions
-    if pos[0] == (3,1) and pos[1] == (8,1):
-        right_idx = 1
-        left_idx = 0
-    elif pos[1] == (3,1) and pos[0] == (8,1):
-        right_idx = 0
-        left_idx = 1
-    assert left_idx != -1 and right_idx != -1
+def _get_agent_featurized_states(states, env):
+    target_player_idx = 0
+    # assertions specific to `mai_separate_coop_left` room layout
+    # check that we are getting the trajectory of the left agent
+    assert states[0].player_positions[target_player_idx] == (3,1)
 
     feat_states = []
     for s in states:
         reward_features = env.irl_reward_state_encoding(s)
         feat_states.append(reward_features)
-
     feat_states = np.array(feat_states)
     feat_states = np.swapaxes(feat_states,0,1)
-    
-    layout = irl_config['layout']
-    if layout == 'mai_separate_coop_right':
-        right_state = calculateFE(feat_states[right_idx], irl_config)
-        return right_state
-    else:
-        assert layout == 'mai_separate_coop_left'
-        left_state = calculateFE(feat_states[left_idx], irl_config)
-        return left_state
+    return feat_states[target_player_idx]
+
+def getMAIDummyFE(train_config, irl_config):
+    mdp_params = train_config["environment_params"]["mdp_params"]
+    env_params = train_config["environment_params"]["env_params"]
+    agent_pair = AgentPair(MAIClockwiseLeftAgent(), MAIDummyRightCoopAgent())
+
+    ae = get_base_ae(mdp_params, env_params)
+    env = ae.env
+    results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
+
+    states = results['ep_states'][0]
+    featurized_states = _get_agent_featurized_states(states, env)
+    feature_expectation = calculateFE(featurized_states, irl_config)
+    return feature_expectation
 
 def getRLAgentFE(train_config, irl_config): #get the feature expectations of a new policy using RL agent
     '''
@@ -79,7 +63,10 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     
     Returns the feature expectation.
     '''
-    layout = irl_config['layout']
+    mdp_params = train_config["environment_params"]["mdp_params"]
+    env_params = train_config["environment_params"]["env_params"]
+    ae = get_base_ae(mdp_params, env_params)
+    env = ae.env
     # train and get rollouts
     results = None
     while True:
@@ -90,40 +77,9 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
             print(e)
 
     agent_rollout = results['evaluation']['states']
-
-    left_idx = -1
-    right_idx = -1
-    pos = agent_rollout[0].player_positions
-    if pos[0] == (3,1) and pos[1] == (8,1):
-        right_idx = 1
-        left_idx = 0
-    elif pos[1] == (3,1) and pos[0] == (8,1):
-        right_idx = 0
-        left_idx = 1
-    assert left_idx != -1 and right_idx != -1
-    # print(f'RL agent position={pos}, left idx={left_idx}, right idx={right_idx}')
-
-    # featurize states
-    mdp_params = train_config["environment_params"]["mdp_params"]
-    env_params = train_config["environment_params"]["env_params"]
-    ae = get_base_ae(mdp_params, env_params)
-    env = ae.env
-    feat_states = []
-    for state in agent_rollout:
-        # using lossless feats
-        reward_features = env.irl_reward_state_encoding(state)
-        feat_states.append(reward_features)
-
-    feat_states = np.array(feat_states)
-    feat_states = np.swapaxes(feat_states,0,1)
-    
-    if layout == 'mai_separate_coop_right':
-        right_state = calculateFE(feat_states[right_idx], irl_config)
-        return right_state
-    else:
-        assert layout == 'mai_separate_coop_left'
-        left_state = calculateFE(feat_states[left_idx], irl_config)
-        return left_state
+    featurized_states = _get_agent_featurized_states(agent_rollout, env)
+    feature_expectation = calculateFE(featurized_states, irl_config)
+    return feature_expectation
 
 def load_checkpoint(file_path):
     assert os.path.isfile(file_path)
@@ -158,7 +114,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30           # change if reward shape changed.
+        reward_obs_shape = 30         # change if reward shape changed.
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
@@ -172,12 +128,8 @@ if __name__ == "__main__":
             reward_obs_shape = checkpoint["reward_obs_shape"]
             reward_model = LinearReward(reward_obs_shape)
             reward_model.updateWeights(checkpoint["reward_model_weights"])
-        # else:
-            # reward_model = checkpoint["reward_func"]
-            # reward_obs_shape = 30
         config = checkpoint['config']
         config["environment_params"]["custom_reward_func"] = reward_model.getRewards
-        # config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
         irl_agent = checkpoint['irl_agent']
         i = checkpoint['curr_epoch'] + 1
@@ -260,39 +212,3 @@ if __name__ == "__main__":
     
     print('Final weights found, irl training completed.')
 
-
-
-# DEFAULT_DATA_PARAMS = {
-#     "layouts": ["cramped_room"],
-#     "check_trajectories": False,
-#     "featurize_states": True,
-#     "data_path": CLEAN_2019_HUMAN_DATA_TRAIN
-# }
-
-
-# def load_data():
-#     def _pad(sequences, maxlen=None, default=0):
-#         if not maxlen:
-#             maxlen = max([len(seq) for seq in sequences])
-#         for seq in sequences:
-#             pad_len = maxlen - len(seq)
-#             seq.extend([default]*pad_len)
-#         return sequences
-
-#     processed_trajs = get_human_human_trajectories(
-#         **DEFAULT_DATA_PARAMS, silent=False)
-#     print(len(processed_trajs))
-#     for k in processed_trajs:
-#         print(k)
-#     inputs, targets = processed_trajs["ep_states"], processed_trajs["ep_actions"]
-#     print(f'inputs = {type(inputs)}; len = {len(inputs)}')
-#     print(f'targets = {type(targets)}; len = {len(targets)}')
-
-#     # sequence matters, pad the shorter ones with init state
-#     seq_lens = np.array([len(seq) for seq in inputs])
-#     seq_padded = _pad(inputs, default=np.zeros((len(inputs[0][0],))))
-#     targets_padded = _pad(targets, default=np.zeros(1))
-#     seq_t = np.dstack(seq_padded).transpose((2, 0, 1))
-#     targets_t = np.dstack(targets_padded).transpose((2, 0, 1))
-
-#     return seq_t, targets_t, seq_lens

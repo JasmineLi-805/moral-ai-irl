@@ -1885,8 +1885,8 @@ class OvercookedGridworld(object):
         reward_features = np.array(final_obs_for_players)
         
         # print(reward_features)
-        # reward_features = reward_features[:, :5, :6]
-        reward_features = reward_features[:, :5, :6, :]
+        # reward_features = reward_features[:, :6, :5]
+        reward_features = reward_features[:, :6, :5, :]
         # idx = np.arange(1.0, 12.0)
         # reward_features = reward_features * idx
         reward_features = np.sum(reward_features, axis=3)
