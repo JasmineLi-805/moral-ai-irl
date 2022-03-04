@@ -1347,7 +1347,7 @@ class MAIClockwiseLeft(MAIDumbAgent):
             Direction.NORTH,
             Direction.EAST,
             Direction.EAST
-        ]
+        ] * 40
     }
 
     def __init__(self):

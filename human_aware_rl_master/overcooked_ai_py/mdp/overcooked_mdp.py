@@ -1844,9 +1844,9 @@ class OvercookedGridworld(object):
         all_objects = overcooked_state.all_objects_list
 
         def make_layer(position, value):
-                layer = np.zeros(self.shape)
-                layer[position] = value
-                return layer
+            layer = np.zeros(self.shape)
+            layer[position] = value
+            return layer
 
         def process_for_player(primary_agent_idx):
             # Ensure that primary_agent_idx layers are ordered before other_agent_idx layers
