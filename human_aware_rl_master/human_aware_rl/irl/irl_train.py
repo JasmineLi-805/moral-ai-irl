@@ -51,6 +51,8 @@ def getMAIDummyFE(train_config, irl_config):
     env = ae.env
     results = env.get_rollouts(agent_pair=agent_pair, num_games=2, display=True)
 
+    ep_states = results['ep_states']
+    print(f'ep_state len = {len(ep_states)}')
     states = results['ep_states'][0]
     featurized_states = _get_agent_featurized_states(states, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
