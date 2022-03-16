@@ -31,16 +31,19 @@ def _get_agent_featurized_states(states, env):
     target_player_idx = 0
     # assertions specific to `mai_separate_coop_left` room layout
     # check that we are getting the trajectory of the left agent
-    assert states[0].player_positions[target_player_idx] == (3,1)
+    assert states[0][0].player_positions[target_player_idx] == (3,1)
 
-    feat_states = []
-    print(f'length of the states: {states.shape}')
-    for s in states:
-        reward_features = env.irl_reward_state_encoding(s)
-        feat_states.append(reward_features)
-    feat_states = np.array(feat_states)
-    feat_states = np.swapaxes(feat_states,0,1)
-    return feat_states[target_player_idx]
+    num_game = len(states)
+    for game in states:
+        feat_states = []
+        for s in game:
+            reward_features = env.irl_reward_state_encoding(s)
+            feat_states.append(reward_features)
+        feat_states = np.array(feat_states)
+        feat_states = np.swapaxes(feat_states,0,1)
+        print(f'num game = {num_game}')
+        print(f'feat_states shape = {feat_states.shape}')
+        return feat_states[target_player_idx]
 
 def getMAIDummyFE(train_config, irl_config):
     mdp_params = train_config["environment_params"]["mdp_params"]
@@ -51,9 +54,7 @@ def getMAIDummyFE(train_config, irl_config):
     env = ae.env
     results = env.get_rollouts(agent_pair=agent_pair, num_games=2, display=True)
 
-    ep_states = results['ep_states']
-    print(f'ep_state len = {len(ep_states)}')
-    states = results['ep_states'][0]
+    states = results['ep_states']
     featurized_states = _get_agent_featurized_states(states, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
     return feature_expectation
