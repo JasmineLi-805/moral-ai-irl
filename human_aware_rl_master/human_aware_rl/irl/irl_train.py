@@ -34,7 +34,7 @@ def _get_agent_featurized_states(states, env):
     assert states[0].player_positions[target_player_idx] == (3,1)
 
     feat_states = []
-    print(f'length of the states: {len(states)}')
+    print(f'length of the states: {states.shape}')
     for s in states:
         reward_features = env.irl_reward_state_encoding(s)
         feat_states.append(reward_features)
