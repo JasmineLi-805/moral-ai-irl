@@ -49,7 +49,7 @@ def getMAIDummyFE(train_config, irl_config):
 
     ae = get_base_ae(mdp_params, env_params)
     env = ae.env
-    results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
+    results = env.get_rollouts(agent_pair=agent_pair, num_games=2, display=True)
 
     states = results['ep_states'][0]
     featurized_states = _get_agent_featurized_states(states, env)
