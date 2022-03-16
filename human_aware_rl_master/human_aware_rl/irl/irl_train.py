@@ -34,6 +34,7 @@ def _get_agent_featurized_states(states, env):
     assert states[0][0].player_positions[target_player_idx] == (3,1)
 
     num_game = len(states)
+    print(f'num game = {num_game}')
     all_feat = []
     for game in states:
         feat_states = []
@@ -47,9 +48,7 @@ def _get_agent_featurized_states(states, env):
 
     all_feat = np.array(all_feat)
     all_feat = np.sum(all_feat, axis=0)
-    print(f'all_feat shape = {all_feat.shape}, num_game = {num_game}')
     all_feat = all_feat / num_game
-    print(all_feat)
     return all_feat
 
 def getMAIDummyFE(train_config, irl_config):
