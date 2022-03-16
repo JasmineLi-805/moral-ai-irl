@@ -100,7 +100,7 @@ def my_config():
     sgd_minibatch_size = 1200 if not LOCAL_TESTING else 800
 
     # Rollout length
-    rollout_fragment_length = 400
+    rollout_fragment_length = 10
     
     # Whether all PPO agents should share the same policy network
     shared_policy = True
@@ -152,7 +152,7 @@ def my_config():
     evaluation_interval = 200 if not LOCAL_TESTING else 2
 
     # How many timesteps should be in an evaluation episode
-    evaluation_ep_length = 400
+    evaluation_ep_length = 10
 
     # Number of games to simulation each evaluation
     evaluation_num_games = 1
@@ -201,7 +201,7 @@ def my_config():
     }
 
     # Max episode length
-    horizon = 400
+    horizon = 10
 
     # Constant by which shaped rewards are multiplied by when calculating total reward
     reward_shaping_factor = 0.0
