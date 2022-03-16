@@ -1,6 +1,8 @@
 from math import e, inf
 import sys, os
 
+from sqlalchemy import all_
+
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
@@ -34,6 +36,7 @@ def _get_agent_featurized_states(states, env):
     assert states[0][0].player_positions[target_player_idx] == (3,1)
 
     num_game = len(states)
+    all_feat = []
     for game in states:
         feat_states = []
         for s in game:
@@ -41,9 +44,15 @@ def _get_agent_featurized_states(states, env):
             feat_states.append(reward_features)
         feat_states = np.array(feat_states)
         feat_states = np.swapaxes(feat_states,0,1)
-        print(f'num game = {num_game}')
-        print(f'feat_states shape = {feat_states.shape}')
-        return feat_states[target_player_idx]
+
+        all_feat.append(feat_states[target_player_idx])
+
+    all_feat = np.array(all_feat)
+    all_feat = np.sum(all_feat, axis=0)
+    print(f'all_feat shape = {all_feat.shape}, num_game = {num_game}')
+    all_feat = all_feat / num_game
+    print(all_feat)
+    return all_feat
 
 def getMAIDummyFE(train_config, irl_config):
     mdp_params = train_config["environment_params"]["mdp_params"]
