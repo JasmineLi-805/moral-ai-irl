@@ -89,6 +89,8 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
         except Exception as e:
             print(e)
 
+    for k in results['evaluation']:
+        print(k)
     agent_rollout = results['evaluation']['states']
     featurized_states = _get_agent_featurized_states(agent_rollout, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
