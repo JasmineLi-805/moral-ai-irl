@@ -33,7 +33,7 @@ def _get_agent_featurized_states(states, env):
     # check that we are getting the trajectory of the left agent
     print(str(type(states)) + f'\t {len(states)}')
     print(str(type(states[0])) + f'\t {len(states[0])}')
-    print(str(type(states[0][0])) + f'\t {len(states[0][0])}')
+    print(str(type(states[0][0])))
     # assert states[0][0].player_positions[target_player_idx] == (3,1)
 
     num_game = len(states)
@@ -61,7 +61,7 @@ def getMAIDummyFE(train_config, irl_config):
 
     ae = get_base_ae(mdp_params, env_params)
     env = ae.env
-    results = env.get_rollouts(agent_pair=agent_pair, num_games=2, display=True)
+    results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
 
     states = results['ep_states']
     featurized_states = _get_agent_featurized_states(states, env)
