@@ -32,8 +32,8 @@ def _get_agent_featurized_states(states, env):
     # assertions specific to `mai_separate_coop_left` room layout
     # check that we are getting the trajectory of the left agent
     print(type(states))
-    print(type(states[0]))
-    print(type(states[0][0]))
+    print(type(states[0]) + f'\t {len(states[0])}')
+    print(type(states[0][0]) + f'\t {len(states[0][0])}')
     # assert states[0][0].player_positions[target_player_idx] == (3,1)
 
     num_game = len(states)
