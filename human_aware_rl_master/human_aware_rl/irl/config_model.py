@@ -103,7 +103,7 @@ def get_train_config(reward_func):
     save_freq = -1  # do not store intermediate RL agent results
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 100 if not LOCAL_TESTING else 1
+    evaluation_interval = 10 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 10
