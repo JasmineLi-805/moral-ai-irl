@@ -212,3 +212,50 @@ class MAIClockwiseLeftAgent(Agent):
         """
         self.agent_index = None
         self.mdp = None
+
+# 1.2
+class MAIToOnionShortAgent(Agent):
+    
+    def __init__(self):
+        self.agent = ToOnionShort()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAIToOnionLongAgent(Agent):
+    
+    def __init__(self):
+        self.agent = ToOnionLong()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None

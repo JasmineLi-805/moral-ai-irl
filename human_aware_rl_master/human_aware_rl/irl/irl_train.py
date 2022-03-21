@@ -31,13 +31,9 @@ def _get_agent_featurized_states(states, env):
     target_player_idx = 0
     # assertions specific to `mai_separate_coop_left` room layout
     # check that we are getting the trajectory of the left agent
-    print(str(type(states)) + f'\t {len(states)}')
-    print(str(type(states[0])) + f'\t {len(states[0])}')
-    print(str(type(states[0][0])))
-    # assert states[0][0].player_positions[target_player_idx] == (3,1)
+    assert states[0][0].player_positions[target_player_idx] == (3,1)
 
     num_game = len(states)
-    print(f'num game = {num_game}')
     all_feat = []
     for game in states:
         feat_states = []
@@ -57,13 +53,17 @@ def _get_agent_featurized_states(states, env):
 def getMAIDummyFE(train_config, irl_config):
     mdp_params = train_config["environment_params"]["mdp_params"]
     env_params = train_config["environment_params"]["env_params"]
-    agent_pair = AgentPair(MAIClockwiseLeftAgent(), MAIDummyRightCoopAgent())
-
     ae = get_base_ae(mdp_params, env_params)
     env = ae.env
-    results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
 
-    states = results['ep_states']
+    states = []
+    agents = [MAIToOnionLongAgent(), MAIToOnionShortAgent()]
+    for a in agents:
+        agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
+        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
+        states.append(results['ep_states'])
+
+    states = np.concatenate(states, axis=0)
     featurized_states = _get_agent_featurized_states(states, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
     return feature_expectation
@@ -89,9 +89,8 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
         except Exception as e:
             print(e)
 
-    for k in results['evaluation']:
-        print(k)
     agent_rollout = results['evaluation']['states']
+    agent_rollout = np.expand_dims(agent_rollout, axis=0)
     featurized_states = _get_agent_featurized_states(agent_rollout, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
     return feature_expectation

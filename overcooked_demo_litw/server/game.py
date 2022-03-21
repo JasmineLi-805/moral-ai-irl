@@ -1373,3 +1373,56 @@ class MAIClockwiseLeft(MAIDumbAgent):
                 self.help_provided = False
                 self.provided_coop += 1
         super(MAIClockwiseLeft, self).reset_smart(state)
+
+# 1.2 
+class ToOnionShort(MAIDumbAgent):
+    STEPS = {
+        'TO_ONION': [
+            Direction.EAST,
+            Direction.SOUTH,
+            Direction.SOUTH,
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TO_ONION'
+        ]
+        super().__init__(sequence, ToOnionShort.STEPS)
+
+    def reset_smart(self, state):
+        last_phase = self.phases[self.curr_phase]
+        self.phases.append('STAY')
+        super(ToOnionShort, self).reset_smart(state)
+
+class ToOnionLong(MAIDumbAgent):
+    STEPS = {
+        'TO_ONION': [
+            Direction.WEST,
+            Direction.WEST,
+            Direction.SOUTH,
+            Direction.SOUTH,
+            Direction.EAST,
+            Direction.EAST,
+            Direction.EAST
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TO_ONION'
+        ]
+        super().__init__(sequence, ToOnionLong.STEPS)
+
+    def reset_smart(self, state):
+        last_phase = self.phases[self.curr_phase]
+        self.phases.append('STAY')
+        super(ToOnionLong, self).reset_smart(state)
