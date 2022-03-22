@@ -232,6 +232,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         action = [action_dict[self.curr_agents[0]], action_dict[self.curr_agents[1]]]
         assert all(self.action_space.contains(a) for a in action), "%r (%s) invalid"%(action, type(action))
         joint_action = [Action.INDEX_TO_ACTION[a] for a in action]
+        joint_action_idx = action
         # take a step in the current base environment
 
         if self.use_phi:
@@ -243,7 +244,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
             dense_reward = info["shaped_r_by_agent"]
 
         # get lossless state features
-        reward_features = self.base_env.irl_reward_state_encoding(next_state)
+        reward_features = self.base_env.irl_reward_state_encoding(next_state, joint_action_idx)
 
         if self.custom_reward_func:
             shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()
@@ -433,7 +434,8 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
 
         # Log any metrics we care about for rllib tensorboard visualization
         metrics = {}
-        metrics['states'] = results['ep_states'][0]
+        metrics['actions'] = results['ep_actions']
+        metrics['states'] = results['ep_states']
         metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
         return metrics
 
@@ -475,7 +477,6 @@ def evaluate(eval_params, mdp_params, outer_shape, agent_0_policy, agent_1_polic
                                             dir=eval_params['store_dir'],
                                             display_phi=eval_params['display_phi'],
                                             info=verbose)
-
     return results
 
 def reset_dummy_policy(policy):

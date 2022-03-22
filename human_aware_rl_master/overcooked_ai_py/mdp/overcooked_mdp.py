@@ -1832,7 +1832,7 @@ class OvercookedGridworld(object):
     ###################
     # STATE ENCODINGS #
     ###################
-    def irl_reward_state_encoding(self, overcooked_state, horizon=400, debug=False):
+    def irl_reward_state_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
@@ -1893,6 +1893,10 @@ class OvercookedGridworld(object):
         target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2])    # for squeezed bitmap
         # target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3]) # for unsqueezed bitmap
         reward_features = np.reshape(reward_features, target_shape)
+
+        reward_features = [np.append(reward_features[0], joint_action[0]), 
+                            np.append(reward_features[1], joint_action[1])]
+        reward_features = np.stack(reward_features)
         return reward_features
 
     @property

@@ -27,22 +27,22 @@ def calculateFE(states, irl_config):
     result = np.sum(states, axis=0)
     return result
 
-def _get_agent_featurized_states(states, env):
+def _get_agent_featurized_states(states, joint_action, env):
     target_player_idx = 0
     # assertions specific to `mai_separate_coop_left` room layout
     # check that we are getting the trajectory of the left agent
     assert states[0][0].player_positions[target_player_idx] == (3,1)
 
     num_game = len(states)
+    # print(f'num games: {num_game}')
     all_feat = []
-    for game in states:
+    for game, actions in zip(states,joint_action):
         feat_states = []
-        for s in game:
-            reward_features = env.irl_reward_state_encoding(s)
+        for s,a in zip(game,actions):
+            reward_features = env.irl_reward_state_encoding(s, a)
             feat_states.append(reward_features)
         feat_states = np.array(feat_states)
         feat_states = np.swapaxes(feat_states,0,1)
-
         all_feat.append(feat_states[target_player_idx])
 
     all_feat = np.array(all_feat)
@@ -57,14 +57,24 @@ def getMAIDummyFE(train_config, irl_config):
     env = ae.env
 
     states = []
+    actions = []
     agents = [MAIToOnionLongAgent(), MAIToOnionShortAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
         results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
         states.append(results['ep_states'])
+        actions.append(results['ep_actions'])
 
+    # print(f'MAI actions traj num={len(actions)}, traj len={len(actions[0][0])}')
+    act = []
+    for traj in actions:
+        temp = []
+        for idx in traj[0]:
+            temp.append([Action.ACTION_TO_INDEX[idx[0]], Action.ACTION_TO_INDEX[idx[1]]])
+        act.append(temp)
+    actions = act
     states = np.concatenate(states, axis=0)
-    featurized_states = _get_agent_featurized_states(states, env)
+    featurized_states = _get_agent_featurized_states(states,actions, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
     return feature_expectation
 
@@ -89,9 +99,17 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
         except Exception as e:
             print(e)
 
-    agent_rollout = results['evaluation']['states']
-    agent_rollout = np.expand_dims(agent_rollout, axis=0)
-    featurized_states = _get_agent_featurized_states(agent_rollout, env)
+    rollout = results['evaluation']['states']
+    actions = results['evaluation']['actions']
+    # print(f'RL actions traj num={len(actions)}, traj len={len(actions[0])}')
+    act = []
+    for traj in actions:
+        temp = []
+        for idx in traj:
+            temp.append([Action.ACTION_TO_INDEX[idx[0]], Action.ACTION_TO_INDEX[idx[1]]])
+        act.append(temp)
+    actions = act
+    featurized_states = _get_agent_featurized_states(rollout, actions, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
     return feature_expectation
 
@@ -128,7 +146,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30         # change if reward shape changed.
+        reward_obs_shape = 30 + 1         # change if reward shape changed.
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
