@@ -1877,7 +1877,6 @@ class OvercookedGridworld(object):
             # NOTE: currently not including time left or order_list in featurization
             return np.array(state_mask_stack).astype(int)
 
-        # NOTE: Currently not very efficient, a decent amount of computation repeated here
         num_players = len(overcooked_state.players)
         final_obs_for_players = tuple(process_for_player(i) for i in range(num_players))
 
@@ -1894,8 +1893,12 @@ class OvercookedGridworld(object):
         # target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3]) # for unsqueezed bitmap
         reward_features = np.reshape(reward_features, target_shape)
 
-        reward_features = [np.append(reward_features[0], joint_action[0]), 
-                            np.append(reward_features[1], joint_action[1])]
+        player_0_action = np.zeros(6)
+        player_0_action[joint_action[0]] = 1
+        player_1_action = np.zeros(6)
+        player_1_action[joint_action[1]] = 1
+        reward_features = [np.append(reward_features[0], player_0_action), 
+                            np.append(reward_features[1], player_1_action)]
         reward_features = np.stack(reward_features)
         return reward_features
 

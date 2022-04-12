@@ -1,0 +1,13 @@
+{
+    "grid":  """XXXPXXXXPXXX
+                X    SX 2  X
+                D XX XX XX S
+                X   1X     X
+                XXXXOXX XXDX
+                XXXXXXX XXXX
+                XXXXXXX   OX
+                XXXXXXXXXXXX""",
+    "start_all_orders" : [
+        {"ingredients" : ["onion", "onion", "onion"]}
+    ]
+}

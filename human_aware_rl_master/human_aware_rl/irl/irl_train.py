@@ -29,10 +29,6 @@ def calculateFE(states, irl_config):
 
 def _get_agent_featurized_states(states, joint_action, env):
     target_player_idx = 0
-    # assertions specific to `mai_separate_coop_left` room layout
-    # check that we are getting the trajectory of the left agent
-    assert states[0][0].player_positions[target_player_idx] == (3,1)
-
     num_game = len(states)
     # print(f'num games: {num_game}')
     all_feat = []
@@ -58,10 +54,10 @@ def getMAIDummyFE(train_config, irl_config):
 
     states = []
     actions = []
-    agents = [MAIToOnionLongAgent(), MAIToOnionShortAgent()]
+    agents = [MAIToOnionShortAgent(), MAIToOnionLongAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
-        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
+        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
         states.append(results['ep_states'])
         actions.append(results['ep_actions'])
 
@@ -146,7 +142,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30 + 1         # change if reward shape changed.
+        reward_obs_shape = 30 + 6         # change if reward shape changed.
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
@@ -167,7 +163,7 @@ if __name__ == "__main__":
         i = checkpoint['curr_epoch'] + 1
         bestT = checkpoint['bestT']
         accumulateT = checkpoint['accumulateT']
-
+    
     num_gpu = config['training_params']['num_gpus']
     print(f'num gpu = {num_gpu}')
 

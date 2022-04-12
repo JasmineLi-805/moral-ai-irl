@@ -1426,3 +1426,56 @@ class ToOnionLong(MAIDumbAgent):
         last_phase = self.phases[self.curr_phase]
         self.phases.append('STAY')
         super(ToOnionLong, self).reset_smart(state)
+
+######
+# layout: coop_experiment_1
+
+class CoopSendOnion(MAIDumbAgent):
+    STEPS = {
+        'SEND_ONION': [
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.EAST,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'SEND_ONION'
+        ]
+        super().__init__(sequence, CoopSendOnion.STEPS)
+
+    def reset_smart(self, state):
+        last_phase = self.phases[self.curr_phase]
+        self.phases.append('STAY')
+        super(CoopSendOnion, self).reset_smart(state)
+
+class NonCoopTakeOnion(MAIDumbAgent):
+    STEPS = {
+        'TAKE_ONION': [
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.NORTH,
+            Direction.NORTH
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCoopTakeOnion.STEPS)
+
+    def reset_smart(self, state):
+        last_phase = self.phases[self.curr_phase]
+        self.phases.append('STAY')
+        super(NonCoopTakeOnion, self).reset_smart(state)

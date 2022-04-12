@@ -26,12 +26,12 @@ class DummyPolicy(RllibPolicy):
         assert config['layout']
         layout = config['layout']
         # the 'left' and 'right' in the layout name refers to the human player's position
-        possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right']
+        possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right', 'coop_experiment_1']
         assert config['layout'] in possible_layout
         if config['layout']== 'mai_separate_coop_right':
             print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentLeftCoop')
             self.model = MAIDumbAgentLeftCoop() 
-        elif config['layout']== 'mai_separate_coop_left':
+        else:
             print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentRightCoop') 
             self.model = MAIDumbAgentRightCoop()
         # self.context = self._create_execution_context()
@@ -241,6 +241,55 @@ class MAIToOnionLongAgent(Agent):
     
     def __init__(self):
         self.agent = ToOnionLong()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+######
+# layout: coop_experiment_1
+
+class MAICoopLeftAgent(Agent):
+    
+    def __init__(self):
+        self.agent = CoopSendOnion()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAINonCoopLeftAgent(Agent):
+    
+    def __init__(self):
+        self.agent = NonCoopTakeOnion()
 
     def action(self, state):
         act = self.agent.action(state)
