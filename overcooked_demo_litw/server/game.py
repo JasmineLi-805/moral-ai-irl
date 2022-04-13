@@ -1479,3 +1479,66 @@ class NonCoopTakeOnion(MAIDumbAgent):
         last_phase = self.phases[self.curr_phase]
         self.phases.append('STAY')
         super(NonCoopTakeOnion, self).reset_smart(state)
+
+class ConditionCoop(MAIDumbAgent):
+    STEPS = {
+        'COOP': [
+            Direction.SOUTH,
+        ],
+        'NON_COOP': [
+            Direction.EAST,
+        ],
+        'SEND_ONION':[
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.EAST,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'STAY'
+        ]
+        super().__init__(sequence, ConditionCoop.STEPS)
+
+    def action(self, state):
+        self.curr_tick += 1
+        if self.curr_phase < len(self.phases):
+            formula_name = self.phases[self.curr_phase]
+            if formula_name in self.formulas:
+                phase = self.formulas[formula_name]
+                if self.curr_tick < len(phase)-1:
+                    return phase[self.curr_tick], None
+                elif self.curr_tick == len(phase) - 1:
+                    action = phase[self.curr_tick]
+                    self.reset_smart(state)
+                    return action, None
+            else:
+                self.curr_phase += 1
+        return Action.STAY, None
+
+    def reset_smart(self, state):
+        if isinstance(state, np.ndarray):
+            state = unflatten_state(state)
+
+        last_phase = self.phases[self.curr_phase]
+        if isinstance(state, OvercookedState):
+            player_pos = state.player_positions
+            right_player_idx = 0
+            if player_pos[1][0] > 5:
+                right_player_idx = 1
+            if state.players[right_player_idx].held_object:
+                self.phases.append('NON_COOP')
+            else: 
+                self.phases.append('COOP')
+        elif isinstance(state, Dict):
+            if state['player_right_held_obj']:
+                self.phases.append('NON_COOP')
+            else:
+                self.phases.append('COOP')
+        super(ConditionCoop, self).reset_smart(state)

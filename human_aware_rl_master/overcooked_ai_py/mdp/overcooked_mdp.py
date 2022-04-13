@@ -1833,6 +1833,29 @@ class OvercookedGridworld(object):
     # STATE ENCODINGS #
     ###################
     def irl_reward_state_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
+        encoding = np.zeros((2, 12))
+        
+        player_pos = overcooked_state.player_positions
+        right_player_idx = 0
+        if player_pos[1][0] > 5:
+            right_player_idx = 1
+        left_player_idx = 1 - right_player_idx
+        if overcooked_state.players[right_player_idx].held_object:
+            encoding[0][0] = 1
+        
+        agent_0_orientation = overcooked_state.player_orientations[left_player_idx]
+        agent_0_orientation = Direction.DIRECTION_TO_INDEX[agent_0_orientation]
+        encoding[0][1+agent_0_orientation] = 1
+
+        if player_pos[left_player_idx] == (4,3):
+            encoding[0][5] = 1
+
+        encoding[0][6+joint_action[left_player_idx]] = 1
+        
+        return encoding
+            
+
+    def location_action_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
@@ -1894,13 +1917,13 @@ class OvercookedGridworld(object):
         reward_features = np.reshape(reward_features, target_shape)
 
         # add one-hot encoding of agent actions
-        # player_0_action = np.zeros(6)
-        # player_0_action[joint_action[0]] = 1
-        # player_1_action = np.zeros(6)
-        # player_1_action[joint_action[1]] = 1
-        # reward_features = [np.append(reward_features[0], player_0_action), 
-        #                     np.append(reward_features[1], player_1_action)]
-        # reward_features = np.stack(reward_features)
+        player_0_action = np.zeros(6)
+        player_0_action[joint_action[0]] = 1
+        player_1_action = np.zeros(6)
+        player_1_action[joint_action[1]] = 1
+        reward_features = [np.append(reward_features[0], player_0_action), 
+                            np.append(reward_features[1], player_1_action)]
+        reward_features = np.stack(reward_features)
         
         return reward_features
 
