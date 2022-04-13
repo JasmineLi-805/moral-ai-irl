@@ -142,7 +142,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30 + 6         # change if reward shape changed.
+        reward_obs_shape = 30         # change if reward shape changed.
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
