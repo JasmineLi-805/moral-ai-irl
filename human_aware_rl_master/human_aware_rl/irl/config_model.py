@@ -60,7 +60,7 @@ def get_train_config(reward_func):
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 10 if not LOCAL_TESTING else 1
+    num_training_iters = 100 if not LOCAL_TESTING else 1
 
     # Stepsize of SGD.
     lr = 5e-5
