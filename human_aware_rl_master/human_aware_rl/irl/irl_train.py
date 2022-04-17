@@ -57,7 +57,7 @@ def getMAIDummyFE(train_config, irl_config):
     agents = [MAIConditionedCoopLeftAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
-        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
+        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
         states.append(results['ep_states'])
         actions.append(results['ep_actions'])
 
