@@ -54,7 +54,7 @@ def get_train_config(reward_func):
     sgd_minibatch_size = 800 if not LOCAL_TESTING else 800
 
     # Rollout length
-    rollout_fragment_length = 50
+    rollout_fragment_length = 15
     
     # Whether all PPO agents should share the same policy network
     shared_policy = True
@@ -106,7 +106,7 @@ def get_train_config(reward_func):
     evaluation_interval = 100 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
-    evaluation_ep_length = 50
+    evaluation_ep_length = 15
 
     # Number of games to simulation each evaluation
     evaluation_num_games = 5
@@ -128,7 +128,7 @@ def get_train_config(reward_func):
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "coop_experiment_1"
+    layout_name = "mai_separate_coop_left"
 
     # IRL params
     discount_factor = 1.0
@@ -156,7 +156,7 @@ def get_train_config(reward_func):
     }
 
     # Max episode length
-    horizon = 50
+    horizon = 15
 
     # Constant by which shaped rewards are multiplied by when calculating total reward
     reward_shaping_factor = 0.0
