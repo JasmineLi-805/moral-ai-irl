@@ -54,7 +54,8 @@ def getMAIDummyFE(train_config, irl_config):
 
     states = []
     actions = []
-    agents = [MAIToOnionLongAgent(), MAIToOnionShortAgent()]
+    # agents = [MAIToOnionLongAgent(), MAIToOnionShortAgent()]
+    agents = [MAIConditionedCoopLeftAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
         results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
@@ -143,7 +144,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     if not args.resume_from:
         accumulateT = []
-        reward_obs_shape = 30+6         # change if reward shape changed.
+        reward_obs_shape = 12         # change if reward shape changed.
         reward_model = LinearReward(reward_obs_shape)
         config = get_train_config(reward_func=reward_model.getRewards)
         irl_config = config['irl_params']
