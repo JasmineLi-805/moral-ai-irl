@@ -1832,7 +1832,7 @@ class OvercookedGridworld(object):
     ###################
     # STATE ENCODINGS #
     ###################
-    def irl_reward_state_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
+    def condition_bot_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
         encoding = np.zeros((2, 12))
         
         player_pos = overcooked_state.player_positions
@@ -1855,7 +1855,7 @@ class OvercookedGridworld(object):
         return encoding
             
 
-    def location_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
+    def irl_reward_state_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool

@@ -128,7 +128,8 @@ def get_train_config(reward_func):
 
     ### Environment Params ###
     # Which overcooked level to use
-    layout_name = "coop_experiment_1"
+    # layout_name = "coop_experiment_1"
+    layout_name = "mai_separate_coop_left"
 
     # IRL params
     discount_factor = 1.0
