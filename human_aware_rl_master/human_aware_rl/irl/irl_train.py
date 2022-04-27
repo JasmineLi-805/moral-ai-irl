@@ -54,7 +54,7 @@ def getMAIDummyFE(train_config, irl_config):
 
     states = []
     actions = []
-    agents = [MAIToOnionLongAgent()] #, MAIToOnionShortAgent()]
+    agents = [MAIToOnionShortAgent()]
     # agents = [MAIConditionedCoopLeftAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
