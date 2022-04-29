@@ -1917,13 +1917,13 @@ class OvercookedGridworld(object):
         reward_features = np.reshape(reward_features, target_shape)
 
         # add one-hot encoding of agent actions
-        player_0_action = np.zeros(6)
-        player_0_action[joint_action[0]] = 1
-        player_1_action = np.zeros(6)
-        player_1_action[joint_action[1]] = 1
-        reward_features = [np.append(reward_features[0], player_0_action), 
-                            np.append(reward_features[1], player_1_action)]
-        reward_features = np.stack(reward_features)
+        # player_0_action = np.zeros(6)
+        # player_0_action[joint_action[0]] = 1
+        # player_1_action = np.zeros(6)
+        # player_1_action[joint_action[1]] = 1
+        # reward_features = [np.append(reward_features[0], player_0_action), 
+        #                     np.append(reward_features[1], player_1_action)]
+        # reward_features = np.stack(reward_features)
         
         return reward_features
 
