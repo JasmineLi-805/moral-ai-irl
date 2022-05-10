@@ -24,7 +24,9 @@ def _apply_discount(states, gamma):
 
 
 def calculateFE(states, irl_config):
+    timesteps = states.shape[0]
     result = np.sum(states, axis=0)
+    result = result / timesteps
     return result
 
 def _get_agent_featurized_states(states, joint_action, env):
@@ -73,7 +75,7 @@ def getMAIDummyFE(train_config, irl_config):
     states = np.concatenate(states, axis=0)
     featurized_states = _get_agent_featurized_states(states,actions, env)
     feature_expectation = calculateFE(featurized_states, irl_config)
-    print(f'expert FE={feature_expectation}')
+    print(f'expert FE={feature_expectation}, timestep={featurized_states.shape[0]}')
     return feature_expectation
 
 def getRLAgentFE(train_config, irl_config): #get the feature expectations of a new policy using RL agent
