@@ -6,10 +6,9 @@ sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
 import argparse
-from human_aware_rl.irl.irl_agent import irlAppAgent, DeepIRLFC
 from human_aware_rl.ppo.ppo_rllib_client import run
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
-from human_aware_rl_master.human_aware_rl.irl.reward_models import LinearReward, TorchLinearReward
+from human_aware_rl_master.human_aware_rl.irl.reward_models import TorchLinearReward
 from human_aware_rl.dummy.rl_agent import *
 from human_aware_rl.rllib.utils import get_base_ae
 from overcooked_ai_py.agents.agent import AgentPair
@@ -132,14 +131,14 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    assert args.trial
-    trial = args.trial
+    # assert args.trial
+    # trial = args.trial
 
     # directory to save results
-    cwd = os.getcwd()
-    save_dir = f'{cwd}/result/T{trial}'
-    if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+    # cwd = os.getcwd()
+    # save_dir = f'{cwd}/result/T{trial}'
+    # if not os.path.exists(save_dir):
+    #     os.mkdir(save_dir)
 
     # init 
     n_epochs = args.epochs
