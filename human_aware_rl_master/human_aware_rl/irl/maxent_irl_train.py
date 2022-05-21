@@ -141,7 +141,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     
     reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
-    reward_model = TorchLinearReward()
+    reward_model = TorchLinearReward(reward_obs_shape)
     optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
     
     config = get_train_config(reward_func=reward_model.get_rewards)
