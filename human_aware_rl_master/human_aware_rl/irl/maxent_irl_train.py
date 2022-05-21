@@ -93,13 +93,10 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
     ae = get_base_ae(mdp_params, env_params)
     env = ae.env
     # train and get rollouts
-    results = None
-    while True:
-        try:
-            results = run(train_config)
-            break
-        except Exception as e:
-            print(e)
+    try:
+        results = run(train_config)
+    except Exception as e:
+        print(e)
 
     rollout = results['evaluation']['states']
     actions = results['evaluation']['actions']
@@ -143,8 +140,8 @@ if __name__ == "__main__":
     # init 
     n_epochs = args.epochs
     
-    reward_obs_shape = 30         # change if reward shape changed.
-    reward_model = TorchLinearReward(reward_obs_shape)
+    reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
+    reward_model = TorchLinearReward()
     optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
     
     config = get_train_config(reward_func=reward_model.get_rewards)
