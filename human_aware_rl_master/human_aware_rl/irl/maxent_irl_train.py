@@ -119,7 +119,9 @@ def getStatesAndGradient(expert_sv, agent_sv):
         # state.to(device)
         states.append(state)
         grad.append(visit[s])
-    states = torch.tensor(states)
+    print(f'states len = {len(states)}')
+    states = torch.stack(states)
+    print(f'states shape = {states.shape}')
     grad = torch.tensor(grad, dtype=torch.float)
 
     return states, grad
@@ -175,8 +177,6 @@ if __name__ == "__main__":
 
         # compute the rewards and gradients for occurred states
         states, grad_r = getStatesAndGradient(expert_state_visit, agent_state_visit)
-        # states.to(device)
-        # grad_r.to(device)
         reward = reward_model.forward(states)
         print(f'iteration {i}: rewards={reward}, grad_r={grad_r}')
         
