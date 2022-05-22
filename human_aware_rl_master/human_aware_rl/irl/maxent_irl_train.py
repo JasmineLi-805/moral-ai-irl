@@ -119,11 +119,8 @@ def getStatesAndGradient(expert_sv, agent_sv):
         # state.to(device)
         states.append(state)
         grad.append(visit[s])
-    print(states)
-    states = torch.tensor(states, dtype=torch.float)
-    # states.to(device)
+    states = torch.tensor(states)
     grad = torch.tensor(grad, dtype=torch.float)
-    # grad.to(device)
 
     return states, grad
 
