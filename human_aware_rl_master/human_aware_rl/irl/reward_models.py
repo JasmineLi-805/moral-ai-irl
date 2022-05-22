@@ -5,20 +5,19 @@ import numpy as np
 class TorchLinearReward(nn.Module):
     def __init__(self, n_input, n_h1=400, n_h2=1):
         super(TorchLinearReward, self).__init__()
-        self.fc1 = nn.Linear(in_features=n_input, out_features=n_h1, bias=True)
-        self.fc2 = nn.Linear(in_features=n_h1, out_features=n_h2, bias=True)
-        self.act = nn.ELU()
+        self.fc1 = nn.Linear(in_features=n_input, out_features=n_h2, bias=True)
+        # self.fc2 = nn.Linear(in_features=n_h1, out_features=n_h2, bias=True)
+        # self.act = nn.ELU()
 
     def forward(self, x):
-        print(f'input={x}')
         x = self.fc1(x)
-        x = self.act(x)
-        x = self.fc2(x)
-        x = self.act(x)
+        # x = self.act(x)
+        # x = self.fc2(x)
+        # x = self.act(x)
         return x
 
     def get_theta(self):
-        return [self.fc1.weight.detach(), self.fc2.weight.detach()]
+        return [self.fc1.weight.detach()]
 
     def get_rewards(self, states):
         if type(states) == np.ndarray:
