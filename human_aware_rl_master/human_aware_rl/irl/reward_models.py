@@ -17,12 +17,14 @@ class TorchLinearReward(nn.Module):
         return x
 
     def get_theta(self):
-      return [self.fc1.weight.detach().numpy(), self.fc2.weight.detach().numpy()]
+        return [self.fc1.weight.detach().numpy(), self.fc2.weight.detach().numpy()]
 
     def get_rewards(self, states):
-      with torch.no_grad():
-        rewards = self.forward(states).detach().numpy()
-      return rewards
+        if type(states) == np.ndarray:
+            states = torch.from_numpy(states)
+        with torch.no_grad():
+            rewards = self.forward(states).detach().numpy()
+        return rewards
 
 class LinearReward:
     def __init__(self, num_in_feature) -> None:
