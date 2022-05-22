@@ -116,13 +116,13 @@ def getStatesAndGradient(expert_sv, agent_sv):
     grad = []
     for s in visit:
         state = torch.tensor(s, dtype=torch.float)
-        state.to(device)
+        # state.to(device)
         states.append(state)
         grad.append(visit[s])
     states = torch.tensor(states, dtype=torch.float)
-    states.to(device)
+    # states.to(device)
     grad = torch.tensor(grad, dtype=torch.float)
-    grad.to(device)
+    # grad.to(device)
 
     return states, grad
 
@@ -142,8 +142,7 @@ def parse_args():
 
 if __name__ == "__main__":
     print(f'Deep MaxEnt IRL training starting...')
-    print(f'can use gpu: {torch.cuda.is_available()}')
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f'can use gpu: {torch.cuda.is_available()}; device={device}')
 
     args = parse_args()
     # assert args.trial
@@ -161,7 +160,7 @@ if __name__ == "__main__":
     print(f'initiating models and optimizers...')
     reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
     reward_model = TorchLinearReward(reward_obs_shape)
-    reward_model.to(device)
+    # reward_model.to(device)
     optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
     print(f'complete')
     
@@ -178,8 +177,8 @@ if __name__ == "__main__":
 
         # compute the rewards and gradients for occurred states
         states, grad_r = getStatesAndGradient(expert_state_visit, agent_state_visit)
-        states.to(device)
-        grad_r.to(device)
+        # states.to(device)
+        # grad_r.to(device)
         reward = reward_model.forward(states)
         print(f'iteration {i}: rewards={reward}, grad_r={grad_r}')
         
