@@ -88,7 +88,7 @@ def getAgentVisitation(train_config, irl_config): #get the feature expectations 
     except Exception as e:
         print(e)
 
-    rollout = results['evaluation']['states']
+    states = results['evaluation']['states']
     actions = results['evaluation']['actions']
     # print(f'RL actions traj num={len(actions)}, traj len={len(actions[0])}')
     act = []
@@ -98,7 +98,7 @@ def getAgentVisitation(train_config, irl_config): #get the feature expectations 
             temp.append([Action.ACTION_TO_INDEX[idx[0]], Action.ACTION_TO_INDEX[idx[1]]])
         act.append(temp)
     actions = act
-    state_visit = getVisitation(states,actions, env)
+    state_visit = getVisitation(states, actions, env)
     return state_visit
 
 def getStatesAndGradient(expert_sv, agent_sv):
