@@ -10,6 +10,7 @@ class TorchLinearReward(nn.Module):
         self.act = nn.ELU()
 
     def forward(self, x):
+        print(f'input={x}')
         x = self.fc1(x)
         x = self.act(x)
         x = self.fc2(x)
@@ -17,13 +18,13 @@ class TorchLinearReward(nn.Module):
         return x
 
     def get_theta(self):
-        return [self.fc1.weight.detach().numpy(), self.fc2.weight.detach().numpy()]
+        return [self.fc1.weight.detach(), self.fc2.weight.detach()]
 
     def get_rewards(self, states):
         if type(states) == np.ndarray:
             states = torch.from_numpy(states)
         with torch.no_grad():
-            rewards = self.forward(states).detach().numpy()
+            rewards = self.forward(states).detach()
         return rewards
 
 class LinearReward:
