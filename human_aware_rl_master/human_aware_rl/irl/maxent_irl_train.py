@@ -123,6 +123,7 @@ def getStatesAndGradient(expert_sv, agent_sv):
     states = torch.stack(states)
     print(f'states shape = {states.shape}')
     grad = torch.tensor(grad, dtype=torch.float)
+    grad = torch.unsqueeze(grad, dim=1)
 
     return states, grad
 
