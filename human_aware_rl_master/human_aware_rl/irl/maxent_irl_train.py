@@ -31,6 +31,7 @@ def getVisitation(states, joint_action, env):
     for game, actions in zip(states,joint_action):
         for s,a in zip(game,actions):
             reward_features = env.irl_reward_state_encoding(s, a)[target_player_idx]
+            reward_features = tuple(reward_features)
             if reward_features not in freq:
                 freq[reward_features] = 0
             freq[reward_features] += 1
