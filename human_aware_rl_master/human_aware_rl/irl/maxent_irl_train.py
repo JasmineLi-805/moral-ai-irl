@@ -148,12 +148,12 @@ if __name__ == "__main__":
     irl_config = config['irl_params']
     
     expertFE = getMAIDummyFE(config, irl_config)    # only uses mdp_params and env_params in config
-    expertFE = states = torch.tensor(expertFE, dtype=float)
+    expertFE = states = torch.tensor(expertFE, dtype=torch.float)
     for i in range(n_epochs):
         # train a policy and get feature expectation
         config["environment_params"]["custom_reward_func"] = reward_model.get_rewards
         agentFE = getRLAgentFE(config, irl_config)
-        agentFE = states = torch.tensor(agentFE, dtype=float)
+        agentFE = states = torch.tensor(agentFE, dtype=torch.float)
 
         # compute the reward for the agent
         agent_reward = reward_model.forward(agentFE)

@@ -22,7 +22,7 @@ class TorchLinearReward(nn.Module):
 
     def get_rewards(self, states):
         if type(states) == np.ndarray:
-            states = torch.tensor(states, dtype=float)
+            states = torch.tensor(states, dtype=torch.float)
         with torch.no_grad():
             rewards = self.forward(states).detach()
         return rewards
