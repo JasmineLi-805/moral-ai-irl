@@ -4,7 +4,7 @@ HOME_DIR = '/PROJECT_PATH/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl/
 # There is a bug when using too long directory names in RAY TMP folders: https://github.com/ray-project/ray/issues/7724
 TMP_DIR = '/tmp/'
 
-LOCAL_TESTING = False
+LOCAL_TESTING = True
 GERLACH = True
 
 def _env_creator(env_config):
@@ -60,7 +60,7 @@ def get_train_config(reward_func):
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 50 if not LOCAL_TESTING else 1
+    num_training_iters = 100 if not LOCAL_TESTING else 1
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -103,7 +103,7 @@ def get_train_config(reward_func):
     save_freq = -1  # do not store intermediate RL agent results
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 50 if not LOCAL_TESTING else 1
+    evaluation_interval = 100 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
     evaluation_ep_length = 15

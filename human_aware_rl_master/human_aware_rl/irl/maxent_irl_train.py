@@ -24,33 +24,22 @@ def _apply_discount(states, gamma):
         result[i] = g * states[i]
     return result
 
-
-def calculateFE(states, irl_config):
-    timesteps = states.shape[0]
-    result = np.sum(states, axis=0)
-    result = result / timesteps
-    return result
-
-def _get_agent_featurized_states(states, joint_action, env):
+def getVisitation(states, joint_action, env):
     target_player_idx = 0
     num_game = len(states)
-    # print(f'num games: {num_game}')
-    all_feat = []
+    freq = {}
     for game, actions in zip(states,joint_action):
-        feat_states = []
         for s,a in zip(game,actions):
-            reward_features = env.irl_reward_state_encoding(s, a)
-            feat_states.append(reward_features)
-        feat_states = np.array(feat_states)
-        feat_states = np.swapaxes(feat_states,0,1)
-        all_feat.append(feat_states[target_player_idx])
+            reward_features = env.irl_reward_state_encoding(s, a)[target_player_idx]
+            if reward_features not in freq:
+                freq[reward_features] = 0
+            freq[reward_features] += 1
+    
+    for state in freq:
+        freq[state] /= num_game
+    return freq
 
-    all_feat = np.array(all_feat)
-    all_feat = np.sum(all_feat, axis=0)
-    all_feat = all_feat / num_game
-    return all_feat
-
-def getMAIDummyFE(train_config, irl_config):
+def getExpertVisitation(train_config, irl_config):
     mdp_params = train_config["environment_params"]["mdp_params"]
     env_params = train_config["environment_params"]["env_params"]
     ae = get_base_ae(mdp_params, env_params)
@@ -75,12 +64,10 @@ def getMAIDummyFE(train_config, irl_config):
         act.append(temp)
     actions = act
     states = np.concatenate(states, axis=0)
-    featurized_states = _get_agent_featurized_states(states,actions, env)
-    feature_expectation = calculateFE(featurized_states, irl_config)
-    print(f'expert FE={feature_expectation}, timestep={featurized_states.shape[0]}')
-    return feature_expectation
+    state_visit = getVisitation(states,actions, env)
+    return state_visit
 
-def getRLAgentFE(train_config, irl_config): #get the feature expectations of a new policy using RL agent
+def getAgentVisitation(train_config, irl_config): #get the feature expectations of a new policy using RL agent
     '''
     Trains an RL agent with the current reward function. 
     Then rolls out one trial of the trained agent and calculate the feature expectation of the RL agent.
@@ -108,9 +95,29 @@ def getRLAgentFE(train_config, irl_config): #get the feature expectations of a n
             temp.append([Action.ACTION_TO_INDEX[idx[0]], Action.ACTION_TO_INDEX[idx[1]]])
         act.append(temp)
     actions = act
-    featurized_states = _get_agent_featurized_states(rollout, actions, env)
-    feature_expectation = calculateFE(featurized_states, irl_config)
-    return feature_expectation
+    state_visit = getVisitation(states,actions, env)
+    return state_visit
+
+def getStatesAndGradient(expert_sv, agent_sv):
+    # calculate the gradient for each of the state: (mu_agent - mu_expert)
+    visit = {}
+    for state in agent_sv:
+        visit[state] = agent_sv[state]
+    for state in expert_sv:
+        if state not in visit:
+            visit[state] = 0.0
+        visit[state] -= expert_sv[state]
+    
+    # organize into NN input
+    states = []
+    grad = []
+    for s in visit:
+        states.append(torch.tensor(s, dtype=torch.float))
+        grad.append(visit[s])
+    states = torch.tensor(states, dtype=torch.float)
+    grad = torch.tensor(grad, dtype=torch.float)
+
+    return states, grad
 
 def load_checkpoint(file_path):
     assert os.path.isfile(file_path)
@@ -147,25 +154,20 @@ if __name__ == "__main__":
     config = get_train_config(reward_func=reward_model.get_rewards)
     irl_config = config['irl_params']
     
-    expertFE = getMAIDummyFE(config, irl_config)    # only uses mdp_params and env_params in config
-    expertFE = states = torch.tensor(expertFE, dtype=torch.float)
+    expert_state_visit = getExpertVisitation(config, irl_config)    # only uses mdp_params and env_params in config
     for i in range(n_epochs):
         # train a policy and get feature expectation
         config["environment_params"]["custom_reward_func"] = reward_model.get_rewards
-        agentFE = getRLAgentFE(config, irl_config)
-        agentFE = states = torch.tensor(agentFE, dtype=torch.float)
+        agent_state_visit = getAgentVisitation(config, irl_config)
 
-        # compute the reward for the agent
-        agent_reward = reward_model.forward(agentFE)
-        expert_reward = reward_model.forward(expertFE)
-
-        # compute the gradient of the reward
-        grad_r = torch.tensor(agentFE - expertFE)
-        print(f'iteration {i}: R(agent)={agent_reward}, R(expert)={expert_reward}, grad_r={grad_r}')
+        # compute the rewards and gradients for occurred states
+        states, grad_r = getStatesAndGradient(expert_state_visit, agent_state_visit)
+        reward = reward_model.forward(states)
+        print(f'iteration {i}: rewards={reward}, grad_r={grad_r}')
         
         # gradient descent
         optim.zero_grad()
-        agent_reward.backward(gradient=grad_r)
+        reward.backward(gradient=grad_r)
         optim.step()
     
     print(reward_model.get_theta())
