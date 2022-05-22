@@ -135,6 +135,9 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
+    print(f'can use gpu: {torch.cuda.is_available()}')
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     args = parse_args()
     # assert args.trial
     # trial = args.trial
@@ -150,6 +153,7 @@ if __name__ == "__main__":
     
     reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
     reward_model = TorchLinearReward(reward_obs_shape)
+    reward_model.to(device)
     optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
     
     config = get_train_config(reward_func=reward_model.get_rewards)
@@ -163,6 +167,8 @@ if __name__ == "__main__":
 
         # compute the rewards and gradients for occurred states
         states, grad_r = getStatesAndGradient(expert_state_visit, agent_state_visit)
+        states.to(device)
+        grad_r.to(device)
         reward = reward_model.forward(states)
         print(f'iteration {i}: rewards={reward}, grad_r={grad_r}')
         
