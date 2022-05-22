@@ -135,6 +135,7 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
+    print(f'Deep MaxEnt IRL training starting...')
     print(f'can use gpu: {torch.cuda.is_available()}')
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -151,15 +152,19 @@ if __name__ == "__main__":
     # init 
     n_epochs = args.epochs
     
+    print(f'initiating models and optimizers...')
     reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
     reward_model = TorchLinearReward(reward_obs_shape)
     reward_model.to(device)
     optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
+    print(f'complete')
     
     config = get_train_config(reward_func=reward_model.get_rewards)
     irl_config = config['irl_params']
     
+    print(f'getting expert trajectory and state visitation...')
     expert_state_visit = getExpertVisitation(config, irl_config)    # only uses mdp_params and env_params in config
+    print(f'complete')
     for i in range(n_epochs):
         # train a policy and get feature expectation
         config["environment_params"]["custom_reward_func"] = reward_model.get_rewards
