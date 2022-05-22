@@ -17,6 +17,8 @@ from human_aware_rl.irl.config_model import get_train_config
 import torch
 from torch import nn
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 def _apply_discount(states, gamma):
     result = states.copy()
     for i in range(len(states)):
@@ -52,7 +54,7 @@ def getExpertVisitation(train_config, irl_config):
     # agents = [MAIConditionedCoopLeftAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
-        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
+        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
         states.append(results['ep_states'])
         actions.append(results['ep_actions'])
 
@@ -113,10 +115,14 @@ def getStatesAndGradient(expert_sv, agent_sv):
     states = []
     grad = []
     for s in visit:
-        states.append(torch.tensor(s, dtype=torch.float))
+        state = torch.tensor(s, dtype=torch.float)
+        state.to(device)
+        states.append(state)
         grad.append(visit[s])
     states = torch.tensor(states, dtype=torch.float)
+    states.to(device)
     grad = torch.tensor(grad, dtype=torch.float)
+    grad.to(device)
 
     return states, grad
 
