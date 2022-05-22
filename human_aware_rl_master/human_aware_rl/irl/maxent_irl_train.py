@@ -58,7 +58,6 @@ def getExpertVisitation(train_config, irl_config):
         states.append(results['ep_states'])
         actions.append(results['ep_actions'])
 
-    # print(f'MAI actions traj num={len(actions)}, traj len={len(actions[0][0])}')
     act = []
     for traj in actions:
         temp = []
@@ -119,9 +118,7 @@ def getStatesAndGradient(expert_sv, agent_sv):
         # state.to(device)
         states.append(state)
         grad.append(visit[s])
-    print(f'states len = {len(states)}')
     states = torch.stack(states)
-    print(f'states shape = {states.shape}')
     grad = torch.tensor(grad, dtype=torch.float)
     grad = torch.unsqueeze(grad, dim=1)
 
@@ -172,6 +169,8 @@ if __name__ == "__main__":
     expert_state_visit = getExpertVisitation(config, irl_config)    # only uses mdp_params and env_params in config
     print(f'complete')
     for i in range(n_epochs):
+        if i % 10 == 0:
+            print(f'iteration {i}')
         # train a policy and get feature expectation
         config["environment_params"]["custom_reward_func"] = reward_model.get_rewards
         agent_state_visit = getAgentVisitation(config, irl_config)
@@ -179,12 +178,11 @@ if __name__ == "__main__":
         # compute the rewards and gradients for occurred states
         states, grad_r = getStatesAndGradient(expert_state_visit, agent_state_visit)
         reward = reward_model.forward(states)
-        print(f'iteration {i}: rewards={reward}, grad_r={grad_r}')
         
         # gradient descent
         optim.zero_grad()
         reward.backward(gradient=grad_r)
         optim.step()
-    
+    print(f'training completed')
     print(reward_model.get_theta())
 
