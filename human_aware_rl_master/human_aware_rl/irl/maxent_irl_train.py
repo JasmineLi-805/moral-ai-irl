@@ -130,9 +130,14 @@ def viewReward(reward_model):
     for i in range(30):
         input[i][i] = 1
     rewards = reward_model.get_rewards(input)
-    rewards = torch.reshape(rewards, (6,5))
+    rewards = torch.reshape(rewards, (5,6))
+    
     plt.imshow(rewards, cmap='hot', interpolation='nearest')
+    for i in range(len(rewards)):
+        for j in range(len(rewards[i])):
+            plt.text(j, i, harvest[i, j], ha="center", va="center", color="w")
     plt.savefig("reward.png")
+
 
 def load_checkpoint(file_path):
     assert os.path.isfile(file_path)
