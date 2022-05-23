@@ -6,6 +6,7 @@ sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
 import argparse
+import matplotlib.pyplot as plt
 from human_aware_rl.ppo.ppo_rllib_client import run
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
 from human_aware_rl_master.human_aware_rl.irl.reward_models import TorchLinearReward
@@ -124,6 +125,14 @@ def getStatesAndGradient(expert_sv, agent_sv):
 
     return states, grad
 
+def viewReward(reward_model):
+    input = torch.zeros(30, 30)
+    for i in range(30):
+        input[i][i] = 1
+    rewards = reward_model.get_rewards(input)
+    plt.imshow(rewards, cmap='hot', interpolation='nearest')
+    plt.savefig("reward.png")
+
 def load_checkpoint(file_path):
     assert os.path.isfile(file_path)
     with open(file_path, 'rb') as file:
@@ -185,8 +194,4 @@ if __name__ == "__main__":
         optim.step()
     print(f'training completed')
     
-    for state in expert_state_visit:
-        reward = reward_model.get_rewards(state)
-        print(f'reward={reward}')
-        print(torch.reshape(state, (5,6)))
-        print()
+    viewReward(reward_model)
