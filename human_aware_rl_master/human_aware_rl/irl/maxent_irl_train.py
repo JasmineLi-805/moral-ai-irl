@@ -131,11 +131,12 @@ def viewReward(reward_model):
         input[i][i] = 1
     rewards = reward_model.get_rewards(input)
     rewards = torch.reshape(rewards, (5,6))
+    print(rewards)
     
     plt.imshow(rewards, cmap='hot', interpolation='nearest')
     for i in range(len(rewards)):
         for j in range(len(rewards[i])):
-            plt.text(i, j, reward[i, j], ha="center", va="center", color="w")
+            plt.text(j + 0.5, i + 0.5, reward[j, i], ha="center", va="center", color="w")
     plt.savefig("reward.png")
 
 
