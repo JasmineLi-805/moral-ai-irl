@@ -184,5 +184,9 @@ if __name__ == "__main__":
         reward.backward(gradient=grad_r)
         optim.step()
     print(f'training completed')
-    print(reward_model.get_theta())
-
+    
+    for state in expert_state_visit:
+        reward = reward_model.get_rewards(state)
+        print(f'reward={reward}')
+        print(torch.reshape(state, (5,6)))
+        print()
