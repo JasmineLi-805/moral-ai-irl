@@ -135,7 +135,7 @@ def viewReward(reward_model):
     plt.imshow(rewards, cmap='hot', interpolation='nearest')
     for i in range(len(rewards)):
         for j in range(len(rewards[i])):
-            plt.text(j, i, reward[i, j], ha="center", va="center", color="w")
+            plt.text(i, j, reward[i, j], ha="center", va="center", color="w")
     plt.savefig("reward.png")
 
 
