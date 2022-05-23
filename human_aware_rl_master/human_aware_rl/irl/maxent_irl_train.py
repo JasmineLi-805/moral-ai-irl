@@ -130,6 +130,7 @@ def viewReward(reward_model):
     for i in range(30):
         input[i][i] = 1
     rewards = reward_model.get_rewards(input)
+    rewards = torch.reshape(rewards, (6,5))
     plt.imshow(rewards, cmap='hot', interpolation='nearest')
     plt.savefig("reward.png")
 
