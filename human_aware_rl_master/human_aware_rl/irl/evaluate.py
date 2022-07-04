@@ -88,8 +88,9 @@ def main():
     else:
         reward_model = checkpoint["reward_func"]
     config = get_train_config(reward_func=reward_model.getRewards)
-    # config['num_training_iters'] = 10
-    # config['evaluation_interval'] = 10
+    config['num_training_iters'] = 300
+    config['evaluation_interval'] = 100
+    config['evaluation_params']['display'] = True
     run_rl_training(config)
 
     # display T values

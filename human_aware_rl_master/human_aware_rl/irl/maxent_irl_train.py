@@ -1,6 +1,7 @@
 from cmath import exp
 from math import e, inf
 import sys, os
+import shutil
 
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
@@ -51,7 +52,12 @@ def getExpertVisitation(train_config, irl_config):
 
     states = []
     actions = []
-    agents = [MAIToOnionLongAgent()]
+    agents = [
+ #       MAIToOnionLongAgent(), MAIToOnionLongAgent(), MAIToOnionLongAgent(), 
+ #       MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
+ #       MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
+        MAIToOnionShortAgent()
+    ]
     # agents = [MAIConditionedCoopLeftAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
@@ -125,20 +131,28 @@ def getStatesAndGradient(expert_sv, agent_sv):
 
     return states, grad
 
-def viewReward(reward_model):
+def viewReward(reward_model, save_path):
     input = torch.zeros(30, 30)
     for i in range(30):
         input[i][i] = 1
     rewards = reward_model.get_rewards(input)
-    rewards = torch.reshape(rewards, (5,6))
-    print(rewards)
     
-    plt.imshow(rewards, cmap='hot', interpolation='nearest')
-    # for i in range(rewards.shape[0]):
-    #     for j in range(rewards.shape[1]):
-    #         plt.text(j + 0.5, i + 0.5, reward[i, j], ha="center", va="center", color="w")
-    plt.savefig("reward.png")
+    rewards = torch.reshape(rewards, (6,5))
+    rewards = rewards.transpose(0,1)
+    rewards = torch.nn.functional.normalize(rewards)
 
+    print(rewards)
+
+    plt.imshow(rewards, cmap='viridis', interpolation='nearest')
+    plt.title('it=25_evaln=50_0long_10short')
+    plt.colorbar()
+    for i in range(rewards.shape[0]):
+        for j in range(rewards.shape[1]):
+            val = rewards[i, j].item()
+            plt.text(j, i, round(val, 3), ha="center", va="center", color="w")
+    plt.savefig(save_path)
+    plt.clf()
+    return rewards
 
 def load_checkpoint(file_path):
     assert os.path.isfile(file_path)
@@ -148,7 +162,7 @@ def load_checkpoint(file_path):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('-t', '--trial', type=int, help='trial num')
+    parser.add_argument('-t', '--trial', type=str, help='trial index')
     parser.add_argument('--resume_from', type=str, default=None, help='pickle file to resume training')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs to train')
     args = parser.parse_args()
@@ -159,36 +173,59 @@ if __name__ == "__main__":
     print(f'can use gpu: {torch.cuda.is_available()}; device={device}')
 
     args = parse_args()
-    # assert args.trial
-    # trial = args.trial
-
+    assert args.trial
+    trial = args.trial
+    
     # directory to save results
-    # cwd = os.getcwd()
-    # save_dir = f'{cwd}/result/T{trial}'
-    # if not os.path.exists(save_dir):
-    #     os.mkdir(save_dir)
+    cwd = os.getcwd()
+    save_dir = f'{cwd}/result/bot/T{trial}'
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
 
     # init 
     n_epochs = args.epochs
     
-    print(f'initiating models and optimizers...')
-    reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
-    reward_model = TorchLinearReward(reward_obs_shape)
-    # reward_model.to(device)
-    optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
-    print(f'complete')
+    if not args.resume_from:
+        print(f'initiating models and optimizers...')
+        reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
+        reward_model = TorchLinearReward(reward_obs_shape)
+        optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
+
+        print(f'loading training configurations...')
+        config = get_train_config()
+        irl_config = config['irl_params']
+
+        print(f'getting expert trajectory and state visitation...')
+        expert_state_visit = getExpertVisitation(config, irl_config)    # only uses mdp_params and env_params in config
+        print(f'complete')
+    else:
+        print(f'loading model checkpoint from {args.resume_from}...')
+        checkpoint = load_checkpoint(args.resume_from)
+        
+        print(f'retrieving reward model and optimizer...')
+        reward_model = checkpoint["reward_model"]
+        optim = checkpoint['optimizer']
+        
+        print(f'loading configurations...')
+        config = checkpoint['config']
+        irl_config = config['irl_params']
+        i = checkpoint['current_epoch'] + 1 # advance to the next epoch
+        
+        print(f'getting expert trajectory and state visitation...')
+        expert_state_visit = checkpoint['expert_svf']
+        print(f'complete')
     
-    config = get_train_config(reward_func=reward_model.get_rewards)
-    irl_config = config['irl_params']
-    
-    print(f'getting expert trajectory and state visitation...')
-    expert_state_visit = getExpertVisitation(config, irl_config)    # only uses mdp_params and env_params in config
-    print(f'complete')
+    # make a copy of the config file
+    path = os.path.join(save_dir, f'config.py')
+    shutil.copy('config_model.py', path)
+
+    # set the reward function used for RL training.
+    config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
+
     for i in range(n_epochs):
         if i % 10 == 0:
             print(f'iteration {i}')
         # train a policy and get feature expectation
-        config["environment_params"]["custom_reward_func"] = reward_model.get_rewards
         agent_state_visit = getAgentVisitation(config, irl_config)
 
         # compute the rewards and gradients for occurred states
@@ -199,6 +236,30 @@ if __name__ == "__main__":
         optim.zero_grad()
         reward.backward(gradient=grad_r)
         optim.step()
+
+        if i % 5 == 0:
+            checkpoint = {
+                "reward_model": reward_model,
+                "optimizer": optim,
+                "config": config,
+                "current_epoch": i,
+                "expert_svf": expert_state_visit,
+            }
+            file_name = f'epoch={i}.checkpoint'
+            viewReward(reward_model, os.path.join(save_dir, f"reward_epoch={i}.png"))
+            with open(os.path.join(save_dir, file_name), 'wb') as save_file:
+                pickle.dump(checkpoint, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+
+    final = {
+        "reward_model": reward_model,
+        "optimizer": optim,
+        "config": config,
+        "current_epoch": n_epochs,
+        "expert_svf": expert_state_visit,
+    }
+    file_name = f'final.checkpoint'
+    viewReward(reward_model, os.path.join(save_dir, f"reward_epoch={i}.png"))
+    with open(os.path.join(save_dir, file_name), 'wb') as save_file:
+        pickle.dump(final, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+
     print(f'training completed')
-    
-    viewReward(reward_model)

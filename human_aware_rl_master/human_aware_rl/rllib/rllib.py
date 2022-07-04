@@ -246,6 +246,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
         # get lossless state features
         reward_features = self.base_env.irl_reward_state_encoding(next_state, joint_action_idx)
 
+        assert self.custom_reward_func
         if self.custom_reward_func:
             shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()
             shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item()

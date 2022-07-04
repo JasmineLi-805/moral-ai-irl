@@ -12,7 +12,7 @@ def _env_creator(env_config):
     from human_aware_rl.rllib.rllib import OvercookedMultiAgent 
     return OvercookedMultiAgent.from_config(env_config)
 
-def get_train_config(reward_func):
+def get_train_config():
     ### Model params ###
 
     # Whether dense reward should come from potential function or not
@@ -109,7 +109,7 @@ def get_train_config(reward_func):
     evaluation_ep_length = 15
 
     # Number of games to simulation each evaluation
-    evaluation_num_games = 5
+    evaluation_num_games = 50
 
     # Whether to display rollouts in evaluation
     evaluation_display = False
@@ -225,7 +225,7 @@ def get_train_config(reward_func):
             "reward_shaping_horizon" : reward_shaping_horizon,
             "use_phi" : use_phi,
             # customized reward calculation
-            "custom_reward_func": reward_func,
+            "custom_reward_func": None,
             "discount_factor": discount_factor
         }
     }
