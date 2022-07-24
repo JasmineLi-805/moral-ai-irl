@@ -52,12 +52,9 @@ def getExpertVisitation(train_config, irl_config):
 
     states = []
     actions = []
-    agents = [
- #       MAIToOnionLongAgent(), MAIToOnionLongAgent(), MAIToOnionLongAgent(), 
- #       MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
- #       MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
-        MAIToOnionShortAgent()
-    ]
+    agents = [ MAIToOnionLongAgent(), MAIToOnionShortAgent()]
+    #    MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
+    #    MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
     # agents = [MAIConditionedCoopLeftAgent()]
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
@@ -144,7 +141,7 @@ def viewReward(reward_model, save_path):
     print(rewards)
 
     plt.imshow(rewards, cmap='viridis', interpolation='nearest')
-    plt.title('it=25_evaln=50_0long_10short')
+    plt.title('reward map')
     plt.colorbar()
     for i in range(rewards.shape[0]):
         for j in range(rewards.shape[1]):
