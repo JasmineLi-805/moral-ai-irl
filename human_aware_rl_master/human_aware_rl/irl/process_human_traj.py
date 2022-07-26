@@ -1,14 +1,16 @@
+import os
 import json
 import glob
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState, OvercookedGridworld
-from overcooked_ai_py.mdp.actions import Action
+import pickle
+
+from matplotlib.pyplot import grid
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
 
 """
 run command: `python process_human_traj.py`
 """
 
-
-def load_json(data_dir):
+def load_human_data_json(data_dir):
     games = []
     for f in glob.glob(data_dir + '*.json'):
         with(open(f,'r')) as a_file:
@@ -19,6 +21,7 @@ def load_json(data_dir):
                     num_rounds = len(a_participant['game_rounds'])
                     len_traj = len(a_participant['game_rounds'][0]['data']['trajectory'])
                     print(f'game rounds={num_rounds}, traj len={len_traj}')
+        # TODO: Remove this to load more than 1 file.
         break
     return games
 
@@ -38,6 +41,20 @@ def remove_idle_states(trajectories):
         print(f'prev traj len={trajectory_length}, curr traj len={len(traj)}')
     print(f'completed removing idle states, removed {count} idle steps')
 
+
+"""
+returns a list of filtered trajectories and a GridWorld object.
+
+returns:
+ - results: a list of trajectories in the following format
+        [
+            [{timestep_1.2 dict}, {timestep_1.2 dict}, ...],
+            [{timestep_2.1 dict}, {timestep_2.2 dict}, ...],
+            ...
+            [{timestep_n.1 dict}, {timestep_n.2 dict}, ...],
+        ]
+ - gridworld: a GridWorld object created from the layout name, can be used in the future.
+"""
 def filter_trajectory(trajectories, state='onion_help'):
     if not trajectories:
         return None
@@ -55,9 +72,12 @@ def filter_trajectory(trajectories, state='onion_help'):
                 if i - prev_sample >= 10 and a_state['players'][0]['position'] == [4,3]:
                     result = []
                     for j in range(i, min(i + 10, trajectory_length)):
-                        state = a_participant['game_rounds'][0]['data']['trajectory'][j]['state']
+                        # state = a_participant['game_rounds'][0]['data']['trajectory'][j]['state']
+                        # action = a_participant
                         # result.append(state)
-                        result.append(OvercookedState.from_dict(state))
+                        # result.append(OvercookedState.from_dict(state))
+                        ts = a_participant['game_rounds'][0]['data']['trajectory'][j]
+                        result.append(ts)
                     results.append(result)
                     prev_sample = i
     else:
@@ -65,22 +85,23 @@ def filter_trajectory(trajectories, state='onion_help'):
     print(f'filtered out {len(results)} trajectories')
     return results, gridworld
 
+if __name__ == "__main__":
+    data_dir = '/home/jasmine/moral-ai-irl/overcooked_participants_data/'
+    save_dir = '/home/jasmine/moral-ai-irl/overcooked_participants_data/cleaned'
 
-data_dir = '/home/jasmine/moral-ai-irl/overcooked_participants_data/'
-games = load_json(data_dir)
-remove_idle_states(games)
-trajectory, gridworld = filter_trajectory(games)
-print(f'printing state strings')
+    games = load_human_data_json(data_dir)
+    remove_idle_states(games)
+    trajectory, gridworld = filter_trajectory(games)
+    # state = trajectory[0][0]['state']
 
-for t in range(len(trajectory)):
-    traj = trajectory[t]
-    i = 0
-    for state in traj:
-        print(f'trajectory {t}, time step {i}')
-        print(gridworld.state_string(state))
-        print()
-        i += 1
+    pack = {
+        'trajectory': trajectory,
+        'gridworld': gridworld
+    }
+    file_name = f'test_human_1.data'
+    with open(os.path.join(save_dir, file_name), 'wb') as save_file:
+        pickle.dump(pack, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f'data file saved to {os.path.join(save_dir, file_name)}')
 
-
-# JOINT ACTION = a_participant['game_rounds'][0]['data']['trajectory'][0]['joint_action']
-# SCORE = a_participant['game_rounds'][0]['data']['trajectory'][0]['score']
+    # JOINT ACTION = a_participant['game_rounds'][0]['data']['trajectory'][0]['joint_action']
+    # SCORE = a_participant['game_rounds'][0]['data']['trajectory'][0]['score']
