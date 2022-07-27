@@ -45,26 +45,32 @@ def _loadProcessedHumanData(data_path, view_traj=False):
 
     states = []
     actions = []
+    scores = []
     for i in range(len(trajectory)):
         state = []
         action = []
+        score = []
         for j in range(len(trajectory[i])):
             state_dict = trajectory[i][j]
             s = state_dict['state']
             a = state_dict['joint_action']
+            sc = state_dict['score']
 
             s = OvercookedState.from_dict(s)
             state.append(s)
             action.append(a)
+            score.append(sc)
             
             if view_traj:
                 print(gridworld.state_string(s))
         states.append(state)
         actions.append(action)
+        scores.append(score)
 
     assert len(states) == len(trajectory)
     assert len(actions) == len(trajectory)
-    return states, actions
+    assert len(scores) == len(trajectory)
+    return states, actions, scores
 
 def _convertAction2Index(actions):
     act = []
@@ -75,16 +81,15 @@ def _convertAction2Index(actions):
             act_1 = tuple(idx[1]) if type(idx[1]) == list else idx[1]
             temp.append([Action.ACTION_TO_INDEX[act_0], Action.ACTION_TO_INDEX[act_1]])
         act.append(temp)
-        print(temp)
     return act
 
-def getVisitation(states, joint_action, env):
+def getVisitation(states, joint_action, scores, env):
     target_player_idx = 0
     num_game = len(states)
     freq = {}
-    for game, actions in zip(states,joint_action):
-        for s,a in zip(game,actions):
-            reward_features = env.irl_reward_state_encoding(s, a)[target_player_idx]
+    for game, actions, score in zip(states,joint_action, scores):
+        for s,a,sc in zip(game,actions, score):
+            reward_features = env.human_coop_state_encoding(s, a, sc)[target_player_idx]
             reward_features = tuple(reward_features)
             if reward_features not in freq:
                 freq[reward_features] = 0
@@ -95,9 +100,9 @@ def getVisitation(states, joint_action, env):
     return freq
 
 def getExpertVisitation(env, data_path):
-    states, actions = _loadProcessedHumanData(data_path, view_traj=True)
+    states, actions, scores = _loadProcessedHumanData(data_path, view_traj=False)
     actions = _convertAction2Index(actions)
-    state_visit = getVisitation(states,actions, env)
+    state_visit = getVisitation(states,actions, scores, env)
     return state_visit
 
 def getAgentVisitation(train_config, env): #get the feature expectations of a new policy using RL agent
@@ -116,8 +121,9 @@ def getAgentVisitation(train_config, env): #get the feature expectations of a ne
 
     states = results['evaluation']['states']
     actions = results['evaluation']['actions']
+    scores = results['evaluation']['sparse_reward']
     actions = _convertAction2Index(actions)
-    state_visit = getVisitation(states, actions, env)
+    state_visit = getVisitation(states, actions, scores, env)
     return state_visit
 
 def getStatesAndGradient(expert_sv, agent_sv):
@@ -179,7 +185,7 @@ if __name__ == "__main__":
 
     if not args.resume_from:
         print(f'initiating models and optimizers...')
-        reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
+        reward_obs_shape = torch.tensor([15])       # change if reward shape changed.
         reward_model = TorchLinearReward(reward_obs_shape)
         optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
 

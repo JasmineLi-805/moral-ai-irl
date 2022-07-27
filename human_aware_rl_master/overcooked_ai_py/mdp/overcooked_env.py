@@ -1,3 +1,4 @@
+from ntpath import join
 import gym, tqdm
 import time
 import numpy as np
@@ -209,12 +210,19 @@ class OvercookedEnv(object):
 
         timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"])
         return (next_state, timestep_sparse_reward, done, env_info)
+    
+    def human_coop_state_encoding(self, state, joint_action, score):
+        """
+        Wrapper of the mdp's human_coop_state_encoding
+        """
+        return self.mdp.human_coop_encoding(state, joint_action, score, horizon=self.horizon)
 
     def irl_reward_state_encoding(self, state, joint_action):
         """
         Wrapper of the mdp's irl_reward_encoding
         """
         return self.mdp.irl_reward_state_encoding(state, joint_action, horizon=self.horizon)
+
 
     def lossless_state_encoding_mdp(self, state):
         """
@@ -338,6 +346,7 @@ class OvercookedEnv(object):
         """
         assert self.state.timestep == 0, "Did not reset environment before running agents"
         trajectory = []
+        sparse_rew = [] # added for human coop
         done = False
         # default is to not print to file
         fname = None
@@ -358,6 +367,7 @@ class OvercookedEnv(object):
 
             s_tp1, r_t, done, info = self.step(a_t, a_info_t, display_phi)
             trajectory.append((s_t, a_t, r_t, done, info))
+            sparse_rew.append(self.game_stats["cumulative_sparse_rewards_by_agent"]) # added for human coop
 
             if display and self.state.timestep < display_until:
                 self.print_state_transition(a_t, r_t, info, fname, display_phi)
@@ -368,9 +378,9 @@ class OvercookedEnv(object):
         if include_final_state:
             trajectory.append((s_tp1, (None, None), 0, True, None))
 
-        total_sparse = sum(self.game_stats["cumulative_sparse_rewards_by_agent"])
+        #total_sparse = sum(self.game_stats["cumulative_sparse_rewards_by_agent"])
         total_shaped = sum(self.game_stats["cumulative_shaped_rewards_by_agent"])
-        return np.array(trajectory, dtype=object), self.state.timestep, total_sparse, total_shaped
+        return np.array(trajectory, dtype=object), self.state.timestep, sparse_rew, total_shaped
 
     def get_rollouts(self, agent_pair, num_games, display=False, dir=None, final_state=False, display_phi=False,
                      display_until=np.Inf, metadata_fn=None, metadata_info_fn=None, info=True):

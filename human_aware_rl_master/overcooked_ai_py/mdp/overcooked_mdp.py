@@ -1832,39 +1832,65 @@ class OvercookedGridworld(object):
     ###################
     # STATE ENCODINGS #
     ###################
-    def condition_bot_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
-        encoding = np.zeros((2, 12))
-        
-        player_pos = overcooked_state.player_positions
-        right_player_idx = 0
-        if player_pos[1][0] > 5:
-            right_player_idx = 1
-        left_player_idx = 1 - right_player_idx
-        if overcooked_state.players[right_player_idx].held_object:
-            encoding[0][0] = 1
-        
-        agent_0_orientation = overcooked_state.player_orientations[left_player_idx]
-        agent_0_orientation = Direction.DIRECTION_TO_INDEX[agent_0_orientation]
-        encoding[0][1+agent_0_orientation] = 1
+    def get_irl_reward_state_encoding_shape():
+        return np.array([15])
 
-        if player_pos[left_player_idx] == (4,3):
-            encoding[0][5] = 1
+    """
+    State encoding to study features for human cooperation in Overcooked
+    
+    The encoding has the following shape:
+        [
+            player 0 position (2)
+            player 1 position (2)
+            player 0 orientation (4): one-hot encoding
+            player 1 orientation (4): one-hot encoding
+            player 0 held onion (1): one-hot encoding
+            player 1 held onion (1): one-hot encoding
+            player 0 score (1)
+            player 1 score (1)
+            timestep (1)
+        ]
+    """
+    def human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
+        player_0, player_1 = overcooked_state.players
 
-        encoding[0][6+joint_action[left_player_idx]] = 1
+        # Player position
+        player_pos = np.concatenate((np.array(player_0.position),np.array(player_1.position)), axis=None)
+        assert player_pos.shape == np.array([4]), f'player_pos shape={player_pos.shape}, np.array={np.array([4])}'
+
+        # Player orientation
+        agent_0_orientation = Direction.DIRECTION_TO_INDEX[player_0.orientation]
+        agent_0_orientation = np.eye(4)[agent_0_orientation]
+        agent_1_orientation = Direction.DIRECTION_TO_INDEX[player_1.orientation]
+        agent_1_orientation = np.eye(4)[agent_1_orientation]
+        player_orientation = np.concatenate((agent_0_orientation, agent_1_orientation), axis=None)
+        assert player_orientation.shape == np.array([8])
         
-        return encoding
+        # Whether player is holding onion
+        held_onion = np.zeros((2))
+        if player_0.held_object and player_0.held_object == "onion":
+            held_onion[0] = 1
+        elif player_1.held_object and player_1.held_object == "onion":
+            held_onion[1] = 1
+
+        # TODO: use score in features
+
+        # timestep
+        timestep = np.array(overcooked_state.timestep)
+
+        features = np.concatenate((player_pos, player_orientation, held_onion, timestep), axis=None)
+        return [features, features]
             
 
+    """
+    One hot location encoding for the "walk to corner" task.
+    """
     def irl_reward_state_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
 
-        base_map_features = ["pot_loc", "counter_loc", "onion_disp_loc", "dish_disp_loc", "serve_loc"]
-        obstacle_features = ["wall"]
-        variable_map_features = ["onions_in_pot", "onions_in_soup", "pot_is_full",
-                                 "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
-        all_objects = overcooked_state.all_objects_list
+        assert False
 
         def make_layer(position, value):
             layer = np.zeros(self.shape)
@@ -1906,14 +1932,9 @@ class OvercookedGridworld(object):
         # reshape the featurization
         reward_features = np.array(final_obs_for_players)
         
-        # print(reward_features)
-        # reward_features = reward_features[:, :6, :5]
         reward_features = reward_features[:, :6, :5, :]
-        # idx = np.arange(1.0, 12.0)
-        # reward_features = reward_features * idx
         reward_features = np.sum(reward_features, axis=3)
         target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2])    # for squeezed bitmap
-        # target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2]*reward_features.shape[3]) # for unsqueezed bitmap
         reward_features = np.reshape(reward_features, target_shape)
 
         # add one-hot encoding of agent actions

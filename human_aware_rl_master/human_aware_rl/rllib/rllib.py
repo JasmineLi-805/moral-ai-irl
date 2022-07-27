@@ -244,7 +244,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
             dense_reward = info["shaped_r_by_agent"]
 
         # get lossless state features
-        reward_features = self.base_env.irl_reward_state_encoding(next_state, joint_action_idx)
+        reward_features = self.base_env.human_coop_state_encoding(next_state, joint_action_idx, sparse_reward)
 
         assert self.custom_reward_func
         if self.custom_reward_func:
@@ -437,7 +437,7 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         metrics = {}
         metrics['actions'] = results['ep_actions']
         metrics['states'] = results['ep_states']
-        metrics['average_sparse_reward'] = np.mean(results['ep_returns'])
+        metrics['sparse_reward'] = results['ep_returns']
         return metrics
 
     return _evaluate
