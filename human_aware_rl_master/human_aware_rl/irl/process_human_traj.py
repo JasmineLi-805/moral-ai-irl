@@ -98,7 +98,7 @@ def process_data(data_dir, save_dir):
     }
     file_name = f'test_human_1.data'
     with open(os.path.join(save_dir, file_name), 'wb') as save_file:
-        pickle.dump(pack, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(pack, save_file, protocol=4)
     print(f'data file saved to {os.path.join(save_dir, file_name)}')
 
     # JOINT ACTION = a_participant['game_rounds'][0]['data']['trajectory'][0]['joint_action']
