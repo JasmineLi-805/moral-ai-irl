@@ -2,6 +2,7 @@ import os
 import json
 import glob
 import pickle
+import sys
 
 from matplotlib.pyplot import grid
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
@@ -22,7 +23,7 @@ def load_human_data_json(data_dir):
                     len_traj = len(a_participant['game_rounds'][0]['data']['trajectory'])
                     print(f'game rounds={num_rounds}, traj len={len_traj}')
         # TODO: Remove this to load more than 1 file.
-        break
+        #break
     return games
 
 def remove_idle_states(trajectories):
@@ -85,10 +86,7 @@ def filter_trajectory(trajectories, state='onion_help'):
     print(f'filtered out {len(results)} trajectories')
     return results, gridworld
 
-if __name__ == "__main__":
-    data_dir = '/home/jasmine/moral-ai-irl/overcooked_participants_data/'
-    save_dir = '/home/jasmine/moral-ai-irl/overcooked_participants_data/cleaned'
-
+def process_data(data_dir, save_dir):
     games = load_human_data_json(data_dir)
     remove_idle_states(games)
     trajectory, gridworld = filter_trajectory(games)
@@ -105,3 +103,13 @@ if __name__ == "__main__":
 
     # JOINT ACTION = a_participant['game_rounds'][0]['data']['trajectory'][0]['joint_action']
     # SCORE = a_participant['game_rounds'][0]['data']['trajectory'][0]['score']
+
+
+if __name__ == "__main__":
+    if len(sys.argv)==3:
+        data_dir = sys.argv[1]
+        save_dir = sys.argv[2]
+        process_data(data_dir, save_dir)
+    else:
+        print('USAGE: python process_human_trajectory PATH_TO_DATA PATH_TO_OUTPUT')
+
