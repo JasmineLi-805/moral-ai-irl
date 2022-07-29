@@ -6,25 +6,29 @@ import sys
 
 from matplotlib.pyplot import grid
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
+from datetime import datetime
+
 
 """
 run command: `python process_human_traj.py`
 """
-
 def load_human_data_json(data_dir):
     games = []
     for f in glob.glob(data_dir + '*.json'):
-        with(open(f,'r')) as a_file:
+        with(open(f, 'r')) as a_file:
             for line in a_file:
                 a_participant = json.loads(line)
-                if a_participant['demographics']['data']['demographics-retake']=='no':
-                    games.append(a_participant)
-                    num_rounds = len(a_participant['game_rounds'])
-                    len_traj = len(a_participant['game_rounds'][0]['data']['trajectory'])
-                    print(f'game rounds={num_rounds}, traj len={len_traj}')
-        # TODO: Remove this to load more than 1 file.
-        #break
+                try:
+                    if a_participant['demographics']['data']['demographics-retake'] == 'no':
+                        games.append(a_participant)
+                        num_rounds = len(a_participant['game_rounds'])
+                        len_traj = len(a_participant['game_rounds'][0]['data']['trajectory'])
+                        print(f'game rounds={num_rounds}, traj len={len_traj}')
+                except:
+                    print('COULD NOT PROCESS: {}'.format(f))
+                    pass
     return games
+
 
 def remove_idle_states(trajectories):
     print(f'removing idle states')
@@ -43,70 +47,106 @@ def remove_idle_states(trajectories):
     print(f'completed removing idle states, removed {count} idle steps')
 
 
+def is_coop_state(a_step, a_trajectory):
+    check_state = a_trajectory[a_step]
+    return check_state['state']['players'][0]['position'] == [4, 3] \
+        and check_state['state']['players'][0]['orientation'] == [1, 0] \
+        and check_state['state']['players'][0]['held_object'] is not None \
+        and check_state['state']['players'][0]['held_object']['name'] == 'onion' \
+        and check_state['joint_action'][0] == 'interact' \
+        and {'name': 'onion', 'position': [5, 3]} in a_trajectory[a_step + 1]['state']['objects']
+
+
+def get_pick_onion_up_steps(a_trajectory):
+    states_of_interest = []
+    for step in range(0, len(a_trajectory)):
+        if a_trajectory[step]['state']['players'][0]['position'] == [4, 3] \
+        and a_trajectory[step]['state']['players'][0]['orientation'] == [0, 1] \
+        and a_trajectory[step]['state']['players'][0]['held_object'] is None \
+        and a_trajectory[step]['joint_action'][0] == 'interact':
+            states_of_interest.append(step)
+    return states_of_interest
+
+
+def get_trajectories_of_interest(starting_steps, the_trajectory, steps_limit=50, is_stop_state=is_coop_state,
+                                 stop_overlap=True):
+    coop_trajectories = []
+    for step_idx in range(len(starting_steps)):
+        step = starting_steps[step_idx]
+        trial_trajectory = [the_trajectory[step]]
+        steps_to_overflow = len(the_trajectory)-step
+        if stop_overlap and step_idx < len(starting_steps)-1:
+            next_starting_step = starting_steps[step_idx+1]-step
+        else:
+            next_starting_step = float('inf')
+        limit = min(steps_limit, steps_to_overflow, next_starting_step)
+        for check_step in range(step+1, step+limit):
+            trial_trajectory.append(the_trajectory[check_step])
+            if is_stop_state(check_step, the_trajectory):
+                trial_trajectory.append(the_trajectory[check_step+1])
+                coop_trajectories.append(trial_trajectory)
+                break
+    return coop_trajectories
+
+
+TRAJECTORIES_OF_INTEREST = {
+    'onion_help': {
+        'get_starting_steps': get_pick_onion_up_steps,
+        'is_ending_step': is_coop_state
+    }
+}
+
+
 """
 returns a list of filtered trajectories and a GridWorld object.
 
 returns:
- - results: a list of trajectories in the following format
-        [
-            [{timestep_1.2 dict}, {timestep_1.2 dict}, ...],
-            [{timestep_2.1 dict}, {timestep_2.2 dict}, ...],
-            ...
-            [{timestep_n.1 dict}, {timestep_n.2 dict}, ...],
-        ]
+ - results: a list of trajectories of interest
  - gridworld: a GridWorld object created from the layout name, can be used in the future.
 """
-def filter_trajectory(trajectories, state='onion_help'):
+def filter_trajectory(trajectories, interest='onion_help'):
     if not trajectories:
         return None
     results = []
     layout_name = trajectories[0]['game_rounds'][0]['data']['layout_name']
     gridworld = OvercookedGridworld.from_layout_name(layout_name)
-    if state=='onion_help':
-        print('filtering onion help')
+    if interest in TRAJECTORIES_OF_INTEREST:
+        print('WORKING ON {}!'.format(interest))
         for a_participant in trajectories:
+            print('CHECKING participant {}...'.format(a_participant['demographics']['data']['user_id']))
             assert a_participant['game_rounds'][0]['data']['layout_name'] == layout_name
-            trajectory_length = len(a_participant['game_rounds'][0]['data']['trajectory'])
-            prev_sample = -20   # only used to avoid repeated sampling
-            for i in range(trajectory_length):
-                a_state = a_participant['game_rounds'][0]['data']['trajectory'][i]['state']
-                if i - prev_sample >= 10 and a_state['players'][0]['position'] == [4,3]:
-                    result = []
-                    for j in range(i, min(i + 10, trajectory_length)):
-                        # state = a_participant['game_rounds'][0]['data']['trajectory'][j]['state']
-                        # action = a_participant
-                        # result.append(state)
-                        # result.append(OvercookedState.from_dict(state))
-                        ts = a_participant['game_rounds'][0]['data']['trajectory'][j]
-                        result.append(ts)
-                    results.append(result)
-                    prev_sample = i
+            a_trajectory = a_participant['game_rounds'][0]['data']['trajectory']
+            get_starting_steps = TRAJECTORIES_OF_INTEREST[interest]['get_starting_steps']
+            is_ending_step = TRAJECTORIES_OF_INTEREST[interest]['is_ending_step']
+            steps_of_interest = get_starting_steps(a_trajectory)
+            trajectories_of_interest = get_trajectories_of_interest(steps_of_interest, a_trajectory, is_stop_state=is_ending_step)
+            results = results + trajectories_of_interest
+            print('... and found {} trajectories of interest!'.format(len(trajectories_of_interest)))
     else:
         return None
-    print(f'filtered out {len(results)} trajectories')
+    print(f'FILTERED out {len(results)} trajectories')
     return results, gridworld
+
 
 def process_data(data_dir, save_dir):
     games = load_human_data_json(data_dir)
     remove_idle_states(games)
     trajectory, gridworld = filter_trajectory(games)
-    # state = trajectory[0][0]['state']
-
     pack = {
         'trajectory': trajectory,
         'gridworld': gridworld
     }
-    file_name = f'test_human_1.data'
+    timestamp = datetime.now()
+    file_name = 'trajectories_{}.data'.format(timestamp.isoformat('_', 'seconds'))
     with open(os.path.join(save_dir, file_name), 'wb') as save_file:
         pickle.dump(pack, save_file, protocol=4)
     print(f'data file saved to {os.path.join(save_dir, file_name)}')
-
-    # JOINT ACTION = a_participant['game_rounds'][0]['data']['trajectory'][0]['joint_action']
-    # SCORE = a_participant['game_rounds'][0]['data']['trajectory'][0]['score']
+    with open(os.path.join(save_dir, '{}.json'.format(file_name)), 'w') as save_file:
+        save_file.write(json.dumps(trajectory))
 
 
 if __name__ == "__main__":
-    if len(sys.argv)==3:
+    if len(sys.argv) == 3:
         data_dir = sys.argv[1]
         save_dir = sys.argv[2]
         process_data(data_dir, save_dir)
