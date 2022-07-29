@@ -47,14 +47,46 @@ def remove_idle_states(trajectories):
     print(f'completed removing idle states, removed {count} idle steps')
 
 
+# TODO: needs to vary the position and orientation based on game configuration and round.
 def is_coop_state(a_step, a_trajectory):
     check_state = a_trajectory[a_step]
-    return check_state['state']['players'][0]['position'] == [4, 3] \
-        and check_state['state']['players'][0]['orientation'] == [1, 0] \
-        and check_state['state']['players'][0]['held_object'] is not None \
-        and check_state['state']['players'][0]['held_object']['name'] == 'onion' \
-        and check_state['joint_action'][0] == 'interact' \
-        and {'name': 'onion', 'position': [5, 3]} in a_trajectory[a_step + 1]['state']['objects']
+    if a_step == len(a_trajectory)-1:
+        # There is no next step to confirm onion delivery
+        return False
+    else:
+        return check_state['state']['players'][0]['position'] == [4, 3] \
+            and check_state['state']['players'][0]['orientation'] == [1, 0] \
+            and check_state['state']['players'][0]['held_object'] is not None \
+            and check_state['state']['players'][0]['held_object']['name'] == 'onion' \
+            and check_state['joint_action'][0] == 'interact' \
+            and {'name': 'onion', 'position': [5, 3]} in a_trajectory[a_step + 1]['state']['objects']
+
+
+def find_soup(state, position):
+    if 'objects' in state:
+        for obj in state['objects']:
+            if obj['name'] == 'soup' and obj['position'] == position:
+                return obj
+    return None
+
+
+def is_non_coop_state(a_step, a_trajectory):
+    check_state = a_trajectory[a_step]
+    current_soup = find_soup(check_state['state'], [3, 0])
+    stove_onions_now = 0 if not current_soup else len(current_soup['_ingredients'])
+    if a_step == len(a_trajectory)-1:
+        # There is no next step to confirm onion delivery
+        return False
+    else:
+        next_state = a_trajectory[a_step+1]
+        next_soup = find_soup(next_state['state'], [3, 0])
+        stove_onions_next = 0 if not next_soup else len(next_soup['_ingredients'])
+        return check_state['state']['players'][0]['position'] == [3, 1] \
+            and check_state['state']['players'][0]['orientation'] == [0, -1] \
+            and check_state['state']['players'][0]['held_object'] is not None \
+            and check_state['state']['players'][0]['held_object']['name'] == 'onion' \
+            and check_state['joint_action'][0] == 'interact' \
+            and stove_onions_next > stove_onions_now
 
 
 def get_pick_onion_up_steps(a_trajectory):
@@ -93,6 +125,10 @@ TRAJECTORIES_OF_INTEREST = {
     'onion_help': {
         'get_starting_steps': get_pick_onion_up_steps,
         'is_ending_step': is_coop_state
+    },
+    'onion_cook': {
+        'get_starting_steps': get_pick_onion_up_steps,
+        'is_ending_step': is_non_coop_state
     }
 }
 
@@ -131,7 +167,7 @@ def filter_trajectory(trajectories, interest='onion_help'):
 def process_data(data_dir, save_dir):
     games = load_human_data_json(data_dir)
     remove_idle_states(games)
-    trajectory, gridworld = filter_trajectory(games)
+    trajectory, gridworld = filter_trajectory(games, 'onion_cook')
     pack = {
         'trajectory': trajectory,
         'gridworld': gridworld
