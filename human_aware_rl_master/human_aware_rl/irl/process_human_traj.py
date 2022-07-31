@@ -9,12 +9,10 @@ from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
 from datetime import datetime
 
 
-"""
-run command: `python process_human_traj.py`
-"""
 def load_human_data_json(data_dir):
+    print(f'start data loading, dir={data_dir}')
     games = []
-    for f in glob.glob(data_dir + '*.json'):
+    for f in glob.glob(data_dir + '/*.json'):
         with(open(f, 'r')) as a_file:
             for line in a_file:
                 a_participant = json.loads(line)
@@ -32,6 +30,7 @@ def load_human_data_json(data_dir):
 
 def remove_idle_states(trajectories):
     print(f'removing idle states')
+    assert trajectories
     count = 0
     for a_participant in trajectories:
         trajectory_length = len(a_participant['game_rounds'][0]['data']['trajectory'])
@@ -142,6 +141,7 @@ returns:
 """
 def filter_trajectory(trajectories, interest='onion_help'):
     if not trajectories:
+        print(f'not a trajectory')
         return None
     results = []
     layout_name = trajectories[0]['game_rounds'][0]['data']['layout_name']
@@ -159,21 +159,22 @@ def filter_trajectory(trajectories, interest='onion_help'):
             results = results + trajectories_of_interest
             print('... and found {} trajectories of interest!'.format(len(trajectories_of_interest)))
     else:
+        print('interest not in range')
         return None
     print(f'FILTERED out {len(results)} trajectories')
     return results, gridworld
 
 
-def process_data(data_dir, save_dir):
+def process_data(data_dir, save_dir, interest):
     games = load_human_data_json(data_dir)
     remove_idle_states(games)
-    trajectory, gridworld = filter_trajectory(games, 'onion_cook')
+    trajectory, gridworld = filter_trajectory(games, interest)
     pack = {
         'trajectory': trajectory,
         'gridworld': gridworld
     }
     timestamp = datetime.now()
-    file_name = 'trajectories_{}.data'.format(timestamp.isoformat('_', 'seconds'))
+    file_name = 'trajectories_{}_{}.data'.format(interest, timestamp.isoformat('_', 'seconds'))
     with open(os.path.join(save_dir, file_name), 'wb') as save_file:
         pickle.dump(pack, save_file, protocol=4)
     print(f'data file saved to {os.path.join(save_dir, file_name)}')
@@ -182,10 +183,11 @@ def process_data(data_dir, save_dir):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        data_dir = sys.argv[1]
-        save_dir = sys.argv[2]
-        process_data(data_dir, save_dir)
+    if len(sys.argv) == 4:
+        interest = sys.argv[1]
+        data_dir = sys.argv[2]
+        save_dir = sys.argv[3]
+        process_data(data_dir, save_dir, interest)
     else:
-        print('USAGE: python process_human_trajectory PATH_TO_DATA PATH_TO_OUTPUT')
+        print('USAGE: python process_human_traj.py INTEREST PATH_TO_DATA PATH_TO_OUTPUT')
 
