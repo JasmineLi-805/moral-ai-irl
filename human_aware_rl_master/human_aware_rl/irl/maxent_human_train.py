@@ -116,15 +116,14 @@ def getAgentVisitation(train_config, env): #get the feature expectations of a ne
     # train and get rollouts
     try:
         results = run(train_config)
+        states = results['evaluation']['states']
+        actions = results['evaluation']['actions']
+        scores = results['evaluation']['sparse_reward']
+        actions = _convertAction2Index(actions)
+        state_visit = getVisitation(states, actions, scores, env)
+        return state_visit
     except Exception as e:
-        print(e)
-
-    states = results['evaluation']['states']
-    actions = results['evaluation']['actions']
-    scores = results['evaluation']['sparse_reward']
-    actions = _convertAction2Index(actions)
-    state_visit = getVisitation(states, actions, scores, env)
-    return state_visit
+        print('ERROR: could not get Agent Visitation. -->' + e.with_traceback())
 
 def getStatesAndGradient(expert_sv, agent_sv):
     # calculate the gradient for each of the state: (mu_agent - mu_expert)
