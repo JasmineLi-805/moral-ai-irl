@@ -123,7 +123,7 @@ def getAgentVisitation(train_config, env): #get the feature expectations of a ne
         state_visit = getVisitation(states, actions, scores, env)
         return state_visit
     except Exception as e:
-        print('ERROR: could not get Agent Visitation. -->' + e.with_traceback())
+        print('ERROR: could not get Agent Visitation. -->' + str(e))
 
 def getStatesAndGradient(expert_sv, agent_sv):
     # calculate the gradient for each of the state: (mu_agent - mu_expert)
