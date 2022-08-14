@@ -19,7 +19,7 @@ def get_train_config():
     use_phi = True
 
     # whether to use recurrence in ppo model
-    use_lstm = True
+    use_lstm = True if not LOCAL_TESTING else False
 
     # Base model params
     NUM_HIDDEN_LAYERS = 3
@@ -54,13 +54,13 @@ def get_train_config():
     sgd_minibatch_size = 800 if not LOCAL_TESTING else 800
 
     # Rollout length
-    rollout_fragment_length = 15
+    rollout_fragment_length = 21
     
     # Whether all PPO agents should share the same policy network
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 150 if not LOCAL_TESTING else 1
+    num_training_iters = 150 if not LOCAL_TESTING else 10
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -103,21 +103,21 @@ def get_train_config():
     save_freq = -1  # do not store intermediate RL agent results
 
     # How many training iterations to run between each evaluation
-    evaluation_interval = 150 if not LOCAL_TESTING else 1
+    evaluation_interval = num_training_iters #150 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
-    evaluation_ep_length = 15
+    evaluation_ep_length = 21
 
     # Number of games to simulation each evaluation
-    evaluation_num_games = 50
+    evaluation_num_games = 50 if not LOCAL_TESTING else 3
 
     # Whether to display rollouts in evaluation
     evaluation_display = False
 
     # Where to store model checkpoints and training stats
-    results_dir = HOME_DIR+"result"
+    results_dir = HOME_DIR+"temp_result"
     if GERLACH:
-        results_dir = "/home/jasmine/moral-ai-irl/result"
+        results_dir = "/home/jasmine/moral-ai-irl/temp_result"
     
 
     # Whether tensorflow should execute eagerly or not
@@ -128,11 +128,7 @@ def get_train_config():
 
     ### Environment Params ###
     # Which overcooked level to use
-    # layout_name = "coop_experiment_1"
-    layout_name = "mai_separate_coop_left"
-
-    # IRL params
-    discount_factor = 1.0
+    layout_name = ""
 
     # Name of directory to store training results in (stored in ~/ray_results/<experiment_name>)
 
@@ -157,7 +153,7 @@ def get_train_config():
     }
 
     # Max episode length
-    horizon = 15
+    horizon = 21
 
     # Constant by which shaped rewards are multiplied by when calculating total reward
     reward_shaping_factor = 0.0
@@ -226,19 +222,19 @@ def get_train_config():
             "use_phi" : use_phi,
             # customized reward calculation
             "custom_reward_func": None,
-            "discount_factor": discount_factor
+            "discount_factor": gamma
         }
     }
 
     ray_params = {
         "custom_model_id" : "MyPPOModel",
         "custom_model_cls" : RllibLSTMPPOModel if model_params['use_lstm'] else RllibPPOModel,
-        "temp_dir" : TMP_DIR+"tmp" if not GERLACH else "/home/jasmine/moral-ai-irl/result",
+        "temp_dir" : TMP_DIR+"tmp" if not GERLACH else "/home/jasmine/moral-ai-irl/temp_result",
         "env_creator" : _env_creator
     }
 
     irl_params = {
-        "discount_factor": discount_factor,
+        "discount_factor": gamma,
         "epsilon": 0.1,
         "layout": layout_name
     }

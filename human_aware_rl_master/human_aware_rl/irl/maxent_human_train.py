@@ -190,6 +190,7 @@ if __name__ == "__main__":
 
         print(f'loading training configurations...')
         config = get_train_config()
+        i = 0
 
         print(f'getting expert trajectory and state visitation...')
         env = _loadEnvironment(config)
@@ -219,9 +220,8 @@ if __name__ == "__main__":
     # set the reward function used for RL training.
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
 
-    for i in range(n_epochs):
-        if i % 10 == 0:
-            print(f'iteration {i}')
+    while i < n_epochs:
+        print(f'iteration {i}')
         # train a policy and get feature expectation
         agent_state_visit = getAgentVisitation(config, env)
 
@@ -234,6 +234,7 @@ if __name__ == "__main__":
         reward.backward(gradient=grad_r)
         optim.step()
 
+        i += 1
         if i % 5 == 0:
             checkpoint = {
                 "reward_model": reward_model,

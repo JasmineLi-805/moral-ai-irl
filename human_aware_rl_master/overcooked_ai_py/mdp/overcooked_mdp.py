@@ -1846,8 +1846,6 @@ class OvercookedGridworld(object):
             player 1 orientation (4): one-hot encoding
             player 0 held onion (1): one-hot encoding
             player 1 held onion (1): one-hot encoding
-            player 0 score (1)
-            player 1 score (1)
             timestep (1)
         ]
     """
@@ -1876,7 +1874,8 @@ class OvercookedGridworld(object):
         # TODO: use score in features
 
         # timestep
-        timestep = np.array(overcooked_state.timestep)
+        timestep = [1] if overcooked_state.timestep > 1300 else [0]
+        timestep = np.array(timestep)
 
         features = np.concatenate((player_pos, player_orientation, held_onion, timestep), axis=None)
         return [features, features]

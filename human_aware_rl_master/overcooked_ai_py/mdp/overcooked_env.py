@@ -217,7 +217,7 @@ class OvercookedEnv(object):
         """
         return self.mdp.human_coop_encoding(state, joint_action, score, horizon=self.horizon)
 
-    def irl_reward_state_encoding(self, state, joint_action):
+    def irl_reward_state_encoding(self, state, joint_action, score):
         """
         Wrapper of the mdp's irl_reward_encoding
         """
