@@ -1430,9 +1430,36 @@ class ToOnionLong(MAIDumbAgent):
 ######
 # layout: coop_experiment_1
 
-class CoopSendOnion(MAIDumbAgent):
+class NonCooperativeAgent(MAIDumbAgent):
     STEPS = {
-        'SEND_ONION': [
+        'TAKE_ONION': [
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.NORTH,
+            Direction.NORTH,
+            Direction.WEST,
+            Direction.NORTH,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCooperativeAgent.STEPS)
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(NonCooperativeAgent, self).reset_smart(state)
+
+class CooperativeAgent(MAIDumbAgent):
+    STEPS = {
+        'SEND_ONION':[
             Direction.SOUTH,
             Action.INTERACT,
             Direction.EAST,
@@ -1448,63 +1475,7 @@ class CoopSendOnion(MAIDumbAgent):
         sequence = [
             'SEND_ONION'
         ]
-        super().__init__(sequence, CoopSendOnion.STEPS)
-
-    def reset_smart(self, state):
-        last_phase = self.phases[self.curr_phase]
-        self.phases.append('STAY')
-        super(CoopSendOnion, self).reset_smart(state)
-
-class NonCoopTakeOnion(MAIDumbAgent):
-    STEPS = {
-        'TAKE_ONION': [
-            Direction.SOUTH,
-            Action.INTERACT,
-            Direction.NORTH,
-            Direction.NORTH
-        ],
-        'STAY': [
-            Action.STAY
-        ]
-    }
-
-    def __init__(self):
-        self.help_provided = False
-        sequence = [
-            'TAKE_ONION'
-        ]
-        super().__init__(sequence, NonCoopTakeOnion.STEPS)
-
-    def reset_smart(self, state):
-        last_phase = self.phases[self.curr_phase]
-        self.phases.append('STAY')
-        super(NonCoopTakeOnion, self).reset_smart(state)
-
-class ConditionCoop(MAIDumbAgent):
-    STEPS = {
-        'COOP': [
-            Direction.SOUTH,
-        ],
-        'NON_COOP': [
-            Direction.EAST,
-        ],
-        'SEND_ONION':[
-            Direction.SOUTH,
-            Action.INTERACT,
-            Direction.EAST,
-            Action.INTERACT
-        ],
-        'STAY': [
-            Action.STAY
-        ]
-    }
-
-    def __init__(self):
-        self.help_provided = False
-        sequence = [
-            'STAY'
-        ]
-        super().__init__(sequence, ConditionCoop.STEPS)
+        super().__init__(sequence, CooperativeAgent.STEPS)
 
     def action(self, state):
         self.curr_tick += 1
@@ -1523,22 +1494,6 @@ class ConditionCoop(MAIDumbAgent):
         return Action.STAY, None
 
     def reset_smart(self, state):
-        if isinstance(state, np.ndarray):
-            state = unflatten_state(state)
+        self.phases.append('STAY')
+        super(CooperativeAgent, self).reset_smart(state)
 
-        last_phase = self.phases[self.curr_phase]
-        if isinstance(state, OvercookedState):
-            player_pos = state.player_positions
-            right_player_idx = 0
-            if player_pos[1][0] > 5:
-                right_player_idx = 1
-            if state.players[right_player_idx].held_object:
-                self.phases.append('NON_COOP')
-            else: 
-                self.phases.append('COOP')
-        elif isinstance(state, Dict):
-            if state['player_right_held_obj']:
-                self.phases.append('NON_COOP')
-            else:
-                self.phases.append('COOP')
-        super(ConditionCoop, self).reset_smart(state)
