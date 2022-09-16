@@ -286,7 +286,7 @@ class MAICoopLeftAgent(Agent):
         self.agent_index = None
         self.mdp = None
 
-class MAINonCoopLeftAgent(Agent):
+class MAINonCoopAgent(Agent):
     
     def __init__(self):
         self.agent = NonCooperativeAgent()

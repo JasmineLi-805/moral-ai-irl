@@ -1,12 +1,7 @@
-
-# from overcooked_demo_litw.server.game import MAIDumbAgent
-from overcooked_ai_py.mdp.actions import Action, Direction
-from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES, OvercookedState
-from overcooked_ai_py.agents.benchmarking import AgentEvaluator
+from overcooked_ai_py.mdp.actions import Action
+from overcooked_ai_py.mdp.overcooked_mdp import EVENT_TYPES
 from overcooked_ai_py.agents.agent import Agent, AgentPair
 from ray.rllib.agents.ppo.ppo_tf_policy import PPOTFPolicy
-from ray.rllib.models.preprocessors import NoPreprocessor
 from ray.tune.registry import register_env
 from ray.tune.logger import UnifiedLogger
 from ray.tune.result import DEFAULT_RESULTS_DIR
@@ -23,7 +18,6 @@ import numpy as np
 import os, copy, dill
 import ray
 import logging
-import torch
 
 action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
 obs_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
@@ -51,26 +45,6 @@ class RlLibAgent(Agent):
         if isinstance(self.policy, DummyPolicy):
             self.policy.reset()
 
-    def action_probabilities(self, state):
-        """
-        Arguments:
-            - state (Overcooked_mdp.OvercookedState) object encoding the global view of the environment
-        returns:
-            - Normalized action probabilities determined by self.policy
-        """
-        if isinstance(self.policy, DummyPolicy):
-            print(f'rllib.RllibAgent.action_probabilities(): dummy policy seq = {self.policy.model.phases}')
-
-        # Preprocess the environment state
-        obs = self.featurize(state, debug=False)
-        my_obs = obs[self.agent_index]
-
-        # Compute non-normalized log probabilities from the underlying model
-        logits = self.policy.compute_actions(np.array([my_obs]), self.rnn_state)[2]['action_dist_inputs']
-
-        # Softmax in numpy to convert logits to normalized probabilities
-        return softmax(logits)
-
     def action(self, state):
         """
         Arguments: 
@@ -83,24 +57,26 @@ class RlLibAgent(Agent):
         obs = self.featurize(state)
         if isinstance(self.policy, PPOTFPolicy):
             obs = obs[self.agent_index]
-        # if isinstance(self.policy, DummyPolicy):
-        #     print(f'rllib.RllibAgent.action(): dummy policy seq = {self.policy.model.phases}')
 
         # Use Rllib.Policy class to compute action argmax and action probabilities
         [action_idx], rnn_state, info = self.policy.compute_actions(np.array([obs]), self.rnn_state)
-        agent_action =  Action.INDEX_TO_ACTION[action_idx]
 
-
-        # Softmax in numpy to convert logits to normalized probabilities
         agent_action_info = {}
         if info:
             logits = info['action_dist_inputs']
             action_probabilities = softmax(logits)
-
             agent_action_info['action_probs'] = action_probabilities
-            self.rnn_state = rnn_state
 
-        return agent_action, agent_action_info
+            most_likely_action = action_probabilities[0].argmax()
+            agent_action = Action.INDEX_TO_ACTION[most_likely_action]
+            
+            self.rnn_state = rnn_state
+            return agent_action, agent_action_info
+        else:
+            assert isinstance(self.policy, DummyPolicy), "rllib.action: no action computation info for RL agent"
+            agent_action = Action.INDEX_TO_ACTION[action_idx]
+            return agent_action, agent_action_info
+
 
 
 class OvercookedMultiAgent(MultiAgentEnv):
@@ -419,7 +395,7 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         reset_dummy_policy(agent_1_policy)
 
         agent_0_feat_fn = agent_1_feat_fn = None
-        assert 'dummy' in policies
+        assert 'dummy' in policies, "rllib._evaluate: dummy not in policies"
         if 'dummy' in policies:
             featurize_fn = mai_dummy_feat_fn
             if policies[0] == 'dummy':

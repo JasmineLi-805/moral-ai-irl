@@ -47,20 +47,20 @@ def get_train_config():
 
     # How many environment timesteps will be simulated (across all environments)
     # for one set of gradient updates. Is divided equally across environments
-    train_batch_size = 2400 if not LOCAL_TESTING else 800
+    train_batch_size = 2400 if not LOCAL_TESTING else 800 # 12000
 
     # size of minibatches we divide up each batch into before
     # performing gradient steps
-    sgd_minibatch_size = 800 if not LOCAL_TESTING else 800
+    sgd_minibatch_size = 800 if not LOCAL_TESTING else 800 # 2000
 
     # Rollout length
-    rollout_fragment_length = 21
+    rollout_fragment_length = 14
     
     # Whether all PPO agents should share the same policy network
     shared_policy = True
 
     # Number of training iterations to run
-    num_training_iters = 150 if not LOCAL_TESTING else 10
+    num_training_iters = 150 if not LOCAL_TESTING else 10 # 420
 
     # Stepsize of SGD.
     lr = 5e-5
@@ -72,7 +72,7 @@ def get_train_config():
     grad_clip = 0.1
 
     # Discount factor
-    gamma = 1.0
+    gamma = 0.99
 
     # Exponential decay factor for GAE (how much weight to put on monte carlo samples)
     # Reference: https://arxiv.org/pdf/1506.02438.pdf
@@ -97,7 +97,7 @@ def get_train_config():
 
     # Number of SGD iterations in each outer loop (i.e., number of epochs to
     # execute per train batch).
-    num_sgd_iter = 1 if not LOCAL_TESTING else 1
+    num_sgd_iter = 8 if not LOCAL_TESTING else 1 # 8
 
     # How many trainind iterations (calls to trainer.train()) to run before saving model checkpoint
     save_freq = -1  # do not store intermediate RL agent results
@@ -106,10 +106,10 @@ def get_train_config():
     evaluation_interval = num_training_iters #150 if not LOCAL_TESTING else 1
 
     # How many timesteps should be in an evaluation episode
-    evaluation_ep_length = 21
+    evaluation_ep_length = 14
 
     # Number of games to simulation each evaluation
-    evaluation_num_games = 50 if not LOCAL_TESTING else 3
+    evaluation_num_games = 1 if not LOCAL_TESTING else 3
 
     # Whether to display rollouts in evaluation
     evaluation_display = False
@@ -153,7 +153,7 @@ def get_train_config():
     }
 
     # Max episode length
-    horizon = 21
+    horizon = 4
 
     # Constant by which shaped rewards are multiplied by when calculating total reward
     reward_shaping_factor = 0.0
@@ -177,7 +177,7 @@ def get_train_config():
         "num_workers" : num_workers,
         "train_batch_size" : train_batch_size,
         "sgd_minibatch_size" : sgd_minibatch_size,
-        "rollout_fragment_length" : rollout_fragment_length,
+        "rollout_fragment_length" : horizon,
         "num_sgd_iter" : num_sgd_iter,
         "lr" : lr,
         "lr_schedule" : lr_schedule,
@@ -198,7 +198,7 @@ def get_train_config():
 
     # To be passed into AgentEvaluator constructor and _evaluate function
     evaluation_params = {
-        "ep_length" : evaluation_ep_length,
+        "ep_length" : horizon,
         "num_games" : evaluation_num_games,
         "display" : evaluation_display
     }
