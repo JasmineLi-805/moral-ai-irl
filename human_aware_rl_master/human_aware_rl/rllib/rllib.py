@@ -489,7 +489,7 @@ def reset_dummy_policy(policy):
 ###########################
 
 
-def gen_trainer_from_params(params):
+def gen_trainer_from_params(params, mdp_setup_actions=None):
     # All ray environment set-up
     if not ray.is_initialized():
         init_params = {
@@ -511,6 +511,7 @@ def gen_trainer_from_params(params):
     multi_agent_params = params['environment_params']['multi_agent_params']
 
     env = OvercookedMultiAgent.from_config(environment_params)
+    run_env_setup_steps(env, mdp_setup_actions)
 
     # Returns a properly formatted policy tuple to be passed into ppotrainer config
     def gen_policy(policy_type="ppo"):
@@ -597,7 +598,10 @@ def gen_trainer_from_params(params):
         })
     return trainer
 
-
+def run_env_setup_steps(env, setup_actions):
+    if setup_actions:
+        for joint_action in setup_actions:
+            env.base_env.run_setup_step()
 
 ### Serialization ###
 

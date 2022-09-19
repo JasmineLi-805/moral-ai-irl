@@ -298,9 +298,9 @@ def my_config():
     }
 
 
-def run(params):
+def run(params, mdp_setup_actions=None):
     # Retrieve the tune.Trainable object that is used for the experiment
-    trainer = gen_trainer_from_params(params)
+    trainer = gen_trainer_from_params(params, mdp_setup_actions)
 
     # Object to store training results in
     result = {}

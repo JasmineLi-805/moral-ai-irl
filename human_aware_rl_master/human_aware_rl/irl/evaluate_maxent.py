@@ -54,7 +54,10 @@ if __name__ == "__main__":
     results = None
     while True:
         try:
-            results = run(config)
+            # TODO: add setup steps to config!
+            from overcooked_ai_py.mdp.actions import Action, Direction
+            joint_action = [Direction.SOUTH, Action.STAY] # Makes the human player look SOUTH
+            results = run(config, [joint_action])
             break
         except Exception as e:
             print(e)

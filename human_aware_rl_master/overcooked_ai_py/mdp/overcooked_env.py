@@ -185,6 +185,13 @@ class OvercookedEnv(object):
     # BASIC ENV LOGIC #
     ###################
 
+    def run_setup_step(self, joint_action):
+        """Performs a joint action that only updates the state.
+        ALERT: should only be used to setup a desired testing state!"""
+        joint_agent_action_info = [{}, {}]
+        next_state, mdp_infos = self.mdp.get_state_transition(self.state, joint_action)
+        self.state = next_state
+
     def step(self, joint_action, joint_agent_action_info=None, display_phi=False):
         """Performs a joint action, updating the environment state
         and providing a reward.

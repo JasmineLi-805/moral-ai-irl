@@ -28,6 +28,10 @@ class DummyPolicy(RllibPolicy):
         # the 'left' and 'right' in the layout name refers to the human player's position
         possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right', 'coop_experiment_1']
         assert config['layout'] in possible_layout
+
+        # TODO: Potential place to implement the placing of dummy agent for evaluation procedures.
+        # We could have different 'layouts' we would want to start from, but the only change is the placing of the dummy.
+        # We would need then to skip actions on the
         if config['layout']== 'mai_separate_coop_right':
             print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentLeftCoop')
             self.model = MAIDumbAgentLeftCoop() 
