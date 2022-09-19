@@ -601,7 +601,7 @@ def gen_trainer_from_params(params, mdp_setup_actions=None):
 def run_env_setup_steps(env, setup_actions):
     if setup_actions:
         for joint_action in setup_actions:
-            env.base_env.run_setup_step()
+            env.base_env.run_setup_step(joint_action)
 
 ### Serialization ###
 
