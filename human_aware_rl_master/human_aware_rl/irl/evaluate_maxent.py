@@ -165,13 +165,10 @@ if __name__ == "__main__":
     
     print(f'retrieving reward model and optimizer...')
     reward_model = checkpoint["reward_model"]
-    optim = checkpoint['optimizer']
-    scheduler = checkpoint['scheduler']
     
     print(f'loading configurations...')
     config = checkpoint['config']
     env = _loadEnvironment(config)
-    i = checkpoint['current_epoch'] + 1 # advance to the next epoch
     
     print(f'getting expert trajectory and state visitation...')
     expert_state_visit = checkpoint['expert_svf']
@@ -180,7 +177,7 @@ if __name__ == "__main__":
     # set the reward function used for RL training.
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
     config['evaluation_params']['display'] = True
-    config['num_training_iters'] = 300
+    config['num_training_iters'] = 150
 
     print(f'start evaluating')
     # train a policy and get feature expectation
