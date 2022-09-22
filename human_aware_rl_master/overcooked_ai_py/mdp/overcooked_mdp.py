@@ -1832,64 +1832,13 @@ class OvercookedGridworld(object):
     ###################
     # STATE ENCODINGS #
     ###################
-    def get_irl_reward_state_encoding_shape():
-        return np.array([15])
-
-    """
-    State encoding to study features for human cooperation in Overcooked
-    
-    The encoding has the following shape:
-        [
-            player 0 position (2)
-            player 1 position (2)
-            player 0 orientation (4): one-hot encoding
-            player 1 orientation (4): one-hot encoding
-            player 0 held onion (1): one-hot encoding
-            player 1 held onion (1): one-hot encoding
-            timestep (1)
-        ]
-    """
-    def human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
-        player_0, player_1 = overcooked_state.players
-
-        # Player position
-        player_pos = np.concatenate((np.array(player_0.position),np.array(player_1.position)), axis=None)
-        assert player_pos.shape == np.array([4]), f'player_pos shape={player_pos.shape}, np.array={np.array([4])}'
-
-        # Player orientation
-        agent_0_orientation = Direction.DIRECTION_TO_INDEX[player_0.orientation]
-        agent_0_orientation = np.eye(4)[agent_0_orientation]
-        agent_1_orientation = Direction.DIRECTION_TO_INDEX[player_1.orientation]
-        agent_1_orientation = np.eye(4)[agent_1_orientation]
-        player_orientation = np.concatenate((agent_0_orientation, agent_1_orientation), axis=None)
-        assert player_orientation.shape == np.array([8])
-        
-        # Whether player is holding onion
-        held_onion = np.zeros((2))
-        if player_0.held_object and player_0.held_object == "onion":
-            held_onion[0] = 1
-        elif player_1.held_object and player_1.held_object == "onion":
-            held_onion[1] = 1
-
-        # TODO: use score in features
-
-        # timestep
-        timestep = [1] if overcooked_state.timestep > 1300 else [0]
-        timestep = np.array(timestep)
-
-        features = np.concatenate((player_pos, player_orientation, held_onion, timestep), axis=None)
-        return [features, features]
-            
-
     """
     One hot location encoding for the "walk to corner" task.
     """
-    def irl_reward_state_encoding(self, overcooked_state, joint_action, horizon=400, debug=False):
+    def make_location_bitmap(self, overcooked_state, joint_action, horizon=400, debug=False):
         """A modification of the lossless state encoding for the purpose of IRL training"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool
-
-        assert False
 
         def make_layer(position, value):
             layer = np.zeros(self.shape)
@@ -1922,7 +1871,6 @@ class OvercookedGridworld(object):
             state_mask_stack = np.transpose(state_mask_stack, (1, 2, 0))
             assert state_mask_stack.shape[:2] == self.shape
             assert state_mask_stack.shape[2] == len(LAYERS)
-            # NOTE: currently not including time left or order_list in featurization
             return np.array(state_mask_stack).astype(int)
 
         num_players = len(overcooked_state.players)
@@ -1930,22 +1878,65 @@ class OvercookedGridworld(object):
 
         # reshape the featurization
         reward_features = np.array(final_obs_for_players)
-        
-        reward_features = reward_features[:, :6, :5, :]
         reward_features = np.sum(reward_features, axis=3)
         target_shape = (reward_features.shape[0], reward_features.shape[1]*reward_features.shape[2])    # for squeezed bitmap
         reward_features = np.reshape(reward_features, target_shape)
+        # print(f'reward feature shape={reward_features.shape}')
 
-        # add one-hot encoding of agent actions
-        # player_0_action = np.zeros(6)
-        # player_0_action[joint_action[0]] = 1
-        # player_1_action = np.zeros(6)
-        # player_1_action[joint_action[1]] = 1
-        # reward_features = [np.append(reward_features[0], player_0_action), 
-        #                     np.append(reward_features[1], player_1_action)]
-        # reward_features = np.stack(reward_features)
+        return reward_features[0]
+
+    def get_irl_reward_state_encoding_shape():
+        return np.array([15])
+
+    """
+    State encoding to study features for human cooperation in Overcooked
+    
+    The encoding has the following shape:
+        [
+            player 0 position (2)
+            player 1 position (2)
+            player 0 orientation (4): one-hot encoding
+            player 1 orientation (4): one-hot encoding
+            player 0 held onion (2)
+            player 1 held onion (2)
+            timestep (1)
+        ]
+    """
+    def human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
+        player_0, player_1 = overcooked_state.players
+
+        # Player position
+        # one_hot_position = self.make_location_bitmap(overcooked_state, joint_action, horizon, debug)
+        player_0_pos = np.array(player_0.position)
+        player_1_pos = np.array(player_1.position)
+        player_pos = np.concatenate((player_0_pos, player_1_pos), axis=None)
+        assert player_pos.shape == np.array([4]), f'player_pos shape={player_pos.shape}, np.array={np.array([4])}'
+
+        # Player orientation
+        agent_0_orientation = Direction.DIRECTION_TO_INDEX[player_0.orientation]
+        agent_0_orientation = np.eye(4)[agent_0_orientation]
+        agent_1_orientation = Direction.DIRECTION_TO_INDEX[player_1.orientation]
+        agent_1_orientation = np.eye(4)[agent_1_orientation]
+        player_orientation = np.concatenate((agent_0_orientation, agent_1_orientation), axis=None)
+        assert player_orientation.shape == np.array([8])
         
-        return reward_features
+        # Whether player is holding onion
+        player_0_held_onion = np.array([1,0]) if player_0.held_object and player_0.held_object == "onion" else np.array([0,1])
+        player_1_held_onion = np.array([1,0]) if player_1.held_object and player_1.held_object == "onion" else np.array([0,1])
+        held_onion = np.concatenate((player_0_held_onion, player_1_held_onion))
+
+        # TODO: Whether there is onion on the bridge
+
+        # timestep
+        timestep = [1] if overcooked_state.timestep > 1300 else [0]
+        timestep = np.array(timestep)
+
+        features = np.concatenate((player_pos, player_orientation, held_onion, timestep), axis=None)
+
+        # print(features.shape)
+        # features = np.concatenate((player_0_pos, agent_0_orientation, held_onion, timestep))
+        return [features, features]
+
 
     @property
     def lossless_state_encoding_shape(self):

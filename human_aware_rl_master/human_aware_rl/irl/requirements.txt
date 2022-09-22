@@ -1,0 +1,13 @@
+tensorflow-gpu==2.6.0
+gast
+h5py
+tensorflow-estimator
+ray[rllib]==0.8.5
+gym==0.18.3
+cvxopt
+tqdm
+sacred
+dill
+torch
+matplotlib
+keras==2.6

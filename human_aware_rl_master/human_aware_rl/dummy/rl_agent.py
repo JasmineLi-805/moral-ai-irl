@@ -290,10 +290,10 @@ class MAICoopLeftAgent(Agent):
         self.agent_index = None
         self.mdp = None
 
-class MAINonCoopLeftAgent(Agent):
+class MAINonCoopAgent(Agent):
     
     def __init__(self):
-        self.agent = NonCoopTakeOnion()
+        self.agent = NonCooperativeAgent()
 
     def action(self, state):
         act = self.agent.action(state)
@@ -313,10 +313,10 @@ class MAINonCoopLeftAgent(Agent):
         self.agent_index = None
         self.mdp = None
 
-class MAIConditionedCoopLeftAgent(Agent):
+class MAICooperativeAgent(Agent):
     
     def __init__(self):
-        self.agent = ConditionCoop()
+        self.agent = CooperativeAgent()
 
     def action(self, state):
         act = self.agent.action(state)

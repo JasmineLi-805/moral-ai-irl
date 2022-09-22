@@ -186,7 +186,7 @@ if __name__ == "__main__":
         print(f'initiating models and optimizers...')
         reward_obs_shape = torch.tensor([15])       # change if reward shape changed.
         reward_model = TorchLinearReward(reward_obs_shape)
-        optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
+        optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
 
         print(f'loading training configurations...')
         config = get_train_config()

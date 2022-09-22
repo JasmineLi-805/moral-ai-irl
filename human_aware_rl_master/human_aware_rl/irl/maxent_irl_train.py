@@ -1,14 +1,8 @@
-from cmath import exp
-from math import e, inf
 import sys, os
 import shutil
-
-sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
-sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
 import argparse
-import matplotlib.pyplot as plt
-from human_aware_rl.ppo.ppo_rllib_client import run
+
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
 from human_aware_rl_master.human_aware_rl.irl.reward_models import TorchLinearReward
 from human_aware_rl.dummy.rl_agent import *
@@ -17,15 +11,46 @@ from overcooked_ai_py.agents.agent import AgentPair
 from human_aware_rl.irl.config_model import get_train_config
 
 import torch
-from torch import nn
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def _apply_discount(states, gamma):
-    result = states.copy()
-    for i in range(len(states)):
-        g = pow(gamma, len(states) - i - 1)
-        result[i] = g * states[i]
+def _loadEnvironment(config):
+    mdp_params = config["environment_params"]["mdp_params"]
+    env_params = config["environment_params"]["env_params"]
+    ae = get_base_ae(mdp_params, env_params)
+    env = ae.env
+    
+    return env
+
+def _convertAction2Index(actions):
+    act = []
+    for traj in actions:
+        temp = []
+        for idx in traj:
+            act_0 = tuple(idx[0]) if type(idx[0]) == list else idx[0]
+            act_1 = tuple(idx[1]) if type(idx[1]) == list else idx[1]
+            temp.append([Action.ACTION_TO_INDEX[act_0], Action.ACTION_TO_INDEX[act_1]])
+        act.append(temp)
+    return act
+
+def run_rl_training(params):
+    # Retrieve the tune.Trainable object that is used for the experiment
+    trainer = gen_trainer_from_params(params)
+    # Object to store training results in
+    result = {}
+
+    # Training loop
+    for i in range(params['num_training_iters']):
+        print("Starting training iteration", i)
+        result = trainer.train()
+
+        msg = result['episode_reward_mean']
+        msg2 = result['episode_reward_max']
+        msg3 = result['episode_reward_min']
+        if i % 10 == 0:
+            print(f'{i}: ep rew mean={msg}, max={msg2}, min={msg3}')
+        trainer.workers.foreach_worker(lambda ev: reset_dummy_policy(ev.get_policy('dummy')))
+    
     return result
 
 def getVisitation(states, joint_action, env):
@@ -34,7 +59,7 @@ def getVisitation(states, joint_action, env):
     freq = {}
     for game, actions in zip(states,joint_action):
         for s,a in zip(game,actions):
-            reward_features = env.irl_reward_state_encoding(s, a)[target_player_idx]
+            reward_features = env.human_coop_state_encoding(s, a, 0)[target_player_idx]
             reward_features = tuple(reward_features)
             if reward_features not in freq:
                 freq[reward_features] = 0
@@ -52,13 +77,13 @@ def getExpertVisitation(train_config, irl_config):
 
     states = []
     actions = []
-    agents = [ MAIToOnionLongAgent(), MAIToOnionShortAgent()]
-    #    MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
-    #    MAIToOnionShortAgent(),MAIToOnionShortAgent(), MAIToOnionShortAgent(),
-    # agents = [MAIConditionedCoopLeftAgent()]
+    # agents = [ MAIToOnionLongAgent(), MAIToOnionShortAgent]
+    agents = [MAICooperativeAgent()]
+    # agents = [MAINonCoopAgent()]
+
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
-        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=False)
+        results = env.get_rollouts(agent_pair=agent_pair, num_games=1, display=True)
         states.append(results['ep_states'])
         actions.append(results['ep_actions'])
 
@@ -73,7 +98,7 @@ def getExpertVisitation(train_config, irl_config):
     state_visit = getVisitation(states,actions, env)
     return state_visit
 
-def getAgentVisitation(train_config, irl_config): #get the feature expectations of a new policy using RL agent
+def getAgentVisitation(train_config, env): #get the feature expectations of a new policy using RL agent
     '''
     Trains an RL agent with the current reward function. 
     Then rolls out one trial of the trained agent and calculate the feature expectation of the RL agent.
@@ -81,28 +106,17 @@ def getAgentVisitation(train_config, irl_config): #get the feature expectations 
     
     Returns the feature expectation.
     '''
-    mdp_params = train_config["environment_params"]["mdp_params"]
-    env_params = train_config["environment_params"]["env_params"]
-    ae = get_base_ae(mdp_params, env_params)
-    env = ae.env
     # train and get rollouts
     try:
-        results = run(train_config)
+        results = run_rl_training(train_config)
+        states = results['evaluation']['states']
+        actions = results['evaluation']['actions']
+        scores = results['evaluation']['sparse_reward']
+        actions = _convertAction2Index(actions)
+        state_visit = getVisitation(states, actions, env)
+        return state_visit
     except Exception as e:
-        print(e)
-
-    states = results['evaluation']['states']
-    actions = results['evaluation']['actions']
-    # print(f'RL actions traj num={len(actions)}, traj len={len(actions[0])}')
-    act = []
-    for traj in actions:
-        temp = []
-        for idx in traj:
-            temp.append([Action.ACTION_TO_INDEX[idx[0]], Action.ACTION_TO_INDEX[idx[1]]])
-        act.append(temp)
-    actions = act
-    state_visit = getVisitation(states, actions, env)
-    return state_visit
+        print('ERROR: could not get Agent Visitation. --> ' + str(e))
 
 def getStatesAndGradient(expert_sv, agent_sv):
     # calculate the gradient for each of the state: (mu_agent - mu_expert)
@@ -128,29 +142,6 @@ def getStatesAndGradient(expert_sv, agent_sv):
 
     return states, grad
 
-def viewReward(reward_model, save_path):
-    input = torch.zeros(30, 30)
-    for i in range(30):
-        input[i][i] = 1
-    rewards = reward_model.get_rewards(input)
-    
-    rewards = torch.reshape(rewards, (6,5))
-    rewards = rewards.transpose(0,1)
-    rewards = torch.nn.functional.normalize(rewards)
-
-    print(rewards)
-
-    plt.imshow(rewards, cmap='viridis', interpolation='nearest')
-    plt.title('reward map')
-    plt.colorbar()
-    for i in range(rewards.shape[0]):
-        for j in range(rewards.shape[1]):
-            val = rewards[i, j].item()
-            plt.text(j, i, round(val, 3), ha="center", va="center", color="w")
-    plt.savefig(save_path)
-    plt.clf()
-    return rewards
-
 def load_checkpoint(file_path):
     assert os.path.isfile(file_path)
     with open(file_path, 'rb') as file:
@@ -160,6 +151,7 @@ def load_checkpoint(file_path):
 def parse_args():
     parser = argparse.ArgumentParser(description='train')
     parser.add_argument('-t', '--trial', type=str, help='trial index')
+    parser.add_argument('--data', type=str, help='path to the data')
     parser.add_argument('--resume_from', type=str, default=None, help='pickle file to resume training')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs to train')
     args = parser.parse_args()
@@ -172,6 +164,7 @@ if __name__ == "__main__":
     args = parse_args()
     assert args.trial
     trial = args.trial
+    data_path = args.data
     
     # directory to save results
     cwd = os.getcwd()
@@ -181,19 +174,21 @@ if __name__ == "__main__":
 
     # init 
     n_epochs = args.epochs
-    
+
     if not args.resume_from:
         print(f'initiating models and optimizers...')
-        reward_obs_shape = torch.tensor([30])       # change if reward shape changed.
+        reward_obs_shape = torch.tensor([17])       # change if reward shape changed.
         reward_model = TorchLinearReward(reward_obs_shape)
-        optim = torch.optim.SGD(reward_model.parameters(), lr=0.02, momentum=0.9, weight_decay=0.9)
+        optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
+        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=30)
 
         print(f'loading training configurations...')
         config = get_train_config()
-        irl_config = config['irl_params']
+        i = 0
 
         print(f'getting expert trajectory and state visitation...')
-        expert_state_visit = getExpertVisitation(config, irl_config)    # only uses mdp_params and env_params in config
+        env = _loadEnvironment(config)
+        expert_state_visit = getExpertVisitation(config, config["irl_params"])
         print(f'complete')
     else:
         print(f'loading model checkpoint from {args.resume_from}...')
@@ -202,16 +197,17 @@ if __name__ == "__main__":
         print(f'retrieving reward model and optimizer...')
         reward_model = checkpoint["reward_model"]
         optim = checkpoint['optimizer']
+        scheduler = checkpoint['scheduler']
         
         print(f'loading configurations...')
         config = checkpoint['config']
-        irl_config = config['irl_params']
+        env = _loadEnvironment(config)
         i = checkpoint['current_epoch'] + 1 # advance to the next epoch
         
         print(f'getting expert trajectory and state visitation...')
         expert_state_visit = checkpoint['expert_svf']
         print(f'complete')
-    
+
     # make a copy of the config file
     path = os.path.join(save_dir, f'config.py')
     shutil.copy('config_model.py', path)
@@ -219,11 +215,10 @@ if __name__ == "__main__":
     # set the reward function used for RL training.
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
 
-    for i in range(n_epochs):
-        if i % 10 == 0:
-            print(f'iteration {i}')
+    while i < n_epochs:
+        print(f'iteration {i}')
         # train a policy and get feature expectation
-        agent_state_visit = getAgentVisitation(config, irl_config)
+        agent_state_visit = getAgentVisitation(config, env)
 
         # compute the rewards and gradients for occurred states
         states, grad_r = getStatesAndGradient(expert_state_visit, agent_state_visit)
@@ -233,7 +228,10 @@ if __name__ == "__main__":
         optim.zero_grad()
         reward.backward(gradient=grad_r)
         optim.step()
+        if scheduler:
+            scheduler.step()
 
+        i += 1
         if i % 5 == 0:
             checkpoint = {
                 "reward_model": reward_model,
@@ -241,9 +239,9 @@ if __name__ == "__main__":
                 "config": config,
                 "current_epoch": i,
                 "expert_svf": expert_state_visit,
+                "scheduler": scheduler
             }
             file_name = f'epoch={i}.checkpoint'
-            viewReward(reward_model, os.path.join(save_dir, f"reward_epoch={i}.png"))
             with open(os.path.join(save_dir, file_name), 'wb') as save_file:
                 pickle.dump(checkpoint, save_file, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -253,9 +251,9 @@ if __name__ == "__main__":
         "config": config,
         "current_epoch": n_epochs,
         "expert_svf": expert_state_visit,
+        "scheduler": scheduler
     }
     file_name = f'final.checkpoint'
-    viewReward(reward_model, os.path.join(save_dir, f"reward_epoch={i}.png"))
     with open(os.path.join(save_dir, file_name), 'wb') as save_file:
         pickle.dump(final, save_file, protocol=pickle.HIGHEST_PROTOCOL)
 
