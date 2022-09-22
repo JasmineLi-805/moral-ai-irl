@@ -1,31 +1,20 @@
-import sys, os
+import os
 import shutil
 
-sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
-sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
 import argparse
-import matplotlib.pyplot as plt
 from human_aware_rl.ppo.ppo_rllib_client import run
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
+from human_aware_rl.rllib.rllib import reset_dummy_policy, gen_trainer_from_params
 from human_aware_rl_master.human_aware_rl.irl.reward_models import TorchLinearReward
 from human_aware_rl.dummy.rl_agent import *
 from human_aware_rl.rllib.utils import get_base_ae
-from overcooked_ai_py.agents.agent import AgentPair
 from human_aware_rl.irl.config_model import get_train_config
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState
 
 import torch
-from torch import nn
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-def _apply_discount(states, gamma):
-    result = states.copy()
-    for i in range(len(states)):
-        g = pow(gamma, len(states) - i - 1)
-        result[i] = g * states[i]
-    return result
 
 def _loadEnvironment(config):
     mdp_params = config["environment_params"]["mdp_params"]
@@ -72,6 +61,25 @@ def _loadProcessedHumanData(data_path, view_traj=False):
     assert len(scores) == len(trajectory)
     return states, actions, scores
 
+def run_rl_training(params):
+    # Retrieve the tune.Trainable object that is used for the experiment
+    trainer = gen_trainer_from_params(params)
+    # Object to store training results in
+    result = {}
+
+    # Training loop
+    for i in range(params['num_training_iters']):
+        result = trainer.train()
+
+        msg = result['episode_reward_mean']
+        msg2 = result['episode_reward_max']
+        msg3 = result['episode_reward_min']
+        if i % 10 == 0:
+            print(f'{i}: ep rew mean={msg}, max={msg2}, min={msg3}')
+        trainer.workers.foreach_worker(lambda ev: reset_dummy_policy(ev.get_policy('dummy')))
+    
+    return result
+
 def _convertAction2Index(actions):
     act = []
     for traj in actions:
@@ -115,7 +123,7 @@ def getAgentVisitation(train_config, env): #get the feature expectations of a ne
     '''
     # train and get rollouts
     try:
-        results = run(train_config)
+        results = run_rl_training(train_config)
         states = results['evaluation']['states']
         actions = results['evaluation']['actions']
         scores = results['evaluation']['sparse_reward']
@@ -184,9 +192,10 @@ if __name__ == "__main__":
 
     if not args.resume_from:
         print(f'initiating models and optimizers...')
-        reward_obs_shape = torch.tensor([15])       # change if reward shape changed.
+        reward_obs_shape = torch.tensor([17])       # change if reward shape changed.
         reward_model = TorchLinearReward(reward_obs_shape)
         optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.999) 
 
         print(f'loading training configurations...')
         config = get_train_config()
@@ -203,6 +212,7 @@ if __name__ == "__main__":
         print(f'retrieving reward model and optimizer...')
         reward_model = checkpoint["reward_model"]
         optim = checkpoint['optimizer']
+        scheduler = checkpoint['scheduler']
         
         print(f'loading configurations...')
         config = checkpoint['config']
@@ -221,7 +231,7 @@ if __name__ == "__main__":
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
 
     while i < n_epochs:
-        print(f'iteration {i}')
+        print(f'iteration {i}, curr lr={scheduler.get_last_lr()}')
         # train a policy and get feature expectation
         agent_state_visit = getAgentVisitation(config, env)
 
@@ -233,6 +243,8 @@ if __name__ == "__main__":
         optim.zero_grad()
         reward.backward(gradient=grad_r)
         optim.step()
+        if scheduler:
+            scheduler.step()
 
         i += 1
         if i % 5 == 0:
@@ -242,6 +254,7 @@ if __name__ == "__main__":
                 "config": config,
                 "current_epoch": i,
                 "expert_svf": expert_state_visit,
+                "scheduler": scheduler
             }
             file_name = f'epoch={i}.checkpoint'
             with open(os.path.join(save_dir, file_name), 'wb') as save_file:
@@ -253,6 +266,7 @@ if __name__ == "__main__":
         "config": config,
         "current_epoch": n_epochs,
         "expert_svf": expert_state_visit,
+        "scheduler": scheduler
     }
     file_name = f'final.checkpoint'
     with open(os.path.join(save_dir, file_name), 'wb') as save_file:

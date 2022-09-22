@@ -4,6 +4,7 @@ import pickle
 import argparse
 
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
+from human_aware_rl.rllib.rllib import reset_dummy_policy, gen_trainer_from_params
 from human_aware_rl_master.human_aware_rl.irl.reward_models import TorchLinearReward
 from human_aware_rl.dummy.rl_agent import *
 from human_aware_rl.rllib.utils import get_base_ae
@@ -41,7 +42,6 @@ def run_rl_training(params):
 
     # Training loop
     for i in range(params['num_training_iters']):
-        print("Starting training iteration", i)
         result = trainer.train()
 
         msg = result['episode_reward_mean']
@@ -78,8 +78,8 @@ def getExpertVisitation(train_config, irl_config):
     states = []
     actions = []
     # agents = [ MAIToOnionLongAgent(), MAIToOnionShortAgent]
-    agents = [MAICooperativeAgent()]
-    # agents = [MAINonCoopAgent()]
+    # agents = [MAICooperativeAgent()]
+    agents = [MAINonCoopAgent()]
 
     for a in agents:
         agent_pair = AgentPair(a, MAIDummyRightCoopAgent())
@@ -180,7 +180,8 @@ if __name__ == "__main__":
         reward_obs_shape = torch.tensor([17])       # change if reward shape changed.
         reward_model = TorchLinearReward(reward_obs_shape)
         optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
-        scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=30)
+        # scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=30) # T4
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.999) # T5
 
         print(f'loading training configurations...')
         config = get_train_config()
@@ -216,7 +217,7 @@ if __name__ == "__main__":
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
 
     while i < n_epochs:
-        print(f'iteration {i}')
+        print(f'iteration {i}, curr lr={scheduler.get_last_lr()}')
         # train a policy and get feature expectation
         agent_state_visit = getAgentVisitation(config, env)
 
