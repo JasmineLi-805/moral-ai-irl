@@ -1897,8 +1897,10 @@ class OvercookedGridworld(object):
             player 1 position (2)
             player 0 orientation (4): one-hot encoding
             player 1 orientation (4): one-hot encoding
-            player 0 held onion (2)
-            player 1 held onion (2)
+            player 0 held onion (1)
+            player 1 held onion (1)
+            onion on bridge (1)
+            onion in pot (1)
             timestep (1)
         ]
     """
@@ -1907,8 +1909,25 @@ class OvercookedGridworld(object):
 
         # Player position
         # one_hot_position = self.make_location_bitmap(overcooked_state, joint_action, horizon, debug)
-        player_0_pos = np.array(player_0.position)
-        player_1_pos = np.array(player_1.position)
+        P0_X_MIN = P0_Y_MIN = 1
+        P0_X_MAX = 4
+        P0_Y_MAX = 3
+        
+        P1_X_MIN = 6
+        P1_X_MAX = 10
+        P1_Y_MIN = 1
+        P1_Y_MAX = 6
+
+        p0_x_coor, p0_y_coor = player_0.position
+        p0_x_coor = (p0_x_coor - P0_X_MIN) / (P0_X_MAX - P0_X_MIN) # Normalization
+        p0_y_coor = (p0_y_coor - P0_Y_MIN) / (P0_Y_MAX - P0_Y_MIN) # Normalization
+        player_0_pos = np.array([p0_x_coor, p0_y_coor])
+
+        p1_x_coor, p1_y_coor = player_1.position
+        p1_x_coor = (p1_x_coor - P1_X_MIN) / (P1_X_MAX - P1_X_MIN) # Normalization
+        p1_y_coor = (p1_y_coor - P1_Y_MIN) / (P1_Y_MAX - P1_Y_MIN) # Normalization
+
+        player_1_pos = np.array([p1_x_coor, p1_y_coor])
         player_pos = np.concatenate((player_0_pos, player_1_pos), axis=None)
         assert player_pos.shape == np.array([4]), f'player_pos shape={player_pos.shape}, np.array={np.array([4])}'
 
@@ -1921,18 +1940,30 @@ class OvercookedGridworld(object):
         assert player_orientation.shape == np.array([8])
         
         # Whether player is holding onion
-        player_0_held_onion = np.array([1,0]) if player_0.held_object and player_0.held_object == "onion" else np.array([0,1])
-        player_1_held_onion = np.array([1,0]) if player_1.held_object and player_1.held_object == "onion" else np.array([0,1])
+        player_0_held_onion = np.array([1]) if player_0.held_object and player_0.held_object == "onion" else np.array([0])
+        player_1_held_onion = np.array([1]) if player_1.held_object and player_1.held_object == "onion" else np.array([0])
         held_onion = np.concatenate((player_0_held_onion, player_1_held_onion))
 
-        # TODO: Whether there is onion on the bridge
+        # Whether onion is on the bridge
+        objects = overcooked_state.unowned_objects_by_type
+        onion_on_bridge = np.array([0])
+        if 'onion' in objects:
+            for onion in objects['onion']:
+                if onion.position == (5,3):
+                    onion_on_bridge = np.array([1])
+
+        # Whether onion is in the pot on the left
+        onion_in_pot = np.array([0])
+        if 'soup' in objects:
+            for soup in objects['soup']:
+                if soup.position == (3,0) and soup.ingredients:
+                     onion_in_pot = np.array([1])
 
         # timestep
         timestep = [1] if overcooked_state.timestep > 1300 else [0]
         timestep = np.array(timestep)
 
-        features = np.concatenate((player_pos, player_orientation, held_onion, timestep), axis=None)
-
+        features = np.concatenate((player_pos, player_orientation, held_onion, onion_on_bridge, onion_in_pot, timestep), axis=None)
         # print(features.shape)
         # features = np.concatenate((player_0_pos, agent_0_orientation, held_onion, timestep))
         return [features, features]
