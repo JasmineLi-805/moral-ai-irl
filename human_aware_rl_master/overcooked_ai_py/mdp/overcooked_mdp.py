@@ -1893,43 +1893,44 @@ class OvercookedGridworld(object):
     
     The encoding has the following shape:
         [
-            player 0 position (2)
-            player 1 position (2)
-            player 0 orientation (4): one-hot encoding
-            player 1 orientation (4): one-hot encoding
+            player 0 relative position to left onion (2)
+            player 0 relative position to bridge (2)
+            player 0 relative position to stove (2)
+
+            player 1 relative position to right onion (2)
+            player 1 relative position to bridge (2)
+
+            player 0 orientation (4)
+            player 1 orientation (4)
+
             player 0 held onion (1)
             player 1 held onion (1)
+            
             onion on bridge (1)
-            onion in pot (1)
-            timestep (1)
+            number of onions in pot (1)
         ]
     """
     def human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
         player_0, player_1 = overcooked_state.players
 
-        # Player position
-        # one_hot_position = self.make_location_bitmap(overcooked_state, joint_action, horizon, debug)
-        P0_X_MIN = P0_Y_MIN = 1
-        P0_X_MAX = 4
-        P0_Y_MAX = 3
-        
-        P1_X_MIN = 6
-        P1_X_MAX = 10
-        P1_Y_MIN = 1
-        P1_Y_MAX = 6
-
+        # Player 0 position
+        LEFT_ONION_POS = [4, 4]
+        LEFT_STOVE_POS = [3, 0]
+        BRIDGE_POS = [5, 3]
         p0_x_coor, p0_y_coor = player_0.position
-        p0_x_coor = (p0_x_coor - P0_X_MIN) / (P0_X_MAX - P0_X_MIN) # Normalization
-        p0_y_coor = (p0_y_coor - P0_Y_MIN) / (P0_Y_MAX - P0_Y_MIN) # Normalization
-        player_0_pos = np.array([p0_x_coor, p0_y_coor])
+        p0_to_onion = np.array([p0_x_coor - LEFT_ONION_POS[0], p0_y_coor - LEFT_ONION_POS[1]])
+        p0_to_bridge = np.array([p0_x_coor - BRIDGE_POS[0], p0_y_coor - BRIDGE_POS[1]])
+        p0_to_stove = np.array([p0_x_coor - LEFT_STOVE_POS[0], p0_y_coor - LEFT_STOVE_POS[1]])
+        p0_pos = np.concatenate((p0_to_onion, p0_to_bridge, p0_to_stove), axis=None)
+        assert p0_pos.shape == np.array([6]), f'player_pos shape={p0_pos.shape}, np.array={np.array([4])}'
 
+        # Player 1 position
+        RIGHT_ONION_POS = [10, 6]
         p1_x_coor, p1_y_coor = player_1.position
-        p1_x_coor = (p1_x_coor - P1_X_MIN) / (P1_X_MAX - P1_X_MIN) # Normalization
-        p1_y_coor = (p1_y_coor - P1_Y_MIN) / (P1_Y_MAX - P1_Y_MIN) # Normalization
-
-        player_1_pos = np.array([p1_x_coor, p1_y_coor])
-        player_pos = np.concatenate((player_0_pos, player_1_pos), axis=None)
-        assert player_pos.shape == np.array([4]), f'player_pos shape={player_pos.shape}, np.array={np.array([4])}'
+        p1_to_onion = np.array([p1_x_coor - RIGHT_ONION_POS[0], p1_y_coor - RIGHT_ONION_POS[1]])
+        p1_to_bridge = np.array([p1_x_coor - BRIDGE_POS[0], p1_y_coor - BRIDGE_POS[1]])
+        p1_pos = np.concatenate((p1_to_onion, p1_to_bridge), axis=None)
+        assert p1_pos.shape == np.array([4]), f'player_pos shape={p1_pos.shape}, np.array={np.array([4])}'
 
         # Player orientation
         agent_0_orientation = Direction.DIRECTION_TO_INDEX[player_0.orientation]
@@ -1957,13 +1958,17 @@ class OvercookedGridworld(object):
         if 'soup' in objects:
             for soup in objects['soup']:
                 if soup.position == (3,0) and soup.ingredients:
-                     onion_in_pot = np.array([1])
+                     onion_in_pot = np.array([len(soup.ingredients)])
 
-        # timestep
-        timestep = [1] if overcooked_state.timestep > 1300 else [0]
-        timestep = np.array(timestep)
-
-        features = np.concatenate((player_pos, player_orientation, held_onion, onion_on_bridge, onion_in_pot, timestep), axis=None)
+        features = np.concatenate(
+            (
+                p0_pos, 
+                p1_pos, 
+                player_orientation, 
+                held_onion, 
+                onion_on_bridge,
+                onion_in_pot
+            ), axis=None)
         # print(features.shape)
         # features = np.concatenate((player_0_pos, agent_0_orientation, held_onion, timestep))
         return [features, features]
