@@ -21,8 +21,8 @@ class Recipe:
     _conf = {}
     
     def __new__(cls, ingredients):
-        if not cls._configured:
-            raise ValueError("Recipe class must be configured before recipes can be created")
+        # if not cls._configured:
+        #     raise ValueError("Recipe class must be configured before recipes can be created")
         # Some basic argument verification
         if not ingredients or not hasattr(ingredients, '__iter__') or len(ingredients) == 0:
             raise ValueError("Invalid input recipe. Must be ingredients iterable with non-zero length")
@@ -1897,18 +1897,16 @@ class OvercookedGridworld(object):
             player 0 relative position to bridge (2)
             player 0 relative position to stove (2)
 
-            player 1 relative position to right onion (2)
-            player 1 relative position to bridge (2)
-
             player 0 orientation (4)
-            player 1 orientation (4)
 
             player 0 held onion (1)
             player 1 held onion (1)
             
             onion on bridge (1)
             number of onions in pot (1)
-        ]
+            
+            position & onion (4)
+        ]s
     """
     def human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
         player_0, player_1 = overcooked_state.players
@@ -1937,8 +1935,9 @@ class OvercookedGridworld(object):
         agent_0_orientation = np.eye(4)[agent_0_orientation]
         agent_1_orientation = Direction.DIRECTION_TO_INDEX[player_1.orientation]
         agent_1_orientation = np.eye(4)[agent_1_orientation]
-        player_orientation = np.concatenate((agent_0_orientation, agent_1_orientation), axis=None)
-        assert player_orientation.shape == np.array([8])
+        # player_orientation = np.concatenate((agent_0_orientation, agent_1_orientation), axis=None)
+        player_orientation = agent_0_orientation
+        assert player_orientation.shape == np.array([4])
         
         # Whether player is holding onion
         player_0_held_onion = np.array([1]) if player_0.held_object and player_0.held_object == "onion" else np.array([0])
@@ -1960,14 +1959,22 @@ class OvercookedGridworld(object):
                 if soup.position == (3,0) and soup.ingredients:
                      onion_in_pot = np.array([len(soup.ingredients)])
 
+        # conditions
+        positions = [(4,3), (4,2), (4,1), (3,1)]
+        pos_onion = [0,0,0,0]
+        for i in range(len(positions)):
+            if (p0_x_coor, p0_y_coor) == positions[i] and player_0.held_object and player_0.held_object == "onion":
+                pos_onion[i] = 1
+        pos_onion = np.array(pos_onion)
+
         features = np.concatenate(
             (
                 p0_pos, 
-                p1_pos, 
                 player_orientation, 
                 held_onion, 
                 onion_on_bridge,
-                onion_in_pot
+                onion_in_pot,
+                pos_onion
             ), axis=None)
         # print(features.shape)
         # features = np.concatenate((player_0_pos, agent_0_orientation, held_onion, timestep))
