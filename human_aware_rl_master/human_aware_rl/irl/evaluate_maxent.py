@@ -179,6 +179,9 @@ if __name__ == "__main__":
     config['evaluation_params']['display'] = True
     config['num_training_iters'] = 150
 
+    eplen = config['evaluation_params']['ep_length']
+    print(f"config eval ep: {eplen}")
+
     print(f'start evaluating')
     # train a policy and get feature expectation
     agent_state_visit = getAgentVisitation(config, env)

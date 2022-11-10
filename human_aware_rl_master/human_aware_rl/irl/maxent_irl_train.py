@@ -60,6 +60,7 @@ def getVisitation(states, joint_action, env):
     for game, actions in zip(states,joint_action):
         for s,a in zip(game,actions):
             reward_features = env.human_coop_state_encoding(s, a, 0)[target_player_idx]
+            print(reward_features)
             reward_features = tuple(reward_features)
             if reward_features not in freq:
                 freq[reward_features] = 0
@@ -77,7 +78,6 @@ def getExpertVisitation(train_config, irl_config):
 
     states = []
     actions = []
-    # agents = [ MAIToOnionLongAgent(), MAIToOnionShortAgent]
     # agents = [MAICooperativeAgent()]
     agents = [MAINonCoopAgent()]
 
@@ -177,11 +177,12 @@ if __name__ == "__main__":
 
     if not args.resume_from:
         print(f'initiating models and optimizers...')
-        reward_obs_shape = torch.tensor([17])       # change if reward shape changed.
-        reward_model = TorchLinearReward(reward_obs_shape)
+        reward_obs_shape = torch.tensor([22])       # change if reward shape changed.
+        reward_model = TorchLinearReward(reward_obs_shape, n_h1=200)
         optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
         # scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=30) # T4
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.999) # T5
+        # scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.999) # T5
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.99)  # T6
 
         print(f'loading training configurations...')
         config = get_train_config()
@@ -191,6 +192,7 @@ if __name__ == "__main__":
         env = _loadEnvironment(config)
         expert_state_visit = getExpertVisitation(config, config["irl_params"])
         print(f'complete')
+        assert False
     else:
         print(f'loading model checkpoint from {args.resume_from}...')
         checkpoint = load_checkpoint(args.resume_from)

@@ -17,7 +17,7 @@ class TorchLinearReward(nn.Module):
         return x
 
     def get_theta(self):
-        return [self.fc1.weight.detach()]
+        return [self.fc1.weight.detach(), self.fc2.weight.detach()]
 
     def get_rewards(self, states):
         if type(states) == np.ndarray:

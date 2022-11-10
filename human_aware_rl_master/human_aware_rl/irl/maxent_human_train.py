@@ -148,7 +148,6 @@ def getStatesAndGradient(expert_sv, agent_sv):
     grad = []
     for s in visit:
         state = torch.tensor(s, dtype=torch.float)
-        # state.to(device)
         states.append(state)
         grad.append(visit[s])
     states = torch.stack(states)
@@ -187,13 +186,17 @@ if __name__ == "__main__":
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
+    # make a copy of the config file
+    path = os.path.join(save_dir, f'config.py')
+    shutil.copy('config_model.py', path)
+
     # init 
     n_epochs = args.epochs
 
     if not args.resume_from:
         print(f'initiating models and optimizers...')
-        reward_obs_shape = torch.tensor([17])       # change if reward shape changed.
-        reward_model = TorchLinearReward(reward_obs_shape)
+        reward_obs_shape = torch.tensor([18])       # change if reward shape changed.
+        reward_model = TorchLinearReward(reward_obs_shape, n_h1=200)
         optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.999) 
 
@@ -222,10 +225,6 @@ if __name__ == "__main__":
         print(f'getting expert trajectory and state visitation...')
         expert_state_visit = checkpoint['expert_svf']
         print(f'complete')
-
-    # make a copy of the config file
-    path = os.path.join(save_dir, f'config.py')
-    shutil.copy('config_model.py', path)
 
     # set the reward function used for RL training.
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
