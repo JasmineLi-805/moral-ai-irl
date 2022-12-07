@@ -27,7 +27,11 @@ def load_human_data_json(data_dir):
                     pass
     return games
 
-
+"""
+Filters the trajectory and keeps the states where 
+one of the two agents is interacting with the 
+environment (action != STAY).
+"""
 def remove_idle_states(trajectories):
     print(f'removing idle states')
     assert trajectories
@@ -45,6 +49,27 @@ def remove_idle_states(trajectories):
         print(f'prev traj len={trajectory_length}, curr traj len={len(traj)}')
     print(f'completed removing idle states, removed {count} idle steps')
 
+"""
+Filters the trajectory and keeps the states where 
+the human participant is interacting with the 
+environment (action != STAY).
+"""
+def remove_p0_idle_states(trajectories):
+    print(f'removing idle states')
+    assert trajectories
+    count = 0
+    for a_participant in trajectories:
+        trajectory_length = len(a_participant['game_rounds'][0]['data']['trajectory'])
+        traj = []
+        for a_step in a_participant['game_rounds'][0]['data']['trajectory']:
+            joint_action = a_step['joint_action']
+            if joint_action[0] != [0,0]:  # Action.STAY = [0,0]
+                traj.append(a_step)
+            else:
+                count += 1
+        a_participant['game_rounds'][0]['data']['trajectory'] = traj
+        print(f'prev traj len={trajectory_length}, curr traj len={len(traj)}')
+    print(f'completed removing idle states, removed {count} idle steps')
 
 # TODO: needs to vary the position and orientation based on game configuration and round.
 def is_coop_state(a_step, a_trajectory):
@@ -167,7 +192,7 @@ def filter_trajectory(trajectories, interest='onion_help'):
 
 def process_data(data_dir, save_dir, interest):
     games = load_human_data_json(data_dir)
-    remove_idle_states(games)
+    remove_p0_idle_states(games)
     trajectory, gridworld = filter_trajectory(games, interest)
     pack = {
         'trajectory': trajectory,

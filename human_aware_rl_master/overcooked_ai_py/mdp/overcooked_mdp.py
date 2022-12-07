@@ -1906,7 +1906,7 @@ class OvercookedGridworld(object):
             number of onions in pot (1)
             
             position & onion (4)
-        ]s
+        ]
     """
     def human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
         player_0, player_1 = overcooked_state.players
@@ -1966,6 +1966,15 @@ class OvercookedGridworld(object):
             if (p0_x_coor, p0_y_coor) == positions[i] and player_0.held_object and player_0.held_object == "onion":
                 pos_onion[i] = 1
         pos_onion = np.array(pos_onion)
+
+        # joint actions
+        # action = np.zeros((2,6))
+        # print(joint_action)
+        # p0_action = joint_action[0]
+        # p1_action = joint_action[1]
+        # action[0][Action.ACTION_TO_INDEX[p0_action]] = 1
+        # action[1][Action.ACTION_TO_INDEX[p1_action]] = 1
+        # print(action)
 
         features = np.concatenate(
             (

@@ -177,7 +177,7 @@ if __name__ == "__main__":
     # set the reward function used for RL training.
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
     config['evaluation_params']['display'] = True
-    config['num_training_iters'] = 150
+    # config['num_training_iters'] = 150
 
     eplen = config['evaluation_params']['ep_length']
     print(f"config eval ep: {eplen}")

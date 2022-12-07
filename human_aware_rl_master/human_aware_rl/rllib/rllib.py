@@ -114,8 +114,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
 
         self.custom_reward_func = custom_reward_func
         self.discount = discount_factor
-        self.prev_reward_p0 = 0.0
-        self.prev_reward_p1 = 0.0
+        self.prev_reward_p0 = None
+        self.prev_reward_p1 = None
 
         self.reset()
     
@@ -224,10 +224,12 @@ class OvercookedMultiAgent(MultiAgentEnv):
 
         assert self.custom_reward_func
         if self.custom_reward_func:
-            shaped_reward_p0 = self.custom_reward_func(reward_features[0]).item()
-            shaped_reward_p1 = self.custom_reward_func(reward_features[1]).item()
-            self.prev_reward_p0 = shaped_reward_p0
-            self.prev_reward_p1 = shaped_reward_p1
+            shaped_reward_p0 = self.custom_reward_func(reward_features[0])#, self.prev_reward_p0)
+            shaped_reward_p1 = self.custom_reward_func(reward_features[1])#, self.prev_reward_p1)
+            shaped_reward_p0 = shaped_reward_p0.item()
+            shaped_reward_p1 = shaped_reward_p1.item()
+            # self.prev_reward_p0 = hid_p0
+            # self.prev_reward_p1 = hid_p1
         else:
             shaped_reward_p0 = sparse_reward + self.reward_shaping_factor * dense_reward[0]
             shaped_reward_p1 = sparse_reward + self.reward_shaping_factor * dense_reward[1]
@@ -245,8 +247,8 @@ class OvercookedMultiAgent(MultiAgentEnv):
         self.curr_agents = self._populate_agents()
         ob_p0, ob_p1 = self._get_obs(self.base_env.state)
         self.coop_cnt = 0
-        self.prev_reward_p0 = 0.0
-        self.prev_reward_p1 = 0.0
+        self.prev_reward_p0 = None
+        self.prev_reward_p1 = None
         return {self.curr_agents[0]: ob_p0, self.curr_agents[1]: ob_p1}
     
     def anneal_reward_shaping_factor(self, timesteps):
