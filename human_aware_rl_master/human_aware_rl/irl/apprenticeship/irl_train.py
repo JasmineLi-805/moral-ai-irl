@@ -5,7 +5,7 @@ sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl')
 sys.path.append('/Users/jasmineli/Desktop/moral-ai-irl/human_aware_rl_master')
 import pickle
 import argparse
-from human_aware_rl.irl.irl_agent import irlAppAgent
+from human_aware_rl_master.human_aware_rl.irl.apprenticeship.irl_agent import irlAppAgent
 from human_aware_rl.ppo.ppo_rllib_client import run
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
 from human_aware_rl_master.human_aware_rl.irl.reward_models import LinearReward
