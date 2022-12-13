@@ -6,7 +6,7 @@ import argparse
 from human_aware_rl.ppo.ppo_rllib_client import run
 from human_aware_rl_master.human_aware_rl.human.process_dataframes import *
 from human_aware_rl.rllib.rllib import reset_dummy_policy, gen_trainer_from_params
-from human_aware_rl_master.human_aware_rl.irl.reward_models import TorchLinearReward, TorchRNNReward
+from human_aware_rl_master.human_aware_rl.irl.reward_models import TorchLinearReward, TorchRNNReward, TorchLinCombReward
 from human_aware_rl.dummy.rl_agent import *
 from human_aware_rl.rllib.utils import get_base_ae
 from human_aware_rl.irl.config_model import get_train_config
@@ -200,7 +200,8 @@ if __name__ == "__main__":
 
         print(f'initiating models and optimizers...')
         reward_obs_shape = torch.tensor([18])       # change if reward shape changed.
-        reward_model = TorchLinearReward(reward_obs_shape, n_h1=200)
+        reward_model = TorchLinCombReward(reward_obs_shape)
+        # reward_model = TorchLinearReward(reward_obs_shape, n_h1=200)
         # reward_model = TorchRNNReward(n_input=reward_obs_shape, n_h1=200)
         optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.999) 

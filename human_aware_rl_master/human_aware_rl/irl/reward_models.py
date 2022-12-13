@@ -2,6 +2,25 @@ import torch
 from torch import nn
 import numpy as np
 
+class TorchLinCombReward(nn.Module):
+    def __init__(self, n_input):
+        super(TorchLinCombReward, self).__init__()
+        self.fc = nn.Linear(in_features=n_input, out_features=1, bias=True)
+
+    def forward(self, x):
+        x = self.fc(x)
+        return x
+
+    def get_theta(self):
+        return [self.fc.weight.detach()]
+
+    def get_rewards(self, states):
+        if type(states) == np.ndarray:
+            states = torch.tensor(states, dtype=torch.float)
+        with torch.no_grad():
+            rewards = self.forward(states).detach()
+        return rewards
+
 class TorchLinearReward(nn.Module):
     def __init__(self, n_input, n_h1=400, n_h2=1):
         super(TorchLinearReward, self).__init__()
