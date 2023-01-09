@@ -224,10 +224,17 @@ class OvercookedMultiAgent(MultiAgentEnv):
 
         assert self.custom_reward_func
         if self.custom_reward_func:
-            shaped_reward_p0 = self.custom_reward_func(reward_features[0])#, self.prev_reward_p0)
-            shaped_reward_p1 = self.custom_reward_func(reward_features[1])#, self.prev_reward_p1)
+            # not recurrent
+            shaped_reward_p0 = self.custom_reward_func(reward_features[0])
+            shaped_reward_p1 = self.custom_reward_func(reward_features[1])
             shaped_reward_p0 = shaped_reward_p0.item()
             shaped_reward_p1 = shaped_reward_p1.item()
+
+            # recurrent
+            # shaped_reward_p0, hid_p0 = self.custom_reward_func(reward_features[0], self.prev_reward_p0)
+            # shaped_reward_p1, hid_p1 = self.custom_reward_func(reward_features[1], self.prev_reward_p1)
+            # shaped_reward_p0 = shaped_reward_p0.item()
+            # shaped_reward_p1 = shaped_reward_p1.item()
             # self.prev_reward_p0 = hid_p0
             # self.prev_reward_p1 = hid_p1
         else:
@@ -412,11 +419,11 @@ def get_rllib_eval_function(eval_params, eval_mdp_params, env_params, outer_shap
         # print(len(results['ep_states'][0]))
 
         # Log any metrics we care about for rllib tensorboard visualization
-        metrics = {}
-        metrics['actions'] = results['ep_actions']
-        metrics['states'] = results['ep_states']
-        metrics['sparse_reward'] = results['ep_returns']
-        return metrics
+        # metrics = {}
+        results['actions'] = results['ep_actions']
+        results['states'] = results['ep_states']
+        results['sparse_reward'] = results['ep_returns']
+        return results
 
     return _evaluate
 

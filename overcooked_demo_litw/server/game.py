@@ -1497,3 +1497,60 @@ class CooperativeAgent(MAIDumbAgent):
         self.phases.append('STAY')
         super(CooperativeAgent, self).reset_smart(state)
 
+
+class MAIEvalAgent(MAIDumbAgent):
+
+    STEPS = {
+        'MOVE_CLOCKWISE': [
+            Direction.WEST,
+            Direction.NORTH,
+            Direction.SOUTH,
+            Direction.WEST,
+            Direction.NORTH,
+            Direction.SOUTH,
+            Direction.WEST,
+            Direction.NORTH,
+            Direction.EAST,
+            Direction.WEST,
+            Direction.NORTH,
+            Direction.EAST,
+            Direction.NORTH,
+            Direction.SOUTH,
+            Direction.EAST,
+            Direction.NORTH,
+            Direction.SOUTH,
+            Direction.EAST,
+            Direction.SOUTH,
+            Direction.EAST,
+            Direction.WEST,
+            Direction.SOUTH,
+        ],
+        'MOVE_ANTICLOCKWISE': [
+            Direction.NORTH,
+            Direction.NORTH,
+            Direction.WEST,
+            Direction.WEST,
+            Direction.WEST,
+            Direction.SOUTH,
+            Direction.SOUTH,
+            Direction.EAST,
+            Direction.EAST,
+            Direction.EAST,
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'MOVE_CLOCKWISE',
+            'MOVE_ANTICLOCKWISE'
+        ]
+        super().__init__(sequence, MAIEvalAgent.STEPS)
+
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(MAIEvalAgent, self).reset_smart(state)

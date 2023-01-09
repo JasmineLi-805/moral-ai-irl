@@ -114,7 +114,7 @@ def getAgentVisitation(train_config, env): #get the feature expectations of a ne
         scores = results['evaluation']['sparse_reward']
         actions = _convertAction2Index(actions)
         state_visit = getVisitation(states, actions, env)
-        return state_visit
+        return state_visit, results['evaluation']
     except Exception as e:
         print('ERROR: could not get Agent Visitation. --> ' + str(e))
 
@@ -149,8 +149,11 @@ def load_checkpoint(file_path):
     return checkpoint
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('--checkpoint', type=str, default=None, help='pickle file to resume training')
+    parser = argparse.ArgumentParser(description='evaluate')
+    parser.add_argument('--trial', type=int, help='Trial number')
+    parser.add_argument('--epoch', type=int, help='Epoch number')
+    parser.add_argument('--type', type=str, help='cook or help agent?')
+
     args = parser.parse_args()
     return args
 
@@ -159,9 +162,10 @@ if __name__ == "__main__":
     print(f'can use gpu: {torch.cuda.is_available()}; device={device}')
 
     args = parse_args()
-    
-    print(f'loading model checkpoint from {args.checkpoint}...')
-    checkpoint = load_checkpoint(args.checkpoint)
+
+    checkpoint = f'{os.getcwd()}/result/human/T{args.trial}_{args.type}/epoch={args.epoch}.checkpoint'
+    print(f'loading model checkpoint from {checkpoint}...')
+    checkpoint = load_checkpoint(checkpoint)
     
     print(f'retrieving reward model and optimizer...')
     reward_model = checkpoint["reward_model"]
@@ -177,11 +181,24 @@ if __name__ == "__main__":
     # set the reward function used for RL training.
     config['environment_params']['multi_agent_params']['custom_reward_func'] = reward_model.get_rewards
     config['evaluation_params']['display'] = True
-    # config['num_training_iters'] = 150
+
+    # for testing purposes only
+    # config['training_params']['evaluation_interval'] = 10
+    # config['num_training_iters'] = 10
 
     eplen = config['evaluation_params']['ep_length']
     print(f"config eval ep: {eplen}")
 
     print(f'start evaluating')
     # train a policy and get feature expectation
-    agent_state_visit = getAgentVisitation(config, env)
+    agent_state_visit, eval_traj = getAgentVisitation(config, env)
+
+    file_name = f'{os.getcwd()}/result/human/T{args.trial}_{args.type}/eval_it={args.epoch}.trajectory'
+    content = []
+    if os.path.exists(file_name):
+        content = load_checkpoint(file_name)
+        assert type(content) == list
+    content.append(eval_traj)
+    print(f'saving trajectory results to {file_name}')
+    with open(file_name, 'wb') as save_file:
+        pickle.dump(content, save_file, protocol=pickle.HIGHEST_PROTOCOL)

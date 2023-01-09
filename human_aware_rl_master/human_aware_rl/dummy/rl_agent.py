@@ -331,3 +331,49 @@ class MAICooperativeAgent(Agent):
         """
         self.agent_index = None
         self.mdp = None
+
+class MAIEvaluationAgent(Agent):
+    
+    def __init__(self):
+        self.agent = MAIEvalAgent()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAIStayAgent(Agent):
+    
+    def __init__(self):
+        self.agent = StayAI()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None

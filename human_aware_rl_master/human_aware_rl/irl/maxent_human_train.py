@@ -129,7 +129,7 @@ def getAgentVisitation(train_config, env): #get the feature expectations of a ne
         scores = results['evaluation']['sparse_reward']
         actions = _convertAction2Index(actions)
         state_visit = getVisitation(states, actions, scores, env)
-        return state_visit
+        return state_visit, results['evaluation']
     except Exception as e:
         print('ERROR: could not get Agent Visitation. -->' + str(e))
 
@@ -200,8 +200,8 @@ if __name__ == "__main__":
 
         print(f'initiating models and optimizers...')
         reward_obs_shape = torch.tensor([18])       # change if reward shape changed.
-        reward_model = TorchLinCombReward(reward_obs_shape)
-        # reward_model = TorchLinearReward(reward_obs_shape, n_h1=200)
+        # reward_model = TorchLinCombReward(reward_obs_shape)
+        reward_model = TorchLinearReward(reward_obs_shape, n_h1=200)
         # reward_model = TorchRNNReward(n_input=reward_obs_shape, n_h1=200)
         optim = torch.optim.SGD(reward_model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.9)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optim, gamma=0.999) 
@@ -209,6 +209,7 @@ if __name__ == "__main__":
         print(f'loading training configurations...')
         config = get_train_config()
         i = 0
+        diff_log = {}
 
         print(f'getting expert trajectory and state visitation...')
         env = _loadEnvironment(config)
@@ -227,6 +228,10 @@ if __name__ == "__main__":
         config = checkpoint['config']
         env = _loadEnvironment(config)
         i = checkpoint['current_epoch'] + 1 # advance to the next epoch
+        if 'diff_log' in checkpoint:
+            diff_log = checkpoint['diff_log']
+        else:
+            diff_log = {}
         
         print(f'getting expert trajectory and state visitation...')
         expert_state_visit = checkpoint['expert_svf']
@@ -238,12 +243,12 @@ if __name__ == "__main__":
     while i < n_epochs:
         print(f'iteration {i}, curr lr={scheduler.get_last_lr()}')
         # train a policy and get feature expectation
-        agent_state_visit = getAgentVisitation(config, env)
+        agent_state_visit, eval_traj = getAgentVisitation(config, env)
 
         # compute the rewards and gradients for occurred states
         states, grad_r = getStatesAndGradient(expert_state_visit, agent_state_visit)
-        # reward, _hidden = reward_model.forward(states, None)
         reward = reward_model.forward(states)
+        # reward, _hidden = reward_model.forward(states, None)
         assert reward.shape == grad_r.shape, f'reward={reward.shape}, grad_r={grad_r.shape}'
         
         # gradient descent
@@ -253,6 +258,12 @@ if __name__ == "__main__":
         if scheduler:
             scheduler.step()
 
+        d_mu = grad_r.detach().clone()
+        d_mu = torch.square(d_mu)
+        d_mu = torch.sum(d_mu)
+        diff_log[i] = d_mu
+        print(f'completed iteration {i}, diff: {d_mu}')
+
         i += 1
         if i % 5 == 0:
             checkpoint = {
@@ -261,22 +272,16 @@ if __name__ == "__main__":
                 "config": config,
                 "current_epoch": i,
                 "expert_svf": expert_state_visit,
-                "scheduler": scheduler
+                "scheduler": scheduler,
+                "diff_log": diff_log
             }
             file_name = f'epoch={i}.checkpoint'
             with open(os.path.join(save_dir, file_name), 'wb') as save_file:
                 pickle.dump(checkpoint, save_file, protocol=pickle.HIGHEST_PROTOCOL)
 
-    final = {
-        "reward_model": reward_model,
-        "optimizer": optim,
-        "config": config,
-        "current_epoch": n_epochs,
-        "expert_svf": expert_state_visit,
-        "scheduler": scheduler
-    }
-    file_name = f'final.checkpoint'
-    with open(os.path.join(save_dir, file_name), 'wb') as save_file:
-        pickle.dump(final, save_file, protocol=pickle.HIGHEST_PROTOCOL)
+            trajectory = [eval_traj]
+            eval_file  = f'epoch={i}.trajectory'
+            with open(os.path.join(save_dir, eval_file), 'wb') as save_file:
+                pickle.dump(trajectory, save_file, protocol=pickle.HIGHEST_PROTOCOL)
 
     print(f'training completed')
