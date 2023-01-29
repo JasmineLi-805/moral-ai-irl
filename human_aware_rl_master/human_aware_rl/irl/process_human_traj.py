@@ -9,7 +9,9 @@ from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
 from datetime import datetime
 
 
-def load_human_data_json(data_dir):
+def load_human_data_json(data_dir, target_country):
+    if target_country == 'us':
+        target_country = "United States"
     print(f'start data loading, dir={data_dir}')
     games = []
     for f in glob.glob(data_dir + '/*.json'):
@@ -17,7 +19,10 @@ def load_human_data_json(data_dir):
             for line in a_file:
                 a_participant = json.loads(line)
                 try:
-                    if a_participant['demographics']['data']['demographics-retake'] == 'no':
+                    if  (
+                            a_participant['demographics']['data']['demographics-retake'] == 'no' and 
+                            a_participant['demographics']['data']['demographics-culture'].casefold() == target_country.casefold()
+                        ):
                         games.append(a_participant)
                         num_rounds = len(a_participant['game_rounds'])
                         len_traj = len(a_participant['game_rounds'][0]['data']['trajectory'])
@@ -190,8 +195,8 @@ def filter_trajectory(trajectories, interest='onion_help'):
     return results, gridworld
 
 
-def process_data(data_dir, save_dir, interest):
-    games = load_human_data_json(data_dir)
+def process_data(data_dir, save_dir, interest, target_country):
+    games = load_human_data_json(data_dir, target_country)
     remove_p0_idle_states(games)
     trajectory, gridworld = filter_trajectory(games, interest)
     pack = {
@@ -199,7 +204,7 @@ def process_data(data_dir, save_dir, interest):
         'gridworld': gridworld
     }
     timestamp = datetime.now()
-    file_name = 'trajectories_{}_{}.data'.format(interest, timestamp.isoformat('_', 'seconds'))
+    file_name = 'trajectories_{}_{}_{}.data'.format(target_country, interest, timestamp.isoformat('_', 'seconds'))
     with open(os.path.join(save_dir, file_name), 'wb') as save_file:
         pickle.dump(pack, save_file, protocol=4)
     print(f'data file saved to {os.path.join(save_dir, file_name)}')
@@ -208,11 +213,12 @@ def process_data(data_dir, save_dir, interest):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 5:
         interest = sys.argv[1]
-        data_dir = sys.argv[2]
-        save_dir = sys.argv[3]
-        process_data(data_dir, save_dir, interest)
+        target_country = sys.argv[2]
+        data_dir = sys.argv[3]
+        save_dir = sys.argv[4]
+        process_data(data_dir, save_dir, interest, target_country)
     else:
-        print('USAGE: python process_human_traj.py INTEREST PATH_TO_DATA PATH_TO_OUTPUT')
+        print('USAGE: python process_human_traj.py INTEREST COUNTRY PATH_TO_DATA PATH_TO_OUTPUT')
 
