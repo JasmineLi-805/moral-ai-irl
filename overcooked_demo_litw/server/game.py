@@ -1554,3 +1554,78 @@ class MAIEvalAgent(MAIDumbAgent):
     def reset_smart(self, state):
         self.phases.append('STAY')
         super(MAIEvalAgent, self).reset_smart(state)
+
+
+#######
+# Layout: vertical kitchen
+class VerticalRightCoop(MAIDumbAgent):
+    def __init__(self):
+        self.count_onions = 0
+        self.was_helped = False
+        start = [
+            'STOVE_TO_CENTER'
+        ]
+
+        self.steps = self._convert_direction()
+
+        super().__init__(start, self.steps)
+    
+    def _convert_direction(self):
+        conversion = {
+            Direction.WEST: Direction.NORTH,
+            Direction.NORTH: Direction.EAST,
+            Direction.EAST: Direction.SOUTH,
+            Direction.SOUTH: Direction.WEST,
+            Action.INTERACT: Action.INTERACT,
+            Action.STAY: Action.STAY,
+        }
+        steps = {}
+        for key in MAIDumbAgentRightCoop.STEPS:
+            actions = []
+            for act in MAIDumbAgentRightCoop.STEPS[key]:
+                actions.append(conversion[act])
+            steps[key] = actions
+        return steps
+
+    def reset_smart(self, state):
+        self.curr_tick = -1
+        last_phase = self.phases[self.curr_phase]
+        if last_phase in ['STOVE_TO_CENTER', 'DELIVER_SOUP']:
+            self.phases.append('GRAB_ONION_SHORT')
+        elif last_phase == 'GRAB_ONION_SHORT':
+
+            if isinstance(state, OvercookedState):
+                if state.players[1].held_object:
+                    self.received_coop += 1
+                    self.phases.append('PLACE_ONION_STOVE')
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
+                    self.phases.append('PLACE_ONION_STOVE')
+            elif isinstance(state, Dict):
+                if state['player_right_held_obj'] == 1:
+                    self.received_coop += 1
+                    self.phases.append('PLACE_ONION_STOVE')
+                else:
+                    self.phases.append('GRAB_ONION_LONG')
+                    self.phases.append('PLACE_ONION_STOVE')
+        elif last_phase == 'PLACE_ONION_STOVE':
+            self.count_onions += 1
+            if self.count_onions == 3:
+                self.phases.append('COOK_GET_PLATE')
+            else:
+                self.phases.append('STOVE_TO_CENTER')
+        elif last_phase in ['COOK_GET_PLATE', 'WAIT_SOUP']:
+            self.count_onions = 0
+            if isinstance(state, Dict):
+                if  state['soup_ready_right'] == 1:
+                    self.phases.append('DELIVER_SOUP')
+                else:
+                    self.phases.append('WAIT_SOUP')
+            else:
+                right_stove_pos = (8, 0)
+                right_stove = state.objects.get(right_stove_pos, None)
+                if right_stove and isinstance(right_stove, SoupState) and right_stove.is_ready:
+                    self.phases.append('DELIVER_SOUP')
+                else:
+                    self.phases.append('WAIT_SOUP')
+        self.curr_phase += 1
