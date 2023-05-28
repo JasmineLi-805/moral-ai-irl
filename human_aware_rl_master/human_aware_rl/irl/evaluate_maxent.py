@@ -183,8 +183,8 @@ if __name__ == "__main__":
     config['evaluation_params']['display'] = True
 
     # for testing purposes only
-    # config['training_params']['evaluation_interval'] = 10
-    # config['num_training_iters'] = 10
+    config['training_params']['evaluation_interval'] = 500
+    config['num_training_iters'] = 2000
 
     eplen = config['evaluation_params']['ep_length']
     print(f"config eval ep: {eplen}")
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     # train a policy and get feature expectation
     agent_state_visit, eval_traj = getAgentVisitation(config, env)
 
-    file_name = f'{os.getcwd()}/result/human/T{args.trial}_{args.type}/eval_it={args.epoch}.trajectory'
+    file_name = f'{os.getcwd()}/result/human/T{args.trial}_{args.type}/epoch={args.epoch}.trajectory'
     content = []
     if os.path.exists(file_name):
         content = load_checkpoint(file_name)

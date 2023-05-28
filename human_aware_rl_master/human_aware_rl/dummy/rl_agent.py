@@ -26,11 +26,14 @@ class DummyPolicy(RllibPolicy):
         assert config['layout']
         layout = config['layout']
         # the 'left' and 'right' in the layout name refers to the human player's position
-        possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right', 'coop_experiment_1']
+        possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right', 'coop_experiment_1', 'vertical_kitchen']
         assert config['layout'] in possible_layout
         if config['layout']== 'mai_separate_coop_right':
             print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentLeftCoop')
-            self.model = MAIDumbAgentLeftCoop() 
+            self.model = MAIDumbAgentLeftCoop()
+        elif config['layout'] == 'vertical_kitchen':
+            print(f'DummyPolicy: layout={layout}, agent=VerticalRightCoop') 
+            self.model = VerticalRightCoop()
         else:
             print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentRightCoop') 
             self.model = MAIDumbAgentRightCoop()
@@ -70,6 +73,8 @@ class DummyPolicy(RllibPolicy):
             self.model = MAIDumbAgentLeftCoop()
         elif isinstance(self.model, MAIDumbAgentRightCoop):
             self.model = MAIDumbAgentRightCoop()
+        elif isinstance(self.model, VerticalRightCoop):
+            self.model = VerticalRightCoop()
         else:
             print(f'rl_agent.DummyPolicy.reset failed on type check')
 

@@ -1073,7 +1073,7 @@ class OvercookedGridworld(object):
         assert not self.is_terminal(state), "Trying to find successor of a terminal state: {}".format(state)
         for action, action_set in zip(joint_action, self.get_actions(state)):
             if action not in action_set:
-                raise ValueError("Illegal action %s in state %s" % (action, state))
+                raise ValueError("Illegal action %s in state %s, valid action: %s" % (action, state, action_set))
         
         new_state = state.deepcopy()
 
@@ -1909,6 +1909,14 @@ class OvercookedGridworld(object):
         ]
     """
     def human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
+        pot_loc = self.get_pot_locations()
+        pot_loc_in_vertical = (7,3)
+        if pot_loc_in_vertical in pot_loc:
+            return self.vertical_human_coop_encoding(overcooked_state, joint_action, score, horizon=400, debug=False)
+        else:
+            return self.horizontal_human_coop_encoding(overcooked_state, joint_action, score, horizon=400, debug=False)
+    
+    def horizontal_human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
         player_0, player_1 = overcooked_state.players
 
         # Player 0 position
@@ -1970,10 +1978,8 @@ class OvercookedGridworld(object):
         # joint actions
         # action = np.zeros((2,6))
         # print(joint_action)
-        # p0_action = joint_action[0]
-        # p1_action = joint_action[1]
-        # action[0][Action.ACTION_TO_INDEX[p0_action]] = 1
-        # action[1][Action.ACTION_TO_INDEX[p1_action]] = 1
+        # action[0][joint_action[0]] = 1
+        # action[1][joint_action[1]] = 1
         # print(action)
 
         features = np.concatenate(
@@ -1983,10 +1989,90 @@ class OvercookedGridworld(object):
                 held_onion, 
                 onion_on_bridge,
                 onion_in_pot,
-                pos_onion
+                pos_onion,
+                # action
             ), axis=None)
-        # print(features.shape)
-        # features = np.concatenate((player_0_pos, agent_0_orientation, held_onion, timestep))
+        return [features, features]
+
+    """
+    Same as the human_coop_encoding above, but used for the vertical layout.
+    """
+    def vertical_human_coop_encoding(self, overcooked_state, joint_action, score, horizon=400, debug=False):
+        player_0, player_1 = overcooked_state.players
+
+        # Player 0 position
+        LEFT_ONION_POS = [3, 4]
+        LEFT_STOVE_POS = [7, 3]
+        BRIDGE_POS = [4, 5]
+        p0_x_coor, p0_y_coor = player_0.position
+        p0_to_onion = np.array([p0_x_coor - LEFT_ONION_POS[0], p0_y_coor - LEFT_ONION_POS[1]])
+        p0_to_bridge = np.array([p0_x_coor - BRIDGE_POS[0], p0_y_coor - BRIDGE_POS[1]])
+        p0_to_stove = np.array([p0_x_coor - LEFT_STOVE_POS[0], p0_y_coor - LEFT_STOVE_POS[1]])
+        p0_pos = np.concatenate((p0_to_onion, p0_to_bridge, p0_to_stove), axis=None)
+        assert p0_pos.shape == np.array([6]), f'player_pos shape={p0_pos.shape}, np.array={np.array([4])}'
+
+        # Player 1 position
+        RIGHT_ONION_POS = [1, 10]
+        p1_x_coor, p1_y_coor = player_1.position
+        p1_to_onion = np.array([p1_x_coor - RIGHT_ONION_POS[0], p1_y_coor - RIGHT_ONION_POS[1]])
+        p1_to_bridge = np.array([p1_x_coor - BRIDGE_POS[0], p1_y_coor - BRIDGE_POS[1]])
+        p1_pos = np.concatenate((p1_to_onion, p1_to_bridge), axis=None)
+        assert p1_pos.shape == np.array([4]), f'player_pos shape={p1_pos.shape}, np.array={np.array([4])}'
+
+        # Player orientation
+        agent_0_orientation = Direction.DIRECTION_TO_INDEX[player_0.orientation]
+        agent_0_orientation = np.eye(4)[agent_0_orientation]
+        agent_1_orientation = Direction.DIRECTION_TO_INDEX[player_1.orientation]
+        agent_1_orientation = np.eye(4)[agent_1_orientation]
+        # player_orientation = np.concatenate((agent_0_orientation, agent_1_orientation), axis=None)
+        player_orientation = agent_0_orientation
+        assert player_orientation.shape == np.array([4])
+        
+        # Whether player is holding onion
+        player_0_held_onion = np.array([1]) if player_0.held_object and player_0.held_object == "onion" else np.array([0])
+        player_1_held_onion = np.array([1]) if player_1.held_object and player_1.held_object == "onion" else np.array([0])
+        held_onion = np.concatenate((player_0_held_onion, player_1_held_onion))
+
+        # Whether onion is on the bridge
+        objects = overcooked_state.unowned_objects_by_type
+        onion_on_bridge = np.array([0])
+        if 'onion' in objects:
+            for onion in objects['onion']:
+                if onion.position == (5,3):
+                    onion_on_bridge = np.array([1])
+
+        # Whether onion is in the pot on the left
+        onion_in_pot = np.array([0])
+        if 'soup' in objects:
+            for soup in objects['soup']:
+                if soup.position == (3,0) and soup.ingredients:
+                     onion_in_pot = np.array([len(soup.ingredients)])
+
+        # conditions
+        positions = [(4, 4), (5, 4), (6, 4), (6, 3)]
+        pos_onion = [0,0,0,0]
+        for i in range(len(positions)):
+            if (p0_x_coor, p0_y_coor) == positions[i] and player_0.held_object and player_0.held_object == "onion":
+                pos_onion[i] = 1
+        pos_onion = np.array(pos_onion)
+
+        # joint actions
+        # action = np.zeros((2,6))
+        # print(joint_action)
+        # action[0][joint_action[0]] = 1
+        # action[1][joint_action[1]] = 1
+        # print(action)
+
+        features = np.concatenate(
+            (
+                p0_pos, 
+                player_orientation, 
+                held_onion, 
+                onion_on_bridge,
+                onion_in_pot,
+                pos_onion,
+                # action
+            ), axis=None)
         return [features, features]
 
 

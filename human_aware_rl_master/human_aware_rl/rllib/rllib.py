@@ -219,7 +219,7 @@ class OvercookedMultiAgent(MultiAgentEnv):
             next_state, sparse_reward, done, info = self.base_env.step(joint_action, display_phi=False)
             dense_reward = info["shaped_r_by_agent"]
 
-        # get lossless state features
+        # get state features
         reward_features = self.base_env.human_coop_state_encoding(next_state, joint_action_idx, sparse_reward)
 
         assert self.custom_reward_func

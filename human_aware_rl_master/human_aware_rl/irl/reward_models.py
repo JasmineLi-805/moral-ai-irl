@@ -39,7 +39,7 @@ class TorchLinearReward(nn.Module):
         return [self.fc1.weight.detach(), self.fc2.weight.detach()]
 
     def get_rewards(self, states):
-        if type(states) == np.ndarray:
+        if type(states) == np.ndarray or type(states) == tuple:
             states = torch.tensor(states, dtype=torch.float)
         with torch.no_grad():
             rewards = self.forward(states).detach()
