@@ -1,17 +1,10 @@
-import os, sys
 from typing import Dict
 from overcooked_ai_py.agents.agent import Agent
 
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState, SoupState
-from ray.rllib.models.preprocessors import Preprocessor
-sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/overcooked_demo_litw'))
-sys.path.append(os.path.dirname('/homes/iws/jl9985/moral-ai-irl/overcooked_demo_litw'))
-sys.path.append(os.path.dirname('/home/jasmine/moral-ai-irl/overcooked_demo_litw'))
+from overcooked_ai_py.mdp.overcooked_mdp import SoupState
 from overcooked_demo_litw.server.game import *
 from overcooked_ai_py.mdp.actions import Action
 from ray.rllib.policy import Policy as RllibPolicy
-import numpy as np
-from tensorflow.compat.v1.keras.backend import set_session, get_session
 import gym
 
 
