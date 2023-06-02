@@ -153,12 +153,14 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
+    irl_dir = '/mmfs1/gscratch/rao/jasminel/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl'
+
     print(f'Deep MaxEnt IRL evaluation starting...')
     print(f'can use gpu: {torch.cuda.is_available()}; device={device}')
 
     args = parse_args()
 
-    checkpoint = f'{os.getcwd()}/result/human/T{args.trial}_{args.type}/epoch={args.epoch}.checkpoint'
+    checkpoint = f'{irl_dir}/result/human/T{args.trial}_{args.type}/epoch={args.epoch}.checkpoint'
     print(f'loading model checkpoint from {checkpoint}...')
     checkpoint = load_checkpoint(checkpoint)
     
@@ -179,7 +181,7 @@ if __name__ == "__main__":
 
     # for testing purposes only
     config['training_params']['evaluation_interval'] = 200
-    config['num_training_iters'] = 2000
+    config['num_training_iters'] = 1000
 
     eplen = config['evaluation_params']['ep_length']
     print(f"config eval ep: {eplen}")
@@ -188,7 +190,7 @@ if __name__ == "__main__":
     # train a policy and get feature expectation
     agent_state_visit, eval_traj = getAgentVisitation(config, env)
 
-    file_name = f'{os.getcwd()}/result/vertical/T{args.trial}_{args.type}_epoch={args.epoch}.trajectory'
+    file_name = f'{irl_dir}/result/vertical/T{args.trial}_{args.type}_epoch={args.epoch}.trajectory'
     content = []
     if os.path.exists(file_name):
         content = load_checkpoint(file_name)
