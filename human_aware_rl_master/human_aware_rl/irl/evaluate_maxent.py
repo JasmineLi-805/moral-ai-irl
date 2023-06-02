@@ -173,6 +173,10 @@ if __name__ == "__main__":
     print(f'loading configurations...')
     config = checkpoint['config']
     env = _loadEnvironment(config)
+
+    temp_result_dir = '/mmfs1/home/jl9985/temp_result'
+    config['results_dir'] = temp_result_dir
+    config['ray_params']['temp_dir'] = temp_result_dir
     
     print(f'getting expert trajectory and state visitation...')
     expert_state_visit = checkpoint['expert_svf']
