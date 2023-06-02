@@ -153,6 +153,7 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
+    temp_result_dir = '/mmfs1/home/jl9985/temp_result'
     irl_dir = '/mmfs1/gscratch/rao/jasminel/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl'
 
     print(f'Deep MaxEnt IRL evaluation starting...')
@@ -172,8 +173,8 @@ if __name__ == "__main__":
     
     # Load the vertical world environment
     config["environment_params"]['mdp_params']['layout_name'] = 'vertical_kitchen'
-    config['results_dir'] = irl_dir + '/temp_result'
-    config['ray_params']['temp_dir'] = irl_dir + '/temp_result'
+    config['results_dir'] = temp_result_dir
+    config['ray_params']['temp_dir'] = temp_result_dir
     env = _loadEnvironment(config)
     
 
