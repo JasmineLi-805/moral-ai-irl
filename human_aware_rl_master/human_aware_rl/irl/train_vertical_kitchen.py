@@ -172,6 +172,8 @@ if __name__ == "__main__":
     
     # Load the vertical world environment
     config["environment_params"]['mdp_params']['layout_name'] = 'vertical_kitchen'
+    config['results_dir'] = irl_dir + '/temp_result'
+    config['ray_params']['temp_dir'] = irl_dir + '/temp_result'
     env = _loadEnvironment(config)
     
 
@@ -185,6 +187,7 @@ if __name__ == "__main__":
 
     eplen = config['evaluation_params']['ep_length']
     print(f"config eval ep: {eplen}")
+
 
     print(f'start evaluating')
     # train a policy and get feature expectation
