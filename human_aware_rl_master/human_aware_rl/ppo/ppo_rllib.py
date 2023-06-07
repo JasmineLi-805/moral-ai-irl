@@ -94,6 +94,8 @@ class RllibLSTMPPOModel(RecurrentTFModelV2):
 
     def __init__(self, obs_space, action_space, num_outputs, model_config, name, **kwargs):
         super(RllibLSTMPPOModel, self).__init__(obs_space, action_space, num_outputs, model_config, name)
+        
+        print(f'observation space: ' + obs_space.shapes)
 
         # params we passed in from rllib client
         custom_params = model_config["custom_options"]
@@ -189,6 +191,7 @@ class RllibLSTMPPOModel(RecurrentTFModelV2):
             model_out: tensor of shape [BATCH, T, self.num_outputs] representing action logits
             state: list of tensors [h_out, c_out] each of shape [BATCH, self.cell_size]
         """
+        print(f'input shape: ' + inputs.shape)
         model_out, self._value_out, h_out, c_out = self.base_model([inputs, seq_lens, state])
 
         return model_out, [h_out, c_out]
