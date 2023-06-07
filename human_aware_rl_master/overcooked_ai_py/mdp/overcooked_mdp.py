@@ -2073,6 +2073,7 @@ class OvercookedGridworld(object):
                 pos_onion,
                 # action
             ), axis=None)
+        print(features.shape)
         return [features, features]
 
 
