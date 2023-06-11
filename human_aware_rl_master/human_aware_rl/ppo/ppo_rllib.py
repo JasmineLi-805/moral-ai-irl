@@ -189,7 +189,6 @@ class RllibLSTMPPOModel(RecurrentTFModelV2):
             model_out: tensor of shape [BATCH, T, self.num_outputs] representing action logits
             state: list of tensors [h_out, c_out] each of shape [BATCH, self.cell_size]
         """
-        inputs = inputs.astype(float)
         model_out, self._value_out, h_out, c_out = self.base_model([inputs, seq_lens, state])
 
         return model_out, [h_out, c_out]
