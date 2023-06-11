@@ -153,7 +153,7 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
-    temp_result_dir = '/mmfs1/home/jl9985/temp_result'
+    temp_result_dir = '/mmfs1/gscratch/rao/jasminel/temp_result'
     irl_dir = '/mmfs1/gscratch/rao/jasminel/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl'
 
     print(f'Deep MaxEnt IRL evaluation starting...')
