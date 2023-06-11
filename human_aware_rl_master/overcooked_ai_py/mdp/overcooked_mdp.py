@@ -2195,7 +2195,7 @@ class OvercookedGridworld(object):
             assert state_mask_stack.shape[:2] == self.shape
             assert state_mask_stack.shape[2] == len(LAYERS)
             # NOTE: currently not including time left or order_list in featurization
-            return np.array(state_mask_stack).astype(int)
+            return np.array(state_mask_stack).astype(float)
 
         # NOTE: Currently not very efficient, a decent amount of computation repeated here
         num_players = len(overcooked_state.players)
