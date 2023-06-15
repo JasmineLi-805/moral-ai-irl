@@ -172,7 +172,8 @@ if __name__ == "__main__":
     config = checkpoint['config']
     
     # Load the vertical world environment
-    config["environment_params"]['mdp_params']['layout_name'] = 'vertical_kitchen'
+    # config["environment_params"]['mdp_params']['layout_name'] = 'vertical_kitchen'
+    config["environment_params"]['mdp_params']['layout_name'] = 'coop_experiment_2'
     config['results_dir'] = temp_result_dir
     config['ray_params']['temp_dir'] = temp_result_dir
     env = _loadEnvironment(config)
