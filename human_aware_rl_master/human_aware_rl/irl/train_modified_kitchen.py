@@ -148,6 +148,7 @@ def parse_args():
     parser.add_argument('--trial', type=int, help='Trial number')
     parser.add_argument('--epoch', type=int, help='Epoch number')
     parser.add_argument('--type', type=str, help='cook or help agent?')
+    parser.add_argument('--layout', type=str, help='the layout to use')
 
     args = parser.parse_args()
     return args
@@ -172,8 +173,7 @@ if __name__ == "__main__":
     config = checkpoint['config']
     
     # Load the vertical world environment
-    # config["environment_params"]['mdp_params']['layout_name'] = 'vertical_kitchen'
-    config["environment_params"]['mdp_params']['layout_name'] = 'coop_experiment_2'
+    config["environment_params"]['mdp_params']['layout_name'] = args.layout
     config['results_dir'] = temp_result_dir
     config['ray_params']['temp_dir'] = temp_result_dir
     env = _loadEnvironment(config)
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     # train a policy and get feature expectation
     agent_state_visit, eval_traj = getAgentVisitation(config, env)
 
-    file_name = f'{irl_dir}/result/vertical/T{args.trial}_{args.type}_epoch={args.epoch}.trajectory'
+    file_name = f'{irl_dir}/result/modified/{args.layout}_T{args.trial}_{args.type}_epoch={args.epoch}.trajectory'
     content = []
     if os.path.exists(file_name):
         content = load_checkpoint(file_name)
