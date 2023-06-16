@@ -1,0 +1,22 @@
+{
+    "grid":  """XXXPXXXXPXXX
+                X    SX 2  X
+                D XX XX XX S
+                X 1  X     X
+                XXOXXXX XXDX
+                XXXXXXX XXXX
+                XXXXXXX   OX
+                XXXXXXXXXXXX""",
+    "start_all_orders" : [
+        {"ingredients" : ["onion", "onion", "onion"]}
+    ],
+    "start_state" : {
+        "players": [
+            {"position": [2, 3], "orientation": [-1, 0], "held_object": {"name": "onion", "position": [2, 3]}}, 
+            {"position": [8, 1], "orientation": [0, -1], "held_object": None}
+            ], 
+        "objects": [], 
+        "bonus_orders": [], 
+        "all_orders": [{"ingredients" : ["onion", "onion", "onion"]}]
+    },
+}
