@@ -21,7 +21,8 @@ class DummyPolicy(RllibPolicy):
         # the 'left' and 'right' in the layout name refers to the human player's position
         possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right', 
                            'coop_experiment_1', 'coop_experiment_2', 'vertical_kitchen',
-                           'coop_experiment_3', 'coop_experiment_4']
+                           'coop_experiment_3', 'coop_experiment_4', 'coop_experiment_5', 
+                           'coop_experiment_6', 'coop_experiment_7']
         assert config['layout'] in possible_layout
         if config['layout']== 'mai_separate_coop_right':
             print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentLeftCoop')
