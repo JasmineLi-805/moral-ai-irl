@@ -1,17 +1,10 @@
-import os, sys
 from typing import Dict
 from overcooked_ai_py.agents.agent import Agent
 
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState, SoupState
-from ray.rllib.models.preprocessors import Preprocessor
-sys.path.append(os.path.dirname('/Users/jasmineli/Desktop/moral-ai-irl/overcooked_demo_litw'))
-sys.path.append(os.path.dirname('/homes/iws/jl9985/moral-ai-irl/overcooked_demo_litw'))
-sys.path.append(os.path.dirname('/home/jasmine/moral-ai-irl/overcooked_demo_litw'))
+from overcooked_ai_py.mdp.overcooked_mdp import SoupState
 from overcooked_demo_litw.server.game import *
 from overcooked_ai_py.mdp.actions import Action
 from ray.rllib.policy import Policy as RllibPolicy
-import numpy as np
-from tensorflow.compat.v1.keras.backend import set_session, get_session
 import gym
 
 
@@ -26,7 +19,10 @@ class DummyPolicy(RllibPolicy):
         assert config['layout']
         layout = config['layout']
         # the 'left' and 'right' in the layout name refers to the human player's position
-        possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right', 'coop_experiment_1', 'vertical_kitchen']
+        possible_layout = ['mai_separate_coop_left', 'mai_separate_coop_right', 
+                           'coop_experiment_1', 'coop_experiment_2', 'vertical_kitchen',
+                           'coop_experiment_3', 'coop_experiment_4', 'coop_experiment_5', 
+                           'coop_experiment_6', 'coop_experiment_7']
         assert config['layout'] in possible_layout
         if config['layout']== 'mai_separate_coop_right':
             print(f'DummyPolicy: layout={layout}, agent=MAIDumbAgentLeftCoop')
@@ -364,6 +360,276 @@ class MAIStayAgent(Agent):
     
     def __init__(self):
         self.agent = StayAI()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+#######
+# Layout: coop_experiment_2
+class MAINonCoopAgent2(Agent):
+    
+    def __init__(self):
+        self.agent = NonCooperativeAgent2()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+#######
+# Layout: coop_experiment_3
+
+class MAINonCoopAgent3(Agent):
+    
+    def __init__(self):
+        self.agent = NonCooperativeAgent3()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAICooperativeAgent3(Agent):
+    
+    def __init__(self):
+        self.agent = CooperativeAgent3()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+#######
+# Layout: coop_experiment_4
+
+class MAINonCoopAgent4(Agent):
+    
+    def __init__(self):
+        self.agent = NonCooperativeAgent4()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAICooperativeAgent4(Agent):
+    
+    def __init__(self):
+        self.agent = CooperativeAgent4()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+#######
+# Layout: coop_experiment_5
+
+class MAINonCoopAgent5(Agent):
+    
+    def __init__(self):
+        self.agent = NonCooperativeAgent5()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAICooperativeAgent5(Agent):
+    
+    def __init__(self):
+        self.agent = CooperativeAgent5()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+#######
+# Layout: coop_experiment_6
+
+class MAINonCoopAgent6(Agent):
+    
+    def __init__(self):
+        self.agent = NonCooperativeAgent6()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAICooperativeAgent6(Agent):
+    
+    def __init__(self):
+        self.agent = CooperativeAgent6()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+#######
+# Layout: coop_experiment_7
+
+class MAINonCoopAgent7(Agent):
+    
+    def __init__(self):
+        self.agent = NonCooperativeAgent7()
+
+    def action(self, state):
+        act = self.agent.action(state)
+        return act[0], {}
+
+    def set_agent_index(self, agent_index):
+        self.agent_index = agent_index
+
+    def set_mdp(self, mdp):
+        self.mdp = mdp
+
+    def reset(self):
+        """
+        One should always reset agents in between trajectory rollouts, as resetting
+        usually clears history or other trajectory-specific attributes.
+        """
+        self.agent_index = None
+        self.mdp = None
+
+class MAICooperativeAgent7(Agent):
+    
+    def __init__(self):
+        self.agent = CooperativeAgent7()
 
     def action(self, state):
         act = self.agent.action(state)

@@ -148,17 +148,21 @@ def parse_args():
     parser.add_argument('--trial', type=int, help='Trial number')
     parser.add_argument('--epoch', type=int, help='Epoch number')
     parser.add_argument('--type', type=str, help='cook or help agent?')
+    parser.add_argument('--layout', type=str, help='the layout to use')
 
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
+    temp_result_dir = '/mmfs1/gscratch/rao/jasminel/temp_result'
+    irl_dir = '/mmfs1/gscratch/rao/jasminel/moral-ai-irl/human_aware_rl_master/human_aware_rl/irl'
+
     print(f'Deep MaxEnt IRL evaluation starting...')
     print(f'can use gpu: {torch.cuda.is_available()}; device={device}')
 
     args = parse_args()
 
-    checkpoint = f'{os.getcwd()}/result/human/T{args.trial}_{args.type}/epoch={args.epoch}.checkpoint'
+    checkpoint = f'{irl_dir}/result/human/T{args.trial}_{args.type}/epoch={args.epoch}.checkpoint'
     print(f'loading model checkpoint from {checkpoint}...')
     checkpoint = load_checkpoint(checkpoint)
     
@@ -169,7 +173,9 @@ if __name__ == "__main__":
     config = checkpoint['config']
     
     # Load the vertical world environment
-    config["environment_params"]['mdp_params']['layout_name'] = 'vertical_kitchen'
+    config["environment_params"]['mdp_params']['layout_name'] = args.layout
+    config['results_dir'] = temp_result_dir
+    config['ray_params']['temp_dir'] = temp_result_dir
     env = _loadEnvironment(config)
     
 
@@ -178,8 +184,9 @@ if __name__ == "__main__":
     config['evaluation_params']['display'] = True
 
     # for testing purposes only
+    train_it = 600
     config['training_params']['evaluation_interval'] = 200
-    config['num_training_iters'] = 2000
+    config['num_training_iters'] = train_it
 
     eplen = config['evaluation_params']['ep_length']
     print(f"config eval ep: {eplen}")
@@ -188,7 +195,7 @@ if __name__ == "__main__":
     # train a policy and get feature expectation
     agent_state_visit, eval_traj = getAgentVisitation(config, env)
 
-    file_name = f'{os.getcwd()}/result/vertical/T{args.trial}_{args.type}_epoch={args.epoch}.trajectory'
+    file_name = f'{irl_dir}/result/modified/{args.layout}_T{args.trial}_{args.type}_epoch={args.epoch}_trainIt={train_it}.trajectory'
     content = []
     if os.path.exists(file_name):
         content = load_checkpoint(file_name)

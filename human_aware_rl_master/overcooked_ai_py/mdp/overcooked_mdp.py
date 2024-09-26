@@ -2005,17 +2005,17 @@ class OvercookedGridworld(object):
         LEFT_STOVE_POS = [7, 3]
         BRIDGE_POS = [4, 5]
         p0_x_coor, p0_y_coor = player_0.position
-        p0_to_onion = np.array([p0_x_coor - LEFT_ONION_POS[0], p0_y_coor - LEFT_ONION_POS[1]])
-        p0_to_bridge = np.array([p0_x_coor - BRIDGE_POS[0], p0_y_coor - BRIDGE_POS[1]])
-        p0_to_stove = np.array([p0_x_coor - LEFT_STOVE_POS[0], p0_y_coor - LEFT_STOVE_POS[1]])
+        p0_to_onion = np.array([p0_y_coor - LEFT_ONION_POS[1], LEFT_ONION_POS[0] - p0_x_coor])
+        p0_to_bridge = np.array([p0_y_coor - BRIDGE_POS[1], BRIDGE_POS[0] - p0_x_coor])
+        p0_to_stove = np.array([p0_y_coor - LEFT_STOVE_POS[1], LEFT_STOVE_POS[0] - p0_x_coor])
         p0_pos = np.concatenate((p0_to_onion, p0_to_bridge, p0_to_stove), axis=None)
         assert p0_pos.shape == np.array([6]), f'player_pos shape={p0_pos.shape}, np.array={np.array([4])}'
 
         # Player 1 position
         RIGHT_ONION_POS = [1, 10]
         p1_x_coor, p1_y_coor = player_1.position
-        p1_to_onion = np.array([p1_x_coor - RIGHT_ONION_POS[0], p1_y_coor - RIGHT_ONION_POS[1]])
-        p1_to_bridge = np.array([p1_x_coor - BRIDGE_POS[0], p1_y_coor - BRIDGE_POS[1]])
+        p1_to_onion = np.array([p1_y_coor - RIGHT_ONION_POS[1], RIGHT_ONION_POS[0] - p1_x_coor])
+        p1_to_bridge = np.array([p1_y_coor - BRIDGE_POS[1],  BRIDGE_POS[0] - p1_x_coor])
         p1_pos = np.concatenate((p1_to_onion, p1_to_bridge), axis=None)
         assert p1_pos.shape == np.array([4]), f'player_pos shape={p1_pos.shape}, np.array={np.array([4])}'
 
@@ -2073,6 +2073,7 @@ class OvercookedGridworld(object):
                 pos_onion,
                 # action
             ), axis=None)
+        print(features.shape)
         return [features, features]
 
 
@@ -2194,7 +2195,7 @@ class OvercookedGridworld(object):
             assert state_mask_stack.shape[:2] == self.shape
             assert state_mask_stack.shape[2] == len(LAYERS)
             # NOTE: currently not including time left or order_list in featurization
-            return np.array(state_mask_stack).astype(int)
+            return np.array(state_mask_stack).astype(np.float32)
 
         # NOTE: Currently not very efficient, a decent amount of computation repeated here
         num_players = len(overcooked_state.players)
