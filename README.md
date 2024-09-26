@@ -5,8 +5,9 @@
 ### Start with a NO-GPU version of it:
 
 1. Add both `human_aware` and `overcooked_demo` as part of your project source / python path.
-2. Create and start a virtual/conda environment
+2. Create and start a virtual/conda environment with python=3.8
 3. Install dependencies: `python3 -m pip install -r requirements.txt`
+    - install tensorflow 2.x using the instructions in: https://www.tensorflow.org/install/pip
 
 ### Let's add GPU capabilities:
 ...

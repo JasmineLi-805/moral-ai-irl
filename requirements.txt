@@ -1,4 +1,4 @@
-tensorflow-gpu==2.6.0
+tensorflow-gpu==2.9.1
 gast
 h5py
 tensorflow-estimator

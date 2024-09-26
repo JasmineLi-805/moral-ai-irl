@@ -1629,3 +1629,395 @@ class VerticalRightCoop(MAIDumbAgent):
                 else:
                     self.phases.append('WAIT_SOUP')
         self.curr_phase += 1
+
+#######
+# Layout: modified kitchen 2: coop_experiment_2
+# The Coop agent is the same as the one for experiment 1
+
+class NonCooperativeAgent2(MAIDumbAgent):
+    STEPS = {
+        'TAKE_ONION': [
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.EAST,
+            Direction.NORTH,
+            Direction.NORTH,
+            Direction.WEST,
+            Direction.NORTH,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCooperativeAgent2.STEPS)
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(NonCooperativeAgent2, self).reset_smart(state)
+
+#######
+# Layout: coop_experiment_3
+
+class NonCooperativeAgent3(MAIDumbAgent):
+    STEPS = {
+        'TAKE_ONION': [
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.EAST,
+            Direction.EAST,
+            Direction.NORTH,
+            Direction.NORTH,
+            Direction.WEST,
+            Direction.NORTH,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCooperativeAgent3.STEPS)
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(NonCooperativeAgent3, self).reset_smart(state)
+
+
+class CooperativeAgent3(MAIDumbAgent):
+    STEPS = {
+        'SEND_ONION':[
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.EAST,
+            Direction.EAST,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'SEND_ONION'
+        ]
+        super().__init__(sequence, CooperativeAgent3.STEPS)
+
+    def action(self, state):
+        self.curr_tick += 1
+        if self.curr_phase < len(self.phases):
+            formula_name = self.phases[self.curr_phase]
+            if formula_name in self.formulas:
+                phase = self.formulas[formula_name]
+                if self.curr_tick < len(phase)-1:
+                    return phase[self.curr_tick], None
+                elif self.curr_tick == len(phase) - 1:
+                    action = phase[self.curr_tick]
+                    self.reset_smart(state)
+                    return action, None
+            else:
+                self.curr_phase += 1
+        return Action.STAY, None
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(CooperativeAgent3, self).reset_smart(state)
+
+#######
+# Layout: coop_experiment_4
+class NonCooperativeAgent4(MAIDumbAgent):
+    STEPS = {
+        'TAKE_ONION': [
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.NORTH,
+            Direction.NORTH,
+            Direction.NORTH,
+            Direction.WEST,
+            Direction.NORTH,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCooperativeAgent4.STEPS)
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(NonCooperativeAgent4, self).reset_smart(state)
+
+
+class CooperativeAgent4(MAIDumbAgent):
+    STEPS = {
+        'SEND_ONION':[
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.NORTH,
+            Direction.EAST,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'SEND_ONION'
+        ]
+        super().__init__(sequence, CooperativeAgent4.STEPS)
+
+    def action(self, state):
+        self.curr_tick += 1
+        if self.curr_phase < len(self.phases):
+            formula_name = self.phases[self.curr_phase]
+            if formula_name in self.formulas:
+                phase = self.formulas[formula_name]
+                if self.curr_tick < len(phase)-1:
+                    return phase[self.curr_tick], None
+                elif self.curr_tick == len(phase) - 1:
+                    action = phase[self.curr_tick]
+                    self.reset_smart(state)
+                    return action, None
+            else:
+                self.curr_phase += 1
+        return Action.STAY, None
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(CooperativeAgent4, self).reset_smart(state)
+
+#######
+# Layout: coop_experiment_5
+class NonCooperativeAgent5(MAIDumbAgent):
+    STEPS = {
+        'TAKE_ONION': [
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.NORTH,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCooperativeAgent5.STEPS)
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(NonCooperativeAgent5, self).reset_smart(state)
+
+
+class CooperativeAgent5(MAIDumbAgent):
+    STEPS = {
+        'SEND_ONION':[
+            Direction.SOUTH,
+            Action.INTERACT,
+            Direction.EAST,
+            Direction.SOUTH,
+            Direction.SOUTH,
+            Direction.EAST,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'SEND_ONION'
+        ]
+        super().__init__(sequence, CooperativeAgent5.STEPS)
+
+    def action(self, state):
+        self.curr_tick += 1
+        if self.curr_phase < len(self.phases):
+            formula_name = self.phases[self.curr_phase]
+            if formula_name in self.formulas:
+                phase = self.formulas[formula_name]
+                if self.curr_tick < len(phase)-1:
+                    return phase[self.curr_tick], None
+                elif self.curr_tick == len(phase) - 1:
+                    action = phase[self.curr_tick]
+                    self.reset_smart(state)
+                    return action, None
+            else:
+                self.curr_phase += 1
+        return Action.STAY, None
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(CooperativeAgent5, self).reset_smart(state)
+
+#######
+# Layout: coop_experiment_6
+class NonCooperativeAgent6(MAIDumbAgent):
+    STEPS = {
+        'TAKE_ONION': [
+            Direction.WEST,
+            Action.INTERACT,
+            Direction.NORTH,
+            Direction.WEST,
+            Direction.NORTH,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCooperativeAgent6.STEPS)
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(NonCooperativeAgent6, self).reset_smart(state)
+
+
+class CooperativeAgent6(MAIDumbAgent):
+    STEPS = {
+        'SEND_ONION':[
+            Direction.WEST,
+            Action.INTERACT,
+            Direction.SOUTH,
+            Direction.EAST,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'SEND_ONION'
+        ]
+        super().__init__(sequence, CooperativeAgent6.STEPS)
+
+    def action(self, state):
+        self.curr_tick += 1
+        if self.curr_phase < len(self.phases):
+            formula_name = self.phases[self.curr_phase]
+            if formula_name in self.formulas:
+                phase = self.formulas[formula_name]
+                if self.curr_tick < len(phase)-1:
+                    return phase[self.curr_tick], None
+                elif self.curr_tick == len(phase) - 1:
+                    action = phase[self.curr_tick]
+                    self.reset_smart(state)
+                    return action, None
+            else:
+                self.curr_phase += 1
+        return Action.STAY, None
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(CooperativeAgent6, self).reset_smart(state)
+
+#######
+# Layout: coop_experiment_7
+class NonCooperativeAgent7(MAIDumbAgent):
+    STEPS = {
+        'TAKE_ONION': [
+            Direction.WEST,
+            Action.INTERACT,
+            Direction.EAST,
+            Direction.EAST,
+            Direction.NORTH,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'TAKE_ONION'
+        ]
+        super().__init__(sequence, NonCooperativeAgent7.STEPS)
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(NonCooperativeAgent7, self).reset_smart(state)
+
+
+class CooperativeAgent7(MAIDumbAgent):
+    STEPS = {
+        'SEND_ONION':[
+            Direction.WEST,
+            Action.INTERACT,
+            Direction.EAST,
+            Direction.EAST,
+            Direction.EAST,
+            Direction.SOUTH,
+            Direction.SOUTH,
+            Direction.EAST,
+            Action.INTERACT
+        ],
+        'STAY': [
+            Action.STAY
+        ]
+    }
+
+    def __init__(self):
+        self.help_provided = False
+        sequence = [
+            'SEND_ONION'
+        ]
+        super().__init__(sequence, CooperativeAgent7.STEPS)
+
+    def action(self, state):
+        self.curr_tick += 1
+        if self.curr_phase < len(self.phases):
+            formula_name = self.phases[self.curr_phase]
+            if formula_name in self.formulas:
+                phase = self.formulas[formula_name]
+                if self.curr_tick < len(phase)-1:
+                    return phase[self.curr_tick], None
+                elif self.curr_tick == len(phase) - 1:
+                    action = phase[self.curr_tick]
+                    self.reset_smart(state)
+                    return action, None
+            else:
+                self.curr_phase += 1
+        return Action.STAY, None
+
+    def reset_smart(self, state):
+        self.phases.append('STAY')
+        super(CooperativeAgent7, self).reset_smart(state)
