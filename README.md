@@ -29,6 +29,9 @@ The IRL related code are mainly located in the `human_aware_rl_master/human_awar
 - `human_aware_rl_master/human_aware_rl/irl/evaluate.py`: evaluates a reward function from the IRL training by training an RL agent with the reward function and displaying the agent trajectory
 - `human_aware_rl_master/human_aware_rl/irl/config.py`: sets up the training configuration for `irl_train.py`, while initializing a training process, `irl_train.py` reads the configuration from this file.
 
+### Human Data
+The human data is located at `human_aware_rl_master/human_aware_rl/static/human_data`. See this README file for more on understanding the raw data and the data processing code: `human_aware_rl_master/human_aware_rl/static/human_data/README.md`.
+
 ### Training Instructions
 1. Navigate to the irl directory using `cd human_aware_rl_master/human_aware_rl/irl`
 2. Run IRL training with the command `python irl_train.py [--epochs n] [--trial t]`
